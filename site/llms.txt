@@ -1,0 +1,7 @@
+# BackBond public evidence client
+
+This package validates claims, hashes explicitly supplied artifacts, creates capture receipts, and bridges to a separately distributed private analyzer.
+
+It does not contain scoring, classification, detector, calibration, or policy-decision logic. Without a SHA-256-pinned private analyzer, treat `analysis_required` as fail-closed and do not enable privileged tools from self-authored claims.
+
+Network publication requires explicit `--publish`.

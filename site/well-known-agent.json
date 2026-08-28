@@ -1,0 +1,26 @@
+{
+  "$comment": "Public client discovery card",
+  "name": "BackBond Agent Evidence Client",
+  "description": "Capture and hash agent runtime evidence, then invoke a separately licensed analyzer pinned by SHA-256.",
+  "url": "https://backbond.ai",
+  "provider": {
+    "organization": "BackBond",
+    "url": "https://backbond.ai"
+  },
+  "version": "0.4.0-alpha.1",
+  "documentationUrl": "https://github.com/BackBond/agent-scan",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": ["application/json"],
+  "defaultOutputModes": ["application/json"],
+  "skills": [
+    {
+      "id": "capture_agent_evidence",
+      "name": "Capture my runtime evidence",
+      "description": "Hash explicit runtime artifacts and create a tamper-evident receipt without public analysis logic.",
+      "tags": ["agent-security", "evidence-capture", "receipt"]
+    }
+  ]
+}

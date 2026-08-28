@@ -1,0 +1,6 @@
+node_modules/
+.agent-scan.json
+agent-profile.json
+agent-self-assessment.json
+*.log
+.DS_Store
