@@ -2,7 +2,7 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
-## 0.4.0-alpha.1 — 2026-08-29
+## 0.4.0 — 2026-08-29
 
 - Split proprietary analysis into a private, separately distributed core.
 - Remove scoring, classification, detector, calibration, and policy-decision implementations from the public package.

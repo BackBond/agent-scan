@@ -16,13 +16,13 @@ Without the private analyzer, `scan` records the evidence and exits with code `3
 Pin the exact client version:
 
 ```bash
-npx @backbond/agent-scan@0.4.0-alpha.1 start --json
+npx @backbond/agent-scan@0.4.0 start --json
 ```
 
 Capture artifact hashes without analysis:
 
 ```bash
-npx @backbond/agent-scan@0.4.0-alpha.1 inspect \
+npx @backbond/agent-scan@0.4.0 inspect \
   --tool-schema tools.json \
   --permissions permissions.json \
   --trace runtime-trace.json
