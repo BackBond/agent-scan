@@ -2,6 +2,13 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.4 — 2026-08-29
+
+- Make every generated and `--help` live `tools/list` command retain strict coverage gating with `--require-coverage`.
+- Label v2 commit metadata as caller-supplied and unverified without changing the record protocol shape.
+- Add a dependency-free official GitHub Action that verifies `HEAD` and every explicit tracked input against `github.sha`, runs the scanner bundled with the selected Action version, and writes a redacted record plus job summary while preserving scanner exit codes.
+- Keep the public ruleset at `backbond-local-rules/1.2.1`; this release adds no findings or inference changes.
+
 ## 0.5.3 — 2026-08-29
 
 - Make inconclusive zero-argument and argument-free MCP scans return an exact, pinned `next_action` for captured live `tools/list` input.

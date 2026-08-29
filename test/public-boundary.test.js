@@ -58,7 +58,7 @@ test('published executable sources contain no private fingerprints or execution/
 
 test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.5.3');
+  assert.equal(manifest.version, '0.5.4');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);
@@ -96,4 +96,20 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
   assert.match(workflow, /id-token: write/);
   assert.match(workflow, /contents: write/);
+});
+
+test('official Action verifies committed inputs before invoking the exact tagged scanner locally', () => {
+  const metadata = fs.readFileSync(path.join(ROOT, 'action.yml'), 'utf8');
+  const source = fs.readFileSync(path.join(ROOT, 'action', 'index.js'), 'utf8');
+  assert.match(metadata, /using: node20/);
+  assert.match(source, /GITHUB_SHA/);
+  assert.match(source, /rev-parse', 'HEAD/);
+  assert.match(source, /ls-files', '--error-unmatch/);
+  assert.match(source, /'diff', '--quiet', 'HEAD'/);
+  assert.match(source, /CLI, 'scan', '--require-coverage'/);
+  assert.match(source, /caller-supplied|self-run and unverified/);
+  assert.doesNotMatch(source, /@latest|node:(?:http|https|net|tls)/);
+  for (const token of source.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []) {
+    assert.equal(forbiddenTokenHashes.has(createHash('sha256').update(token).digest('hex')), false, 'private token fingerprint found in action/index.js');
+  }
 });

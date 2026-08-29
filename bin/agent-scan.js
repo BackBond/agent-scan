@@ -41,8 +41,8 @@ Live tools/list recipe:
   1. Ask the agent client for its current MCP tools/list response.
   2. Save the complete JSON response as tools-list.json.
   3. Expected shape: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
-  4. POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin < tools-list.json
-  5. PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin
+  4. POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin --require-coverage < tools-list.json
+  5. PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin --require-coverage
 
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
@@ -51,7 +51,7 @@ Scan options:
   --receipt <file>      Write a tamper-evident receipt without overwriting.
   --signing-key <file>  Sign the receipt with an Ed25519 private key.
   --record-public <file>  Write a redacted self-run scan record without overwriting.
-  --record-commit <sha>  Bind that record to a 40- or 64-character Git commit (record v2).
+  --record-commit <sha>  Add a caller-supplied, unverified Git commit reference (record v2).
   --record-include-tool-names  Include tool names in that public record (off by default).
   --record-include-fingerprints  Include input hashes and byte lengths (off by default).
   --require-coverage    Exit 3 unless coverage is complete.

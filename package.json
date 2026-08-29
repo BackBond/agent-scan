@@ -1,6 +1,6 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "private": false,
   "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
   "bin": {

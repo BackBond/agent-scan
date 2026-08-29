@@ -486,7 +486,7 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(missingLiveTools.result.isError, false);
   assert.equal(missingLiveTools.result.structuredContent.next_action.code, 'provide_live_tools');
-  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.3 scan --stdin/);
+  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage/);
   assert.deepEqual(Object.keys(missingLiveTools.result.structuredContent.next_action.stdin_shape.result), ['tools']);
   const missingLiveRecord = handleMessage({
     jsonrpc: '2.0', id: 11, method: 'tools/call',

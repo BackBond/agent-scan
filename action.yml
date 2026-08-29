@@ -1,0 +1,40 @@
+name: BackBond agent-scan
+description: Verify committed scanner inputs, run the pinned local scanner, and write a redacted public record.
+inputs:
+  tool-schema:
+    description: Repository-relative tool schema or tools/list JSON file.
+    required: false
+  permissions:
+    description: Repository-relative backbond-permissions/v1 JSON file.
+    required: false
+  trace:
+    description: Repository-relative BackBond or OpenTelemetry trace JSON file.
+    required: false
+  config:
+    description: Repository-relative supported agent or MCP config file.
+    required: false
+  record-path:
+    description: Repository-relative output path for the redacted public record.
+    required: false
+    default: backbond-scan-record.json
+  fail-on:
+    description: Runtime-exposure severity threshold.
+    required: false
+    default: high
+  fail-on-prompt:
+    description: Prompt-lint severity threshold.
+    required: false
+    default: none
+outputs:
+  record-path:
+    description: Absolute path of the generated redacted public record.
+  record-sha256:
+    description: Integrity digest of the generated public record.
+  commit:
+    description: Git commit verified by this Action before scanning.
+runs:
+  using: node20
+  main: action/index.js
+branding:
+  icon: shield
+  color: blue

@@ -93,7 +93,7 @@ test('record integrity detects tampering', () => {
   assert.equal(verifyPublicScanRecord(record), false);
 });
 
-test('commit-bound records use v2, retain v1 verification, and bind the full commit', () => {
+test('commit-referenced records use v2, retain v1 verification, and checksum the full commit', () => {
   const scan = fixtureScan('hardened');
   const receipt = createScanReceipt(scan);
   const v1 = createPublicScanRecord(scan, receipt);
@@ -103,8 +103,9 @@ test('commit-bound records use v2, retain v1 verification, and bind the full com
   assert.equal(verifyPublicScanRecord(v1), true);
   assert.equal(v2.protocol, COMMIT_BOUND_RECORD_PROTOCOL);
   assert.equal(v2.source.git_commit, commit);
+  assert.match(v2.assurance.statement, /supplied by the caller and was not verified/);
   assert.equal(verifyPublicScanRecord(v2), true);
-  assert.match(renderCompactRecord(v2), new RegExp(`Commit: ${commit}`));
+  assert.match(renderCompactRecord(v2), new RegExp(`Commit \\(caller-supplied, unverified\\): ${commit}`));
 
   v2.source.git_commit = '0000000000000000000000000000000000000000';
   assert.equal(verifyPublicScanRecord(v2), false);

@@ -121,7 +121,7 @@ test('redacted public record is write-once and omits tool names and input finger
   assert.match(duplicate.stderr, /exist/i);
 });
 
-test('--record-commit writes a commit-bound v2 public record', (t) => {
+test('--record-commit writes a v2 public record with an honestly labeled source reference', (t) => {
   const directory = tempDirectory(t);
   const recordPath = path.join(directory, 'commit-record.json');
   const commit = '0123456789abcdef0123456789abcdef01234567';
@@ -134,8 +134,9 @@ test('--record-commit writes a commit-bound v2 public record', (t) => {
   const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
   assert.equal(record.protocol, 'backbond-scan-record/v2');
   assert.equal(record.source.git_commit, commit);
-  assert.match(run.stdout, new RegExp(`Commit: ${commit}`));
-  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.3/);
+  assert.match(record.assurance.statement, /supplied by the caller and was not verified/);
+  assert.match(run.stdout, new RegExp(`Commit \\(caller-supplied, unverified\\): ${commit}`));
+  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.4/);
 
   for (const [name, suppliedCommit] of [
     ['uppercase', 'ABCDEF0123456789ABCDEF0123456789ABCDEF01'],
@@ -196,6 +197,8 @@ test('--require-coverage exits 3 for inconclusive scans and 0 for complete scans
   assert.match(incompleteHuman.stdout, /^INCONCLUSIVE — 0 findings/);
   assert.match(incompleteHuman.stdout, /Next: save your current MCP tools\/list response/);
   assert.match(incompleteHuman.stdout, /PowerShell: Get-Content -Raw/);
+  assert.match(incompleteHuman.stdout, /scan --stdin --require-coverage < tools-list\.json/);
+  assert.match(incompleteHuman.stdout, /scan --stdin --require-coverage$/m);
 
   const complete = spawnSync(process.execPath, scanArgs(fixturePaths('hardened'), ['--require-coverage']), { encoding: 'utf8' });
   assert.equal(complete.status, 0, complete.stderr);
@@ -240,13 +243,13 @@ test('invalid inputs and removed analyzer/network options exit 2', (t) => {
   assert.equal(emptyOutput.status, 'inconclusive');
   assert.equal(emptyOutput.next_action.code, 'provide_live_tools');
   assert.deepEqual(Object.keys(emptyOutput.next_action.stdin_shape.result), ['tools']);
-  assert.match(emptyOutput.next_action.commands.posix_or_cmd, /@backbond\/agent-scan@0\.5\.3 scan --stdin/);
+  assert.match(emptyOutput.next_action.commands.posix_or_cmd, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage/);
 });
 
 test('--help puts the pinned live tools/list recipe on the first screen', () => {
   const run = spawnSync(process.execPath, [CLI, '--help'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /Expected shape: \{"jsonrpc":"2\.0","id":1,"result":\{"tools":\[\.\.\.\]\}\}/);
-  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.3 scan --stdin < tools-list\.json/);
+  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage < tools-list\.json/);
   assert.match(run.stdout, /Get-Content -Raw/);
 });
