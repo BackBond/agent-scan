@@ -106,15 +106,14 @@ jobs:
             npm publish "${{ steps.pack.outputs.file }}" --access public --provenance
           fi
           mkdir registry-copy
-          registry_file=""
+          registry_file="${{ steps.pack.outputs.file }}"
           for attempt in 1 2 3 4 5 6; do
-            if registry_json=$(npm pack "@backbond/agent-scan@$version" --pack-destination registry-copy --json 2>/dev/null); then
-              registry_file=$(printf '%s' "$registry_json" | node -e "let value=''; process.stdin.on('data', chunk => value += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(value)[0].filename));")
+            if npm pack "@backbond/agent-scan@$version" --pack-destination registry-copy --silent >/dev/null; then
               break
             fi
             sleep 5
           done
-          test -n "$registry_file"
+          test -f "registry-copy/$registry_file"
           mkdir source-tree registry-tree
           tar -xzf "${{ steps.pack.outputs.file }}" -C source-tree
           tar -xzf "registry-copy/$registry_file" -C registry-tree

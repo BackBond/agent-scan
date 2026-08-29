@@ -90,6 +90,7 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /npm publish "\$\{\{ steps\.pack\.outputs\.file \}\}" --access public --provenance/);
   assert.match(workflow, /ref: \$\{\{ format\('refs\/tags\/\{0\}', env\.RELEASE_TAG\) \}\}/);
   assert.match(workflow, /diff -qr --strip-trailing-cr source-tree\/package registry-tree\/package/);
+  assert.match(workflow, /registry_file="\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /cp "registry-copy\/\$registry_file" "\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$package_file"/);
   assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
