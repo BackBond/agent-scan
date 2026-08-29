@@ -2,6 +2,20 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.2 — 2026-08-29
+
+- Add privacy-safe `backbond-scan-record/v1` public records through `--record-public`, with compact pasteable output and self-run/unverified assurance language.
+- Redact tool names and input fingerprints by default; require separate explicit disclosure flags and never include paths, basenames, descriptions, bodies, or evidence pointers.
+- Report partial zero-finding scans as `inconclusive` and add `--require-coverage`, which exits `3` when required coverage is incomplete.
+- Add MCP `emit_record` mode that returns only compact text and the redacted record, without the full scan, receipt, discovery paths, or tool names.
+- Add derived tool-description prompt lint: `BB009` instruction override, `BB010` concealed behavior, and `BB011` sensitive-data solicitation.
+- Add `BB012` when a fetch-like untrusted network tool shares an agent with a privileged tool.
+- Encode control characters in human, MCP text, and compact-record rendering so artifact-supplied tool names cannot forge output lines or terminal state.
+- Document direct ingestion of a captured MCP `tools/list` response through `scan --stdin`; do not spawn commands found in agent configuration.
+- Clarify that scanner execution is local and network-free while first-time package installation may contact the configured npm registry.
+- Stop cleanly when npm cannot resolve the registry and document a verified offline transfer path using the exact npm tarball and SHA-256 attached to the official GitHub release.
+- Make tag publishing fail closed unless the checked-out tag, npm registry tarball, GitHub release tarball, and published SHA-256 all identify the same bytes.
+
 ## 0.5.1 — 2026-08-29
 
 - Make `scan` with no artifact arguments discover bounded project and user MCP configuration for Claude, Cursor, VS Code, Windsurf, and Gemini.

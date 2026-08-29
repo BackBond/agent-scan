@@ -2,7 +2,7 @@
 
 ## Result envelope
 
-`scan` emits `backbond-agent-scan/v1`. Results include scanner and ruleset identities, named findings, evidence quality, coverage gaps, optional discovery and claim contradictions, and hashed input metadata. There is no numeric score.
+`scan` emits `backbond-agent-scan/v1`. Results include scanner and ruleset identities, named findings, evidence quality, coverage gaps, optional discovery and claim contradictions, and hashed input metadata. There is no numeric score. A zero-finding result with partial coverage has status `inconclusive`; `no_findings` is reserved for complete coverage.
 
 ## Canonical tool schema
 
@@ -28,7 +28,7 @@ Supported capabilities are `code_execution`, `secret_read`, `network_egress`, `d
 
 OpenAI, Anthropic, MCP, and OpenAPI 3.x JSON are normalized by stable name, description, operation, and parameter-schema heuristics. They may add the same declarations under an `x-backbond` object. Generic tool inputs conservatively derive input trust as mixed because model-generated arguments can reach them; the output labels this fact `derived`. Absent approval and audit controls remain unknown and create coverage gaps when a rule needs them.
 
-Schema heuristics detect unconstrained command, expression, code, SQL, URL, URI, endpoint, and webhook fields. A local enum, pattern, validator, sandbox, or allowlist declaration suppresses the relevant heuristic. Heuristics never inspect default or example values and never retain a schema body.
+Schema heuristics detect unconstrained command, expression, code, SQL, URL, URI, endpoint, and webhook fields. Narrow tool-description heuristics detect instruction override, concealed behavior, sensitive-data solicitation, and fetch-like network intake. A local enum, pattern, validator, sandbox, or allowlist declaration suppresses the relevant parameter heuristic. Heuristics never inspect default or example values and never retain a schema body or raw tool description.
 
 ## Agent config discovery
 
@@ -83,7 +83,9 @@ OpenTelemetry OTLP JSON is accepted when it contains `resourceSpans`. Tool spans
 
 ## MCP tool
 
-`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime`. The tool has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery. The MCP server performs no network requests and does not execute scanned tools.
+`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime`. The tool has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery. `emit_record: true` returns only compact text and a redacted `backbond-scan-record/v1` in structured output; it omits the full scan, local receipt, discovery paths, artifact names, and tool names. The MCP server performs no network requests and does not execute scanned tools.
+
+The CLI also accepts a captured MCP `tools/list` JSON-RPC response through `scan --stdin`. It does not launch a server or execute a command discovered in configuration.
 
 ## Policy suggestions and SARIF
 
@@ -93,7 +95,13 @@ OpenTelemetry OTLP JSON is accepted when it contains `resourceSpans`. Tool spans
 
 ## Coverage semantics
 
-Malformed JSON or a malformed supported dialect is invalid input and exits `2`. Valid JSON that does not match a supported dialect is retained as a hashed input and reported as `unsupported`. Missing artifacts and facts needed by a rule are coverage gaps. Coverage gaps are not findings and do not create a false security score.
+Malformed JSON or a malformed supported dialect is invalid input and exits `2`. Valid JSON that does not match a supported dialect is retained as a hashed input and reported as `unsupported`. Missing artifacts and facts needed by a rule are coverage gaps. Coverage gaps are not findings and do not create a false security score. `--require-coverage` exits `3` when coverage is incomplete unless a threshold finding already takes precedence with exit `1`.
+
+## Public scan record
+
+`--record-public <file>` writes `backbond-scan-record/v1` without overwriting. Its assurance level is `self-run_unverified`; the record is neither proof of execution nor a BackBond attestation.
+
+By default, the record contains only scanner/ruleset identity, counts of input kinds and dialects, finding IDs, severities, evidence quality, coverage codes, a trusted pinned rerun command, and integrity linkage to the local receipt. It excludes paths, basenames, descriptions, parameters, bodies, pointers, tool names, and input fingerprints. Tool names and fingerprints require separate explicit disclosure flags. Consumers must construct the pinned command from trusted local policy rather than execute record text.
 
 ## Optional claim protocol
 

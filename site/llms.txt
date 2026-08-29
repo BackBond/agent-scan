@@ -1,7 +1,7 @@
 # BackBond local agent scanner
 
-@backbond/agent-scan 0.5.0 runs an open deterministic rule pack over explicitly supplied tool schemas, permission scopes, and trace summaries.
+@backbond/agent-scan 0.5.2 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
 
-It emits named findings BB001–BB006, remediation, coverage gaps, stable CI exit codes, and tamper-evident receipts. It has no score, private analyzer dependency, hosted POST, or network path.
+It emits named findings BB001–BB012, remediation, honest inconclusive coverage, stable CI exit codes, tamper-evident receipts, and redacted self-run public records. It has no score, private analyzer dependency, hosted POST, or scanner network path.
 
 Claims are optional hypotheses and cannot create, suppress, or reduce findings or severity. Raw prompts, trace arguments, file bodies, and secret values remain local and are excluded from receipts.

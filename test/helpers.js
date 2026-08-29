@@ -20,7 +20,7 @@ function fixturePaths(name) {
 }
 
 function tempDirectory(t) {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-scan-051-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-scan-052-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   return directory;
 }

@@ -13,3 +13,5 @@ A receipt records:
 It does not record raw tool schemas, permission values, prompts, trace arguments, file bodies, secrets, or environment values.
 
 `agent-scan verify-receipt --input receipt.json` recomputes the canonical digest and verifies the embedded signature when present. Verification proves integrity of the receipt under the embedded public key. It does not establish the identity or trustworthiness of the signer.
+
+Receipts are local evidence and contain input basenames and fingerprints. Share a redacted `backbond-scan-record/v1` created with `--record-public` instead. The public record links to the receipt integrity digest but is explicitly self-run and unverified.

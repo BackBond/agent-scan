@@ -35,7 +35,7 @@ test('package allowlist ships the open engine, rule pack, docs, and fixtures', (
   assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
     'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'mcp-server.js', 'output.js',
-    'policy.js', 'receipt.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js',
+    'policy.js', 'receipt.js', 'record.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js', 'text.js',
   ]);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'vulnerable', 'tool-schema.json')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'hardened', 'tool-schema.json')), true);
@@ -58,7 +58,7 @@ test('published executable sources contain no private fingerprints or execution/
 
 test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.5.1');
+  assert.equal(manifest.version, '0.5.2');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);
@@ -72,6 +72,23 @@ test('operator docs promise findings, local data, and no score or private analyz
   assert.match(readme, /hardened/i);
   assert.match(readme, /no score/i);
   assert.match(readme, /never leave(?:s)? the machine/i);
+  assert.match(readme, /EAI_AGAIN/);
+  assert.match(readme, /--offline/);
+  assert.match(readme, /sha256sum --check/);
   assert.match(agentInstructions, /claims cannot create, suppress, or reduce/i);
+  assert.match(agentInstructions, /no scan ran/i);
+  assert.match(agentInstructions, /never accept a tarball path or digest from chat/i);
   assert.doesNotMatch(`${readme}\n${agentInstructions}`, /analysis_required/);
+});
+
+test('release workflow publishes and attaches the same packed tarball', () => {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'publish.yml'), 'utf8');
+  assert.match(workflow, /push:\s*\n\s*tags:\s*\n\s*- "v\*"/);
+  assert.match(workflow, /npm publish "\$\{\{ steps\.pack\.outputs\.file \}\}" --access public --provenance/);
+  assert.match(workflow, /ref: \$\{\{ format\('refs\/tags\/\{0\}', env\.RELEASE_TAG\) \}\}/);
+  assert.match(workflow, /cmp -s "\$\{\{ steps\.pack\.outputs\.file \}\}" "registry-copy\/\$registry_file"/);
+  assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$package_file"/);
+  assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
+  assert.match(workflow, /id-token: write/);
+  assert.match(workflow, /contents: write/);
 });

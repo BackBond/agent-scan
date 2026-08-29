@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { CLI, claimSubmission, fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
+const { CLI, ROOT, claimSubmission, fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
 
 function scanArgs(fixture, extra = []) {
   return [CLI, 'scan', '--tool-schema', fixture.tools, '--permissions', fixture.permissions, '--trace', fixture.trace, '--json', ...extra];
@@ -25,7 +25,7 @@ test('vulnerable fixture exits 1 with all expected finding IDs', () => {
   const run = spawnSync(process.execPath, scanArgs(fixturePaths('vulnerable')), { encoding: 'utf8' });
   assert.equal(run.status, 1, run.stderr);
   const output = JSON.parse(run.stdout);
-  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008']);
+  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012']);
   assert.equal(output.coverage.status, 'complete');
 });
 
@@ -78,6 +78,75 @@ test('receipt can be written, verified, and tampering returns exit 1', (t) => {
   assert.equal(invalid.status, 1, invalid.stderr);
 });
 
+test('redacted public record is write-once and omits tool names and input fingerprints by default', (t) => {
+  const directory = tempDirectory(t);
+  const recordPath = path.join(directory, 'scan-record.json');
+  const run = spawnSync(process.execPath, scanArgs(fixturePaths('vulnerable'), [
+    '--record-public', recordPath, '--fail-on', 'none',
+  ]), { encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
+  const serialized = JSON.stringify(record);
+  assert.equal(record.assurance.level, 'self-run_unverified');
+  assert.equal(record.scope.input_fingerprints, undefined);
+  assert.doesNotMatch(serialized, /shell_exec|tool-schema\.json|permissions\.json|trace\.json/);
+
+  const duplicate = spawnSync(process.execPath, scanArgs(fixturePaths('hardened'), [
+    '--record-public', recordPath,
+  ]), { encoding: 'utf8' });
+  assert.equal(duplicate.status, 2);
+  assert.match(duplicate.stderr, /exist/i);
+});
+
+test('discovery public record excludes home paths, config names, server commands, and env keys', (t) => {
+  const directory = tempDirectory(t);
+  const project = path.join(directory, 'PRIVATE_USER_HOME_MARKER', 'project');
+  const cursor = path.join(project, '.cursor');
+  fs.mkdirSync(cursor, { recursive: true });
+  writeJson(cursor, 'mcp.json', {
+    mcpServers: {
+      confidential_server_name: {
+        command: 'PRIVATE_SERVER_COMMAND_MARKER',
+        env: { PRIVATE_ENV_KEY_MARKER: 'PRIVATE_ENV_VALUE_MARKER' },
+      },
+    },
+  });
+  const recordPath = path.join(directory, 'public-record.json');
+  const run = spawnSync(process.execPath, [CLI, 'scan', '--record-public', recordPath, '--fail-on', 'none', '--json'], {
+    encoding: 'utf8', cwd: project, env: { ...process.env, USERPROFILE: path.join(directory, 'PRIVATE_USER_HOME_MARKER'), APPDATA: path.join(directory, 'appdata') },
+  });
+  assert.equal(run.status, 0, run.stderr);
+  const serialized = fs.readFileSync(recordPath, 'utf8');
+  assert.doesNotMatch(serialized, /PRIVATE_USER_HOME_MARKER|PRIVATE_SERVER_COMMAND_MARKER|PRIVATE_ENV_KEY_MARKER|PRIVATE_ENV_VALUE_MARKER|confidential_server_name|mcp\.json|\.cursor/);
+});
+
+test('--require-coverage exits 3 for inconclusive scans and 0 for complete scans', (t) => {
+  const directory = tempDirectory(t);
+  const incomplete = spawnSync(process.execPath, [CLI, 'scan', '--json', '--require-coverage'], {
+    encoding: 'utf8', cwd: directory, env: { ...process.env, USERPROFILE: directory, APPDATA: directory },
+  });
+  assert.equal(incomplete.status, 3, incomplete.stderr);
+  assert.equal(JSON.parse(incomplete.stdout).status, 'inconclusive');
+
+  const incompleteHuman = spawnSync(process.execPath, [CLI, 'scan', '--require-coverage'], {
+    encoding: 'utf8', cwd: directory, env: { ...process.env, USERPROFILE: directory, APPDATA: directory },
+  });
+  assert.equal(incompleteHuman.status, 3, incompleteHuman.stderr);
+  assert.match(incompleteHuman.stdout, /^INCONCLUSIVE — 0 findings/);
+
+  const complete = spawnSync(process.execPath, scanArgs(fixturePaths('hardened'), ['--require-coverage']), { encoding: 'utf8' });
+  assert.equal(complete.status, 0, complete.stderr);
+
+  const findingAndPartial = spawnSync(process.execPath, [CLI, 'scan', '--stdin', '--require-coverage'], {
+    input: fs.readFileSync(path.join(ROOT, 'fixtures', 'wild', 'mcp-prompt-poison.json'), 'utf8'), encoding: 'utf8',
+  });
+  assert.equal(findingAndPartial.status, 1, findingAndPartial.stderr);
+
+  const missingRecord = spawnSync(process.execPath, [CLI, 'scan', '--record-include-tool-names'], { encoding: 'utf8' });
+  assert.equal(missingRecord.status, 2);
+  assert.match(missingRecord.stderr, /require --record-public/);
+});
+
 test('raw trace bodies do not appear in JSON output or receipts', (t) => {
   const directory = tempDirectory(t);
   const marker = 'SUPER_SECRET_TRACE_ARGUMENT_9841';
@@ -103,5 +172,7 @@ test('invalid inputs and removed analyzer/network options exit 2', (t) => {
     encoding: 'utf8', cwd: directory, env: { ...process.env, USERPROFILE: directory, APPDATA: directory },
   });
   assert.equal(empty.status, 0, empty.stderr);
-  assert.equal(JSON.parse(empty.stdout).discovery.protocol, 'backbond-discovery-plan/v1');
+  const emptyOutput = JSON.parse(empty.stdout);
+  assert.equal(emptyOutput.discovery.protocol, 'backbond-discovery-plan/v1');
+  assert.equal(emptyOutput.status, 'inconclusive');
 });

@@ -10,11 +10,13 @@ const { collectEvidence, publicEvidence } = require('../lib/evidence.js');
 const { startMcpServer } = require('../lib/mcp-server.js');
 const { renderHuman } = require('../lib/output.js');
 const { suggestPolicy } = require('../lib/policy.js');
+const { createPublicScanRecord, renderCompactRecord } = require('../lib/record.js');
 const { createScanReceipt, verifyScanReceipt } = require('../lib/receipt.js');
 const { meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
 const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
+const { safeInline } = require('../lib/text.js');
 
 function usage() {
   process.stdout.write(`@backbond/agent-scan — static, local AI-agent tool scanner
@@ -39,17 +41,21 @@ Scan options:
   --fail-on <severity>  Exit 1 at critical, high, medium, or low; none disables (default: high).
   --receipt <file>      Write a tamper-evident receipt without overwriting.
   --signing-key <file>  Sign the receipt with an Ed25519 private key.
+  --record-public <file>  Write a redacted self-run scan record without overwriting.
+  --record-include-tool-names  Include tool names in that public record (off by default).
+  --record-include-fingerprints  Include input hashes and byte lengths (off by default).
+  --require-coverage    Exit 3 unless coverage is complete.
   --suggest-policy      Include non-enforcing disable/wrap and patch templates.
   --json                Emit the complete JSON result.
   --sarif               Emit SARIF 2.1.0 for code scanning and IDEs.
 
-Exit codes: 0 below threshold, 1 threshold met, 2 invalid input or scanner failure.
-Static only: no network requests, second binary, automatic fixes, or active probes.
+Exit codes: 0 below threshold, 1 threshold met, 2 invalid input or scanner failure, 3 required coverage incomplete.
+Static only: scan execution makes no network requests. Package installation may contact the configured npm registry.
 `);
 }
 
 function fail(message) {
-  process.stderr.write(`agent-scan: ${message}\n`);
+  process.stderr.write(`${safeInline(`agent-scan: ${message}`)}\n`);
   process.exitCode = 2;
 }
 
@@ -58,12 +64,14 @@ function parseArgs(argv) {
   const rest = command === argv[0] ? argv.slice(1) : argv;
   const options = {
     command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high',
+    requireCoverage: false, recordIncludeToolNames: false, recordIncludeFingerprints: false,
     toolSchemaPath: null, permissionsPath: null, tracePath: null, configPaths: [],
-    receiptPath: null, signingKeyPath: null,
+    receiptPath: null, signingKeyPath: null, recordPath: null,
   };
   const paths = {
     '--input': 'input', '--tool-schema': 'toolSchemaPath', '--permissions': 'permissionsPath',
     '--trace': 'tracePath', '--receipt': 'receiptPath', '--signing-key': 'signingKeyPath', '--fail-on': 'failOn',
+    '--record-public': 'recordPath',
   };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
@@ -72,6 +80,9 @@ function parseArgs(argv) {
     else if (argument === '--sarif') options.sarif = true;
     else if (argument === '--stdin') options.stdin = true;
     else if (argument === '--suggest-policy') options.suggestPolicy = true;
+    else if (argument === '--require-coverage') options.requireCoverage = true;
+    else if (argument === '--record-include-tool-names') options.recordIncludeToolNames = true;
+    else if (argument === '--record-include-fingerprints') options.recordIncludeFingerprints = true;
     else if (argument === '--config') {
       const value = rest[index + 1];
       if (!value || value.startsWith('--')) throw new Error('--config needs a value');
@@ -87,6 +98,9 @@ function parseArgs(argv) {
   }
   if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOn)) throw new Error('--fail-on must be critical, high, medium, low, or none');
   if (options.json && options.sarif) throw new Error('use either --json or --sarif, not both');
+  if ((options.recordIncludeToolNames || options.recordIncludeFingerprints) && !options.recordPath) {
+    throw new Error('record disclosure options require --record-public <file>');
+  }
   return options;
 }
 
@@ -131,6 +145,11 @@ function hasExplicitArtifacts(options) {
   return Boolean(options.toolSchemaPath || options.permissionsPath || options.tracePath || options.configPaths.length || options.stdin);
 }
 
+function recordScopeMode(options) {
+  if (options.stdin) return 'live-manifest';
+  return hasExplicitArtifacts(options) ? 'explicit-artifacts' : 'discovery';
+}
+
 async function main() {
   let options;
   try { options = parseArgs(process.argv.slice(2)); }
@@ -152,6 +171,9 @@ async function main() {
       return;
     }
     if (!['scan', 'inspect'].includes(options.command)) throw new Error(`unknown command: ${options.command}`);
+    if (options.command === 'inspect' && (options.recordPath || options.requireCoverage)) {
+      throw new Error('--record-public and --require-coverage are scan options');
+    }
     const documents = await loadStdinManifest(options);
     const plan = hasExplicitArtifacts(options) ? null : discover();
     const artifactPaths = [
@@ -172,11 +194,25 @@ async function main() {
     const policy = options.suggestPolicy ? suggestPolicy(scan) : null;
     const receipt = createScanReceipt(scan, { claimInput: claims.metadata, signingKeyPath: options.signingKeyPath });
     const receiptPath = options.receiptPath ? writeNew(options.receiptPath, receipt) : null;
+    const record = options.recordPath ? createPublicScanRecord(scan, receipt, {
+      mode: recordScopeMode(options),
+      includeToolNames: options.recordIncludeToolNames,
+      includeFingerprints: options.recordIncludeFingerprints,
+    }) : null;
+    const recordPath = record ? writeNew(options.recordPath, record) : null;
     const output = { ...scan, receipt, receipt_path: receiptPath, policy_suggestion: policy };
+    if (record) {
+      output.public_record = record;
+      output.public_record_path = recordPath;
+    }
     if (options.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
     else if (options.sarif) process.stdout.write(`${JSON.stringify(toSarif(scan), null, 2)}\n`);
-    else process.stdout.write(renderHuman(scan, { policy, receiptPath }));
+    else {
+      process.stdout.write(renderHuman(scan, { policy, receiptPath }));
+      if (record) process.stdout.write(`\n${renderCompactRecord(record)}\n${safeInline(`Saved: ${recordPath}`)}\n`);
+    }
     if (meetsThreshold(scan.findings, options.failOn)) process.exitCode = 1;
+    else if (options.requireCoverage && scan.coverage.status !== 'complete') process.exitCode = 3;
   } catch (error) {
     fail(error.message);
   }

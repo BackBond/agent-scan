@@ -1,8 +1,9 @@
 name: Publish to npm
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -11,10 +12,10 @@ on:
         type: string
 
 env:
-  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -24,12 +25,27 @@ jobs:
     environment: npm
 
     steps:
+      - name: Require an existing version tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release ref must be a version tag, not a branch or arbitrary ref: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null
+
       - name: Check out the release tag
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ format('refs/tags/{0}', env.RELEASE_TAG) }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Verify checkout is the tagged commit
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$(git rev-parse "$RELEASE_TAG^{commit}")"
 
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -59,10 +75,69 @@ jobs:
       - name: Enforce the public package boundary
         run: npm run test:public-boundary
 
-      - name: Inspect the package contents
-        run: npm pack --dry-run --json
+      - name: Pack the exact release tarball
+        id: pack
+        shell: bash
+        run: |
+          package_file=$(node -p "'backbond-agent-scan-' + require('./package.json').version + '.tgz'")
+          npm pack --json
+          sha256sum "$package_file" > "$package_file.sha256"
+          echo "file=$package_file" >> "$GITHUB_OUTPUT"
 
-      - name: Publish with npm token fallback and provenance
+      - name: Publish with npm token fallback and verify registry bytes
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --access public --provenance
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if npm view "@backbond/agent-scan@$version" version --json >/dev/null 2>&1; then
+            echo "@backbond/agent-scan@$version is already published; verifying exact bytes."
+          else
+            npm publish "${{ steps.pack.outputs.file }}" --access public --provenance
+          fi
+          mkdir registry-copy
+          registry_file=""
+          for attempt in 1 2 3 4 5 6; do
+            if registry_json=$(npm pack "@backbond/agent-scan@$version" --pack-destination registry-copy --json 2>/dev/null); then
+              registry_file=$(printf '%s' "$registry_json" | node -e "let value=''; process.stdin.on('data', chunk => value += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(value)[0].filename));")
+              break
+            fi
+            sleep 5
+          done
+          test -n "$registry_file"
+          if ! cmp -s "${{ steps.pack.outputs.file }}" "registry-copy/$registry_file"; then
+            echo "Refusing release: locally packed tarball differs from the npm registry artifact." >&2
+            exit 1
+          fi
+
+      - name: Create the GitHub release with the exact npm tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          package_file="${{ steps.pack.outputs.file }}"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            assets=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')
+            mkdir release-assets
+            if grep -Fxq "$package_file" <<<"$assets"; then
+              gh release download "$RELEASE_TAG" --pattern "$package_file" --dir release-assets
+              cmp -s "$package_file" "release-assets/$package_file" || {
+                echo "Refusing release: existing GitHub tarball differs from the npm artifact." >&2
+                exit 1
+              }
+            else
+              gh release upload "$RELEASE_TAG" "$package_file"
+            fi
+            if grep -Fxq "$package_file.sha256" <<<"$assets"; then
+              gh release download "$RELEASE_TAG" --pattern "$package_file.sha256" --dir release-assets
+              cmp -s "$package_file.sha256" "release-assets/$package_file.sha256" || {
+                echo "Refusing release: existing GitHub checksum differs from the npm artifact checksum." >&2
+                exit 1
+              }
+            else
+              gh release upload "$RELEASE_TAG" "$package_file.sha256"
+            fi
+          else
+            gh release create "$RELEASE_TAG" "$package_file" "$package_file.sha256" \
+              --verify-tag --generate-notes --title "$RELEASE_TAG"
+          fi
