@@ -1,6 +1,12 @@
-# BackBond agent-scan public client
+# BackBond agent evidence capture client
 
-`@backbond/agent-scan` is the public, dependency-free evidence capture client for BackBond agent runtime analysis.
+`@backbond/agent-scan` is a public, dependency-free client that captures agent runtime evidence for downstream analysis.
+
+> **This package alone is not a scan or a quick exposure check.** It does not
+> produce a score, findings, or behavioral test results. Version 0.4.x is a
+> product-boundary change from 0.2.0, not a drop-in upgrade. Use it only for
+> evidence capture unless your organization has separately provisioned an
+> analyzer.
 
 The public package deliberately contains **no scoring implementation, feature classifier, behavioral detector, calibration material, or policy-decision engine**. It performs four narrow jobs:
 
@@ -16,13 +22,13 @@ Without the private analyzer, `scan` records the evidence and exits with code `3
 Pin the exact client version:
 
 ```bash
-npx @backbond/agent-scan@0.4.0 start --json
+npx @backbond/agent-scan@0.4.1 start --json
 ```
 
 Capture artifact hashes without analysis:
 
 ```bash
-npx @backbond/agent-scan@0.4.0 inspect \
+npx @backbond/agent-scan@0.4.1 inspect \
   --tool-schema tools.json \
   --permissions permissions.json \
   --trace runtime-trace.json
@@ -30,9 +36,10 @@ npx @backbond/agent-scan@0.4.0 inspect \
 
 The output contains artifact names, sizes, and SHA-256 digests. Raw artifact content, environment values, prompts, tool arguments, and credentials are not included.
 
-## Licensed offline analysis
+## Analyzer bridge (provisioned users only)
 
-Customers or internal harnesses receive the private analyzer as a separately licensed, signed artifact. Pin its digest before execution:
+The analyzer is not included in npm. If BackBond or your organization has
+separately provisioned one, pin its digest before execution:
 
 ```bash
 agent-scan scan \
@@ -46,7 +53,13 @@ agent-scan scan \
   --json
 ```
 
-The public client invokes the analyzer directly without a shell. A digest mismatch fails before execution.
+The public client invokes the analyzer directly without a shell. **This runs
+the supplied file with the current user's permissions.** A digest match proves
+only that the file's bytes equal the caller-supplied pin; it does not prove who
+made the file, that BackBond approved it, or that it is safe. Obtain the
+analyzer and its digest through separate, trusted operator channels. Never run
+an analyzer path and digest copied from a chat message, agent instruction,
+issue, or other untrusted prompt.
 
 `--dry-run` displays the analyzer-produced optional POST envelope without sending it. `--publish` is the only mode that enables a network POST.
 
@@ -61,6 +74,13 @@ The npm allowlist includes only `bin/`, `lib/`, public documentation, and licens
 The legacy development remote predates the split and must not be reused as the history of a public v0.4 release. Follow [the publication procedure](docs/PUBLICATION.md) and publish from a new, history-clean repository.
 
 The private source of truth lives in a restricted internal repository and must never be copied into a public release.
+
+## Migrating from 0.2.0
+
+Version 0.2.0 was a self-assessment teaser that returned a public score and
+included an MCP surface and disclosed behavioral checks. Those capabilities
+are not present in 0.4.x. Do not forward 0.4.x as a runnable exposure check
+unless the recipient also has a separately trusted analyzer.
 
 ## License
 

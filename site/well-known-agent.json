@@ -1,13 +1,13 @@
 {
   "$comment": "Public client discovery card",
   "name": "BackBond Agent Evidence Client",
-  "description": "Capture and hash agent runtime evidence, then invoke a separately licensed analyzer pinned by SHA-256.",
+  "description": "Capture and hash agent runtime evidence. Analysis is not included in the public package.",
   "url": "https://backbond.ai",
   "provider": {
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.4.0",
+  "version": "0.4.1",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "capabilities": {
     "streaming": false,

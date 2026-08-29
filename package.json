@@ -1,8 +1,8 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
-  "description": "Public evidence capture and signed private-analyzer bridge for AI agent runtimes.",
+  "description": "Capture hashes and receipts for AI agent runtime evidence; analysis is not included.",
   "bin": {
     "agent-scan": "bin/agent-scan.js",
     "backbond-agent-scan": "bin/agent-scan.js"
@@ -28,20 +28,13 @@
   "keywords": [
     "ai-agent",
     "agent-security",
-    "security-scanner",
-    "risk-score",
-    "prompt-injection",
-    "llm-security",
-    "agent-scanner",
-    "scan-ai-agent",
-    "ai-safety",
-    "mcp",
-    "langchain",
-    "crewai",
-    "autogen",
-    "ai-agent-insurance",
-    "agent-risk",
-    "agent-self-assessment"
+    "evidence-capture",
+    "artifact-hashing",
+    "sha256",
+    "tamper-evident-receipt",
+    "runtime-evidence",
+    "offline-first",
+    "supply-chain-security"
   ],
   "homepage": "https://backbond.ai",
   "repository": {

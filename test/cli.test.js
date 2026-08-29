@@ -47,7 +47,7 @@ function fakeAnalyzer(directory) {
 let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{
  const q=JSON.parse(d); const a=q.submission.assessment.answers;
  const profile=Object.fromEntries(Object.entries(a).map(([k,v])=>[k,v.value]));
- process.stdout.write(JSON.stringify({protocol:'backbond-private-analyzer/v1',payload:{client:'backbond-agent-scan/0.4.0',submitted_at:q.captured_at,profile},result:{score:73,score_kind:'private_analysis',controls:{actions:['control-required']}}}));
+ process.stdout.write(JSON.stringify({protocol:'backbond-private-analyzer/v1',payload:{client:'backbond-agent-scan/0.4.1',submitted_at:q.captured_at,profile},result:{score:73,score_kind:'private_analysis',controls:{actions:['control-required']}}}));
 });\n`);
   return { path: target, digest: sha256(fs.readFileSync(target)) };
 }
@@ -59,6 +59,8 @@ test('default contract says the public client does not analyze', () => {
   assert.equal(output.protocol, TEASER_PROTOCOL);
   assert.equal(output.public_client_role, 'capture_validate_bridge');
   assert.match(output.instructions.join(' '), /does not contain or perform proprietary analysis/i);
+  assert.match(output.instructions.join(' '), /not a scan or quick exposure check/i);
+  assert.match(output.instructions.join(' '), /does not establish publisher authenticity/i);
 });
 
 test('inspect hashes artifacts without returning their contents', (t) => {
@@ -100,6 +102,20 @@ test('private analyzer must match an explicit SHA-256 pin', (t) => {
   assert.equal(output.status, 'analyzed');
   assert.equal(output.analysis.score, 73);
   assert.equal(output.analyzer.sha256, analyzer.digest);
+  assert.equal(output.analyzer.digest_verification, 'matches_caller_supplied_pin');
+  assert.equal(output.analyzer.publisher_authenticity, 'not_established_by_public_client');
+});
+
+test('human output labels analyzer results without claiming verification', (t) => {
+  const f = fixture(t);
+  const analyzer = fakeAnalyzer(f.directory);
+  const run = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--analyzer', analyzer.path, '--analyzer-sha256', analyzer.digest], {
+    encoding: 'utf8', cwd: f.directory,
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /Analyzer-reported score: 73\/100/);
+  assert.match(run.stdout, /publisher authenticity was not established/i);
+  assert.doesNotMatch(run.stdout, /Verified initial score/i);
 });
 
 test('dry-run exposes only the private analyzer POST envelope', (t) => {

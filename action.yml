@@ -1,5 +1,5 @@
 name: 'BackBond Agent Runtime Analysis'
-description: 'Capture agent evidence and invoke a separately licensed analyzer pinned by SHA-256.'
+description: 'Capture agent evidence and optionally execute a separately provisioned analyzer; analysis is not included.'
 author: 'BackBond'
 branding:
   icon: 'shield'
@@ -10,10 +10,10 @@ inputs:
     description: 'Path to a backbond-agent-teaser/v4 JSON claim document'
     required: true
   analyzer:
-    description: 'Path to the separately distributed private analyzer'
+    description: 'Path to a separately trusted analyzer executable; this file will run with runner permissions'
     required: true
   analyzer-sha256:
-    description: 'Trusted SHA-256 digest of the private analyzer'
+    description: 'Caller-trusted SHA-256 byte-identity pin; this does not authenticate the analyzer publisher or safety'
     required: true
   tool-schema:
     description: 'Optional path to a tool/function schema JSON file'
@@ -38,7 +38,7 @@ inputs:
 
 outputs:
   score:
-    description: 'Private analyzer score'
+    description: 'Analyzer-reported score; the public client does not authenticate the analyzer publisher'
     value: ${{ steps.scan.outputs.score }}
   disposition:
     description: 'Private analyzer control disposition'
@@ -74,6 +74,6 @@ runs:
         echo "score=$score" >> "$GITHUB_OUTPUT"
         echo "disposition=$disposition" >> "$GITHUB_OUTPUT"
         if [[ -n "$BACKBOND_MIN_SCORE" ]] && (( score < BACKBOND_MIN_SCORE )); then
-          echo "Analyzer score $score is below required minimum $BACKBOND_MIN_SCORE" >&2
+          echo "Analyzer-reported score $score is below required minimum $BACKBOND_MIN_SCORE" >&2
           exit 1
         fi

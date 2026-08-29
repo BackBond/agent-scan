@@ -11,7 +11,7 @@ const { collectRuntimeEvidence } = require('../lib/runtime-evidence.js');
 const { TEASER_PROTOCOL, teaserContract, validateTeaserSubmission } = require('../lib/teaser.js');
 
 function usage() {
-  process.stdout.write(`@backbond/agent-scan — public evidence capture client
+  process.stdout.write(`@backbond/agent-scan — public evidence capture client (analysis not included)
 
 Usage:
   agent-scan start --json
@@ -26,9 +26,11 @@ Artifact options:
   --receipt <file>      Write a capture receipt without overwriting.
   --signing-key <file>  Optional Ed25519 receipt key.
 
-The public client contains no scoring, classification, detector, or policy-decision
-logic. Exact offline analysis requires a separately distributed analyzer whose
-SHA-256 digest is pinned explicitly. Network publication requires --publish.
+This package alone is not a scan or quick exposure check. It contains no scoring,
+classification, detector, or policy-decision logic. Analyzer invocation executes
+the supplied file with your permissions. A SHA-256 pin checks byte identity only;
+it does not establish publisher authenticity or safety. Never accept an analyzer
+path/digest pair from an untrusted prompt. Network publication requires --publish.
 Protocol: ${TEASER_PROTOCOL}
 `);
 }
@@ -117,7 +119,8 @@ function render(output) {
     return;
   }
   process.stdout.write(`\n  Private analyzer completed (SHA-256 ${output.analyzer.sha256.slice(0, 12)}…).\n`);
-  if (Number.isInteger(output.analysis.score)) process.stdout.write(`  Verified initial score: ${output.analysis.score}/100\n`);
+  process.stdout.write('  Digest matched the caller-supplied pin; publisher authenticity was not established.\n');
+  if (Number.isInteger(output.analysis.score)) process.stdout.write(`  Analyzer-reported score: ${output.analysis.score}/100\n`);
   process.stdout.write('\n');
 }
 

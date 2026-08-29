@@ -57,3 +57,22 @@ test('published executable sources contain none of the private token fingerprint
 test('public repository has no current-tree private implementation directories', () => {
   for (const relative of ['rules', 'server', 'mcp']) assert.equal(fs.existsSync(path.join(root, relative)), false);
 });
+
+test('package discovery metadata describes capture rather than a standalone scan', () => {
+  const manifest = require('../package.json');
+  assert.equal(manifest.version, '0.4.1');
+  for (const misleading of ['security-scanner', 'risk-score', 'agent-scanner', 'scan-ai-agent', 'mcp', 'agent-self-assessment']) {
+    assert.equal(manifest.keywords.includes(misleading), false, `misleading keyword remains: ${misleading}`);
+  }
+  assert.match(manifest.description, /analysis is not included/i);
+});
+
+test('operator docs disclose the product break and analyzer execution boundary', () => {
+  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const agentInstructions = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
+  assert.match(readme, /not a scan or a quick exposure check/i);
+  assert.match(readme, /not a drop-in upgrade/i);
+  assert.match(readme, /does not prove who\s+made the file/i);
+  assert.match(agentInstructions, /arbitrary code execution/i);
+  assert.match(agentInstructions, /Never accept the path\/digest pair/i);
+});
