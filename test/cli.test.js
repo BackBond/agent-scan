@@ -3,141 +3,102 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { sha256 } = require('../lib/canonical.js');
-const { PROTOCOL, QUESTIONS } = require('../lib/assessment.js');
-const { TEASER_PROTOCOL } = require('../lib/teaser.js');
+const { CLI, claimSubmission, fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
 
-const CLI = path.join(__dirname, '..', 'bin', 'agent-scan.js');
-
-function submission() {
-  const values = {
-    name: 'test-runtime', framework: 'custom', exec_code: true, browse_web: false,
-    filesystem: false, exposure: 'local', handles_payments: false, human_approval: 'always',
-    persistent_memory: false, tool_count: 2, guardrails: true, audit_logging: true, incident_plan: true,
-  };
-  return {
-    protocol: TEASER_PROTOCOL,
-    subject: 'self',
-    assessment: {
-      protocol: PROTOCOL,
-      subject: 'self',
-      answers: Object.fromEntries(QUESTIONS.map(question => [question.key, {
-        value: values[question.key], source: 'agent_asserted', evidence: `claim for ${question.key}`,
-      }])),
-    },
-  };
+function scanArgs(fixture, extra = []) {
+  return [CLI, 'scan', '--tool-schema', fixture.tools, '--permissions', fixture.permissions, '--trace', fixture.trace, '--json', ...extra];
 }
 
-function fixture(t) {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-scan-public-'));
-  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
-  const claims = path.join(directory, 'claims.json');
-  const tools = path.join(directory, 'tools.json');
-  fs.writeFileSync(claims, JSON.stringify(submission()));
-  fs.writeFileSync(tools, JSON.stringify({ marker: 'RAW_ARTIFACT_CONTENT_MUST_STAY_LOCAL' }));
-  return { directory, claims, tools };
-}
-
-function fakeAnalyzer(directory) {
-  const target = path.join(directory, 'analyzer.js');
-  fs.writeFileSync(target, `'use strict';
-let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{
- const q=JSON.parse(d); const a=q.submission.assessment.answers;
- const profile=Object.fromEntries(Object.entries(a).map(([k,v])=>[k,v.value]));
- process.stdout.write(JSON.stringify({protocol:'backbond-private-analyzer/v1',payload:{client:'backbond-agent-scan/0.4.1',submitted_at:q.captured_at,profile},result:{score:73,score_kind:'private_analysis',controls:{actions:['control-required']}}}));
-});\n`);
-  return { path: target, digest: sha256(fs.readFileSync(target)) };
-}
-
-test('default contract says the public client does not analyze', () => {
+test('start describes a local scanner with no analyzer or network dependency', () => {
   const run = spawnSync(process.execPath, [CLI], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   const output = JSON.parse(run.stdout);
-  assert.equal(output.protocol, TEASER_PROTOCOL);
-  assert.equal(output.public_client_role, 'capture_validate_bridge');
-  assert.match(output.instructions.join(' '), /does not contain or perform proprietary analysis/i);
-  assert.match(output.instructions.join(' '), /not a scan or quick exposure check/i);
-  assert.match(output.instructions.join(' '), /does not establish publisher authenticity/i);
+  assert.equal(output.protocol, 'backbond-agent-scan/v1');
+  assert.equal(output.mode, 'local_deterministic');
+  assert.match(output.guarantees.join(' '), /no private analyzer/i);
+  assert.match(output.guarantees.join(' '), /no network request/i);
 });
 
-test('inspect hashes artifacts without returning their contents', (t) => {
-  const f = fixture(t);
-  const run = spawnSync(process.execPath, [CLI, 'inspect', '--tool-schema', f.tools], { encoding: 'utf8', cwd: f.directory });
+test('vulnerable fixture exits 1 with all expected finding IDs', () => {
+  const run = spawnSync(process.execPath, scanArgs(fixturePaths('vulnerable')), { encoding: 'utf8' });
+  assert.equal(run.status, 1, run.stderr);
+  const output = JSON.parse(run.stdout);
+  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006']);
+  assert.equal(output.coverage.status, 'complete');
+});
+
+test('hardened fixture exits 0 with complete coverage and no findings', () => {
+  const run = spawnSync(process.execPath, scanArgs(fixturePaths('hardened')), { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   const output = JSON.parse(run.stdout);
-  assert.equal(output.artifacts.length, 1);
-  assert.match(output.artifacts[0].sha256, /^[a-f0-9]{64}$/);
-  assert.doesNotMatch(run.stdout, /RAW_ARTIFACT_CONTENT_MUST_STAY_LOCAL/);
+  assert.deepEqual(output.findings, []);
+  assert.equal(output.coverage.status, 'complete');
 });
 
-test('scan without the private analyzer captures a receipt and fails closed', (t) => {
-  const f = fixture(t);
-  const receipt = path.join(f.directory, 'capture-receipt.json');
-  const run = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--tool-schema', f.tools, '--receipt', receipt, '--json'], {
-    encoding: 'utf8', cwd: f.directory,
-  });
-  assert.equal(run.status, 3, run.stderr);
-  const output = JSON.parse(run.stdout);
-  assert.equal(output.status, 'analysis_required');
-  assert.equal(output.fail_closed, true);
-  assert.equal(fs.existsSync(receipt), true);
+test('--fail-on supports CI thresholds and none disables finding failure', () => {
+  const vulnerable = fixturePaths('vulnerable');
+  const disabled = spawnSync(process.execPath, scanArgs(vulnerable, ['--fail-on', 'none']), { encoding: 'utf8' });
+  assert.equal(disabled.status, 0, disabled.stderr);
+  const critical = spawnSync(process.execPath, scanArgs(vulnerable, ['--fail-on', 'critical']), { encoding: 'utf8' });
+  assert.equal(critical.status, 1, critical.stderr);
 });
 
-test('private analyzer must match an explicit SHA-256 pin', (t) => {
-  const f = fixture(t);
-  const analyzer = fakeAnalyzer(f.directory);
-  const rejected = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--analyzer', analyzer.path, '--analyzer-sha256', '0'.repeat(64), '--json'], {
-    encoding: 'utf8', cwd: f.directory,
-  });
-  assert.equal(rejected.status, 2);
-  assert.match(rejected.stderr, /does not match the pinned digest/);
-  const accepted = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--analyzer', analyzer.path, '--analyzer-sha256', analyzer.digest, '--json'], {
-    encoding: 'utf8', cwd: f.directory,
-  });
-  assert.equal(accepted.status, 0, accepted.stderr);
-  const output = JSON.parse(accepted.stdout);
-  assert.equal(output.status, 'analyzed');
-  assert.equal(output.analysis.score, 73);
-  assert.equal(output.analyzer.sha256, analyzer.digest);
-  assert.equal(output.analyzer.digest_verification, 'matches_caller_supplied_pin');
-  assert.equal(output.analyzer.publisher_authenticity, 'not_established_by_public_client');
+test('claims annotate contradictions but cannot change findings or severity', (t) => {
+  const directory = tempDirectory(t);
+  const claims = writeJson(directory, 'claims.json', claimSubmission({
+    exec_code: false, browse_web: false, filesystem: false, human_approval: 'always',
+    persistent_memory: false, tool_count: 0, audit_logging: true,
+  }));
+  const vulnerable = fixturePaths('vulnerable');
+  const plain = spawnSync(process.execPath, scanArgs(vulnerable), { encoding: 'utf8' });
+  const annotated = spawnSync(process.execPath, scanArgs(vulnerable, ['--input', claims]), { encoding: 'utf8' });
+  const plainOutput = JSON.parse(plain.stdout);
+  const annotatedOutput = JSON.parse(annotated.stdout);
+  assert.deepEqual(
+    annotatedOutput.findings.map(item => [item.id, item.severity]),
+    plainOutput.findings.map(item => [item.id, item.severity]),
+  );
+  assert.equal(annotatedOutput.claim_contradictions.length > 0, true);
 });
 
-test('human output labels analyzer results without claiming verification', (t) => {
-  const f = fixture(t);
-  const analyzer = fakeAnalyzer(f.directory);
-  const run = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--analyzer', analyzer.path, '--analyzer-sha256', analyzer.digest], {
-    encoding: 'utf8', cwd: f.directory,
+test('receipt can be written, verified, and tampering returns exit 1', (t) => {
+  const directory = tempDirectory(t);
+  const receiptPath = path.join(directory, 'scan-receipt.json');
+  const scan = spawnSync(process.execPath, scanArgs(fixturePaths('hardened'), ['--receipt', receiptPath]), { encoding: 'utf8' });
+  assert.equal(scan.status, 0, scan.stderr);
+  assert.equal(fs.existsSync(receiptPath), true);
+  const valid = spawnSync(process.execPath, [CLI, 'verify-receipt', '--input', receiptPath], { encoding: 'utf8' });
+  assert.equal(valid.status, 0, valid.stderr);
+  const receipt = JSON.parse(fs.readFileSync(receiptPath, 'utf8'));
+  receipt.result.status = 'findings';
+  fs.writeFileSync(receiptPath, JSON.stringify(receipt));
+  const invalid = spawnSync(process.execPath, [CLI, 'verify-receipt', '--input', receiptPath], { encoding: 'utf8' });
+  assert.equal(invalid.status, 1, invalid.stderr);
+});
+
+test('raw trace bodies do not appear in JSON output or receipts', (t) => {
+  const directory = tempDirectory(t);
+  const marker = 'SUPER_SECRET_TRACE_ARGUMENT_9841';
+  const trace = writeJson(directory, 'trace.json', {
+    protocol: 'backbond-trace/v1',
+    events: [{ type: 'tool_call', tool: 'status', input_trust: 'trusted', approval: 'enforced', audit: 'observable', arguments: { secret: marker } }],
   });
+  const run = spawnSync(process.execPath, [CLI, 'scan', '--trace', trace, '--json'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
-  assert.match(run.stdout, /Analyzer-reported score: 73\/100/);
-  assert.match(run.stdout, /publisher authenticity was not established/i);
-  assert.doesNotMatch(run.stdout, /Verified initial score/i);
+  assert.doesNotMatch(run.stdout, new RegExp(marker));
 });
 
-test('dry-run exposes only the private analyzer POST envelope', (t) => {
-  const f = fixture(t);
-  const analyzer = fakeAnalyzer(f.directory);
-  const run = spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--tool-schema', f.tools, '--analyzer', analyzer.path, '--analyzer-sha256', analyzer.digest, '--dry-run'], {
-    encoding: 'utf8', cwd: f.directory,
-  });
-  assert.equal(run.status, 0, run.stderr);
-  const output = JSON.parse(run.stdout);
-  assert.equal(output.status, 'dry_run');
-  assert.equal(Object.keys(output.exact_post_body.profile).length, 13);
-  assert.doesNotMatch(JSON.stringify(output.exact_post_body), /RAW_ARTIFACT_CONTENT_MUST_STAY_LOCAL/);
+test('invalid inputs and removed analyzer/network options exit 2', (t) => {
+  const directory = tempDirectory(t);
+  const invalid = path.join(directory, 'invalid.json');
+  fs.writeFileSync(invalid, '{');
+  const malformed = spawnSync(process.execPath, [CLI, 'scan', '--tool-schema', invalid, '--json'], { encoding: 'utf8' });
+  assert.equal(malformed.status, 2);
+  const removed = spawnSync(process.execPath, [CLI, 'scan', '--tool-schema', fixturePaths('hardened').tools, '--analyzer', 'anything'], { encoding: 'utf8' });
+  assert.equal(removed.status, 2);
+  assert.match(removed.stderr, /unknown option/);
+  const empty = spawnSync(process.execPath, [CLI, 'scan', '--json'], { encoding: 'utf8' });
+  assert.equal(empty.status, 2);
 });
-
-test('capture receipt can be independently verified', (t) => {
-  const f = fixture(t);
-  const receipt = path.join(f.directory, 'capture-receipt.json');
-  spawnSync(process.execPath, [CLI, 'scan', '--input', f.claims, '--receipt', receipt, '--json'], { encoding: 'utf8', cwd: f.directory });
-  const verify = spawnSync(process.execPath, [CLI, 'verify-receipt', '--input', receipt], { encoding: 'utf8' });
-  assert.equal(verify.status, 0, verify.stderr);
-  assert.equal(JSON.parse(verify.stdout).valid, true);
-});
-
-module.exports = { submission };

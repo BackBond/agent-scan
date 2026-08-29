@@ -13,8 +13,8 @@ if (fs.existsSync(target) && fs.readdirSync(target).length) throw new Error('tar
 fs.mkdirSync(target, { recursive: true });
 
 const allowlist = [
-  '.github', 'bin', 'docs', 'lib', 'scripts', 'site', 'test',
-  '.gitignore', 'action.yml', 'AGENTS.md', 'CHANGELOG.md', 'LICENSE', 'package.json', 'README.md',
+  '.github', 'bin', 'docs', 'fixtures', 'lib', 'scripts', 'site', 'test',
+  '.gitignore', 'AGENTS.md', 'CHANGELOG.md', 'LICENSE', 'package.json', 'README.md',
 ];
 for (const relative of allowlist) {
   const from = path.join(source, relative);

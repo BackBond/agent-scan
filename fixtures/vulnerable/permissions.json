@@ -1,0 +1,13 @@
+{
+  "protocol": "backbond-permissions/v1",
+  "input_trust": "mixed",
+  "tools": {
+    "shell_exec": { "input_trust": "untrusted", "approval": "none", "audit": "none" },
+    "delete_deployment": { "input_trust": "untrusted", "approval": "advisory", "audit": "none" },
+    "memory_write": { "input_trust": "untrusted", "approval": "none", "audit": "observable" }
+  },
+  "filesystem": { "read": ["**"], "write": ["**"] },
+  "subprocess": { "allow": ["*"] },
+  "credentials": { "read": ["*"] },
+  "network": { "egress": ["*"] }
+}

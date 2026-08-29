@@ -1,0 +1,13 @@
+{
+  "protocol": "backbond-permissions/v1",
+  "input_trust": "trusted",
+  "tools": {
+    "shell_exec": { "input_trust": "trusted", "approval": "enforced", "audit": "observable" },
+    "delete_deployment": { "input_trust": "trusted", "approval": "enforced", "audit": "observable" },
+    "memory_write": { "input_trust": "trusted", "approval": "enforced", "audit": "observable" }
+  },
+  "filesystem": { "read": ["/workspace/input"], "write": ["/workspace/output"] },
+  "subprocess": { "allow": ["/usr/bin/git"] },
+  "credentials": { "read": ["deploy/status-token"] },
+  "network": { "egress": ["status.internal.example:443"] }
+}

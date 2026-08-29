@@ -1,0 +1,8 @@
+{
+  "protocol": "backbond-trace/v1",
+  "events": [
+    { "type": "tool_call", "tool": "shell_exec", "input_trust": "untrusted", "approval": "none", "audit": "none" },
+    { "type": "tool_call", "tool": "delete_deployment", "input_trust": "untrusted", "approval": "advisory", "audit": "none" },
+    { "type": "tool_call", "tool": "memory_write", "input_trust": "untrusted", "approval": "none", "audit": "observable" }
+  ]
+}

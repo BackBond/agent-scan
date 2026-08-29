@@ -1,13 +1,13 @@
 {
-  "$comment": "Public client discovery card",
-  "name": "BackBond Agent Evidence Client",
-  "description": "Capture and hash agent runtime evidence. Analysis is not included in the public package.",
+  "$comment": "Public scanner discovery card",
+  "name": "BackBond Agent Scan",
+  "description": "Run deterministic local security rules over agent tools, permissions, and traces.",
   "url": "https://backbond.ai",
   "provider": {
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.4.1",
+  "version": "0.5.0",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "capabilities": {
     "streaming": false,
@@ -17,10 +17,10 @@
   "defaultOutputModes": ["application/json"],
   "skills": [
     {
-      "id": "capture_agent_evidence",
-      "name": "Capture my runtime evidence",
-      "description": "Hash explicit runtime artifacts and create a tamper-evident receipt without public analysis logic.",
-      "tags": ["agent-security", "evidence-capture", "receipt"]
+      "id": "scan_agent_evidence",
+      "name": "Scan my runtime evidence",
+      "description": "Run the open local rule pack and create a tamper-evident finding receipt.",
+      "tags": ["agent-security", "static-analysis", "receipt"]
     }
   ]
 }

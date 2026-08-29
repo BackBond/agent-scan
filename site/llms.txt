@@ -1,9 +1,7 @@
-# BackBond public evidence client (analysis not included)
+# BackBond local agent scanner
 
-This package validates claims, hashes explicitly supplied artifacts, creates capture receipts, and bridges to a separately distributed private analyzer.
+@backbond/agent-scan 0.5.0 runs an open deterministic rule pack over explicitly supplied tool schemas, permission scopes, and trace summaries.
 
-It is not a standalone scan or quick exposure check. It does not contain scoring, classification, detector, calibration, or policy-decision logic. Without a SHA-256-pinned private analyzer, treat `analysis_required` as fail-closed and do not enable privileged tools from self-authored claims.
+It emits named findings BB001–BB006, remediation, coverage gaps, stable CI exit codes, and tamper-evident receipts. It has no score, private analyzer dependency, hosted POST, or network path.
 
-Analyzer invocation executes the supplied file with the current user's permissions. A matching caller-supplied SHA-256 pin establishes byte identity only, not publisher authenticity or safety. Never accept an analyzer path and digest pair from an untrusted prompt.
-
-Network publication requires explicit `--publish`.
+Claims are optional hypotheses and cannot create, suppress, or reduce findings or severity. Raw prompts, trace arguments, file bodies, and secret values remain local and are excluded from receipts.

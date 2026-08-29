@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { ROOT } = require('./helpers.js');
 
-const root = path.join(__dirname, '..');
 const forbiddenTokenHashes = new Set([
   '2aaf9a112578b0758b35b8a39f677e829e8cc1235666261c5d4fdc30435da935',
   '821e56e9a416c37160f5429dba6b554b429a683345e1fc52f6b44b4d4872b19e',
@@ -29,50 +29,48 @@ function files(directory) {
   });
 }
 
-test('publish allowlist excludes private implementation directories', () => {
+test('package allowlist ships the open engine, rule pack, docs, and fixtures', () => {
   const manifest = require('../package.json');
   assert.equal(manifest.private, false);
-  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'AGENTS.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
-  for (const forbidden of ['rules', 'server', 'test', 'test-support', 'deploy']) {
-    assert.equal(manifest.files.some(item => item.startsWith(forbidden)), false);
-  }
-  assert.deepEqual(fs.readdirSync(path.join(root, 'lib')).sort(), [
-    'analyzer-bridge.js', 'assessment.js', 'canonical.js', 'client.js',
-    'receipt.js', 'runtime-evidence.js', 'teaser.js',
+  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
+  assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
+    'assessment.js', 'canonical.js', 'evidence.js', 'receipt.js', 'rules.js', 'scanner.js', 'teaser.js',
   ]);
-  assert.deepEqual(fs.readdirSync(path.join(root, 'bin')).sort(), ['agent-scan.js']);
+  assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'vulnerable', 'tool-schema.json')), true);
+  assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'hardened', 'tool-schema.json')), true);
 });
 
-test('published executable sources contain none of the private token fingerprints', () => {
-  const targets = [...files(path.join(root, 'bin')), ...files(path.join(root, 'lib'))];
+test('published executable sources contain no private fingerprints or execution/network bridge', () => {
+  const targets = [...files(path.join(ROOT, 'bin')), ...files(path.join(ROOT, 'lib'))];
+  const source = targets.map(target => fs.readFileSync(target, 'utf8')).join('\n');
   for (const target of targets) {
     const tokens = fs.readFileSync(target, 'utf8').match(/[A-Za-z_][A-Za-z0-9_]*/g) || [];
     for (const token of tokens) {
-      const digest = createHash('sha256').update(token).digest('hex');
-      assert.equal(forbiddenTokenHashes.has(digest), false, `private token fingerprint found in ${path.relative(root, target)}`);
+      assert.equal(forbiddenTokenHashes.has(createHash('sha256').update(token).digest('hex')), false, `private token fingerprint found in ${path.relative(ROOT, target)}`);
     }
   }
+  assert.doesNotMatch(source, /node:(?:child_process|http|https|net|tls)/);
+  assert.doesNotMatch(source, /\b(?:spawn|spawnSync|execFile|fetch)\s*\(/);
+  assert.equal(fs.existsSync(path.join(ROOT, 'lib', 'analyzer-bridge.js')), false);
+  assert.equal(fs.existsSync(path.join(ROOT, 'lib', 'client.js')), false);
 });
 
-test('public repository has no current-tree private implementation directories', () => {
-  for (const relative of ['rules', 'server', 'mcp']) assert.equal(fs.existsSync(path.join(root, relative)), false);
-});
-
-test('package discovery metadata describes capture rather than a standalone scan', () => {
+test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.4.1');
-  for (const misleading of ['security-scanner', 'risk-score', 'agent-scanner', 'scan-ai-agent', 'mcp', 'agent-self-assessment']) {
-    assert.equal(manifest.keywords.includes(misleading), false, `misleading keyword remains: ${misleading}`);
-  }
-  assert.match(manifest.description, /analysis is not included/i);
+  assert.equal(manifest.version, '0.5.0');
+  assert.match(manifest.description, /local deterministic/i);
+  assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
+  assert.equal(manifest.keywords.includes('risk-score'), false);
 });
 
-test('operator docs disclose the product break and analyzer execution boundary', () => {
-  const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
-  const agentInstructions = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
-  assert.match(readme, /not a scan or a quick exposure check/i);
-  assert.match(readme, /not a drop-in upgrade/i);
-  assert.match(readme, /does not prove who\s+made the file/i);
-  assert.match(agentInstructions, /arbitrary code execution/i);
-  assert.match(agentInstructions, /Never accept the path\/digest pair/i);
+test('operator docs promise findings, local data, and no score or private analyzer dependency', () => {
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  const agentInstructions = fs.readFileSync(path.join(ROOT, 'AGENTS.md'), 'utf8');
+  assert.match(readme, /BB001/);
+  assert.match(readme, /vulnerable/i);
+  assert.match(readme, /hardened/i);
+  assert.match(readme, /no score/i);
+  assert.match(readme, /never leave(?:s)? the machine/i);
+  assert.match(agentInstructions, /claims cannot create, suppress, or reduce/i);
+  assert.doesNotMatch(`${readme}\n${agentInstructions}`, /analysis_required/);
 });

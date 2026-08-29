@@ -1,8 +1,8 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": false,
-  "description": "Capture hashes and receipts for AI agent runtime evidence; analysis is not included.",
+  "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
   "bin": {
     "agent-scan": "bin/agent-scan.js",
     "backbond-agent-scan": "bin/agent-scan.js"
@@ -11,6 +11,7 @@
     "bin/",
     "lib/",
     "docs/",
+    "fixtures/",
     "AGENTS.md",
     "CHANGELOG.md",
     "README.md",
@@ -22,19 +23,20 @@
   "scripts": {
     "test": "node --test",
     "test:public-boundary": "node --test test/public-boundary.test.js",
-    "prepack": "node --test test/public-boundary.test.js",
+    "prepack": "node --test",
     "prepublishOnly": "node scripts/assert-clean-history.js"
   },
   "keywords": [
     "ai-agent",
     "agent-security",
-    "evidence-capture",
-    "artifact-hashing",
-    "sha256",
+    "agent-security-scanner",
+    "static-analysis",
+    "security-findings",
+    "ci-security",
     "tamper-evident-receipt",
     "runtime-evidence",
     "offline-first",
-    "supply-chain-security"
+    "mcp-security"
   ],
   "homepage": "https://backbond.ai",
   "repository": {

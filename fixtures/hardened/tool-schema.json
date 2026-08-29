@@ -1,0 +1,45 @@
+{
+  "protocol": "backbond-tool-schema/v1",
+  "tools": [
+    {
+      "name": "shell_exec",
+      "description": "Run an allowlisted maintenance command",
+      "capabilities": ["code_execution", "privileged_action"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    },
+    {
+      "name": "vault_read",
+      "description": "Read one named deployment credential",
+      "capabilities": ["secret_read"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    },
+    {
+      "name": "http_post",
+      "description": "Send to an allowlisted internal status endpoint",
+      "capabilities": ["network_egress"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    },
+    {
+      "name": "delete_deployment",
+      "description": "Delete a deployment after operator approval",
+      "capabilities": ["destructive_action", "privileged_action"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    },
+    {
+      "name": "memory_write",
+      "description": "Persist reviewed content for later sessions",
+      "capabilities": ["persistent_write"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    }
+  ]
+}

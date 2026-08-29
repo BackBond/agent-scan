@@ -2,6 +2,19 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.0 — 2026-08-29
+
+- Replace the capture-only analyzer bridge with a dependency-free local deterministic scanner.
+- Add the public `backbond-local-rules/1.0.0` rule pack with named findings BB001–BB006, evidence pointers, severity, and remediation.
+- Support canonical BackBond tool, permission, and trace dialects plus OpenAI, Anthropic, and MCP tool schemas.
+- Add explicit coverage gaps for missing, unsupported, and insufficient evidence instead of inventing findings or passes.
+- Add stable CI exit codes and `--fail-on critical|high|medium|low|none`.
+- Add tamper-evident and optionally Ed25519-signed receipts for input hashes, ruleset identity, and findings.
+- Keep raw artifact bodies, prompts, trace arguments, secret values, and environment values out of output and receipts.
+- Make legacy claims optional hypotheses that can annotate contradictions but never affect findings or severity.
+- Ship vulnerable and hardened fixtures that prove the entire local rule pack.
+- Remove analyzer execution, hosted POST, score, badge, and analyzer-dependent GitHub Action paths.
+
 ## 0.4.1 — 2026-08-29
 
 - State prominently that the public package is evidence capture, not a

@@ -1,0 +1,45 @@
+{
+  "protocol": "backbond-tool-schema/v1",
+  "tools": [
+    {
+      "name": "shell_exec",
+      "description": "Run an operating-system command",
+      "capabilities": ["code_execution", "privileged_action"],
+      "input_trust": "untrusted",
+      "approval": "none",
+      "audit": "none"
+    },
+    {
+      "name": "vault_read",
+      "description": "Read a credential from the secret vault",
+      "capabilities": ["secret_read"],
+      "input_trust": "trusted",
+      "approval": "enforced",
+      "audit": "observable"
+    },
+    {
+      "name": "http_post",
+      "description": "Send data to an HTTP endpoint",
+      "capabilities": ["network_egress"],
+      "input_trust": "untrusted",
+      "approval": "none",
+      "audit": "observable"
+    },
+    {
+      "name": "delete_deployment",
+      "description": "Delete a production deployment",
+      "capabilities": ["destructive_action", "privileged_action"],
+      "input_trust": "untrusted",
+      "approval": "advisory",
+      "audit": "none"
+    },
+    {
+      "name": "memory_write",
+      "description": "Persist content for later agent sessions",
+      "capabilities": ["persistent_write"],
+      "input_trust": "untrusted",
+      "approval": "none",
+      "audit": "observable"
+    }
+  ]
+}
