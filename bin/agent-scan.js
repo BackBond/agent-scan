@@ -6,7 +6,7 @@ const path = require('node:path');
 const { questionSet } = require('../lib/assessment.js');
 const { sha256 } = require('../lib/canonical.js');
 const { discover } = require('../lib/discovery.js');
-const { collectEvidence, publicEvidence } = require('../lib/evidence.js');
+const { collectEvidence, MAX_ARTIFACT_BYTES, publicEvidence } = require('../lib/evidence.js');
 const { startMcpServer } = require('../lib/mcp-server.js');
 const { liveToolsNextAction, renderNextAction } = require('../lib/next-action.js');
 const { renderHuman } = require('../lib/output.js');
@@ -120,8 +120,14 @@ function parseArgs(argv) {
 }
 
 async function readStdin() {
+  process.stdin.setEncoding('utf8');
   let input = '';
-  for await (const chunk of process.stdin) input += chunk;
+  let bytes = 0;
+  for await (const chunk of process.stdin) {
+    bytes += Buffer.byteLength(chunk, 'utf8');
+    if (bytes > MAX_ARTIFACT_BYTES) throw new Error(`stdin tool manifest exceeds ${MAX_ARTIFACT_BYTES} bytes`);
+    input += chunk;
+  }
   return input;
 }
 

@@ -13,6 +13,8 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Reject undeclared or mistyped `scan_my_runtime` arguments instead of silently falling back to discovery.
 - Reduce execution false positives for explicitly read-only documentation tools and recognize executable `cmd`, `python`, and `code` parameters.
 - Fail closed on malformed network allowlists, preserve permission coverage gaps for empty Claude settings, and recognize bare Claude tool permissions plus mixed positive/negative execution descriptions.
+- Bound CLI stdin manifests and MCP JSON-RPC messages to 4 MiB before parsing.
+- Advance the public ruleset identity to `backbond-local-rules/1.2.1` so changed rule bytes never reuse the 1.2.0 receipt identity.
 - Document known derived-rule overreach and keep the release free of new rules, live command execution, automatic fixes, and custom rulesets.
 
 ## 0.5.2 — 2026-08-29

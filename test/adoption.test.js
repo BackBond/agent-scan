@@ -5,9 +5,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { PassThrough } = require('node:stream');
 const { discover } = require('../lib/discovery.js');
-const { collectEvidence } = require('../lib/evidence.js');
-const { handleMessage, TOOL } = require('../lib/mcp-server.js');
+const { collectEvidence, MAX_ARTIFACT_BYTES } = require('../lib/evidence.js');
+const { handleMessage, startMcpServer, TOOL } = require('../lib/mcp-server.js');
 const { renderHuman } = require('../lib/output.js');
 const { scanEvidence } = require('../lib/scanner.js');
 const { CLI, ROOT, tempDirectory, writeJson } = require('./helpers.js');
@@ -224,6 +225,35 @@ test('capability inference distinguishes documentation from executable parameter
     }] } }],
   });
   assert.equal(scanEvidence(mixedDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+
+  const conjunctionDescription = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'conjunction-execution.json', document: { tools: [{
+      name: 'local_runner',
+      description: 'Does not execute code remotely and can run shell commands locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(conjunctionDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+
+  const explanatoryDocumentation = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'explanatory-docs.json', document: { tools: [{
+      name: 'search_docs',
+      description: 'Does not execute code; documentation explains how shell commands execute.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search terms' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(explanatoryDocumentation, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  const sqlQuery = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'sql-query.json', document: { tools: [{
+      name: 'database_lookup',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'SQL query to execute' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(sqlQuery, { now: NOW }).findings.some(item => item.id === 'BB007'), true);
 });
 
 test('malformed MCP network allowlists fail closed instead of suppressing egress findings', () => {
@@ -395,4 +425,20 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(wrongEmitRecordType.result.isError, true);
   assert.match(wrongEmitRecordType.result.content[0].text, /emit_record must be a boolean/);
+});
+
+test('CLI and MCP reject oversized manifests before JSON parsing', () => {
+  const oversized = 'x'.repeat(MAX_ARTIFACT_BYTES + 1);
+  const cli = spawnSync(process.execPath, [CLI, 'scan', '--stdin'], { input: oversized, encoding: 'utf8' });
+  assert.equal(cli.status, 2, cli.stderr);
+  assert.match(cli.stderr, new RegExp(`exceeds ${MAX_ARTIFACT_BYTES} bytes`));
+
+  const input = new PassThrough();
+  const writes = [];
+  startMcpServer(input, { write: chunk => writes.push(chunk) });
+  input.write(`${oversized}\n`);
+  assert.equal(writes.length, 1);
+  const response = JSON.parse(writes[0]);
+  assert.equal(response.error.code, -32600);
+  assert.match(response.error.message, new RegExp(`exceeds ${MAX_ARTIFACT_BYTES} bytes`));
 });

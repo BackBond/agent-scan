@@ -1,6 +1,6 @@
 # Open local rule pack
 
-Ruleset `backbond-local-rules/1.2.0` is implemented in `lib/rules.js`. Its SHA-256 digest is emitted in every scan, receipt, and public record.
+Ruleset `backbond-local-rules/1.2.1` is implemented in `lib/rules.js`. Its SHA-256 digest is emitted in every scan, receipt, and public record.
 
 | ID | Severity | Requires | Finding condition |
 |---|---|---|---|

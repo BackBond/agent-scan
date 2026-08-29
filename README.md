@@ -108,7 +108,7 @@ LangChain, CrewAI, and AutoGen can use the scanner today by exporting their runt
 
 ## Findings
 
-The public `backbond-local-rules/1.2.0` pack contains:
+The public `backbond-local-rules/1.2.1` pack contains:
 
 - `BB001` — untrusted input can reach code or shell execution;
 - `BB002` — secret access is combined with unrestricted egress;
