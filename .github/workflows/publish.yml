@@ -29,7 +29,9 @@ jobs:
         shell: bash
         run: |
           release_tag="$REQUESTED_TAG"
-          if [[ "$release_tag" == publish-v* ]]; then
+          if [[ "$release_tag" =~ ^publish-(v[0-9]+\.[0-9]+\.[0-9]+)-r[0-9]+$ ]]; then
+            release_tag="${BASH_REMATCH[1]}"
+          elif [[ "$release_tag" == publish-v* ]]; then
             release_tag="${release_tag#publish-}"
           fi
           echo "RELEASE_TAG=$release_tag" >> "$GITHUB_ENV"
@@ -116,7 +118,7 @@ jobs:
           mkdir source-tree registry-tree
           tar -xzf "${{ steps.pack.outputs.file }}" -C source-tree
           tar -xzf "registry-copy/$registry_file" -C registry-tree
-          if ! diff -qr source-tree/package registry-tree/package; then
+          if ! diff -qr --strip-trailing-cr source-tree/package registry-tree/package; then
             echo "Refusing release: tagged package contents differ from the npm registry artifact." >&2
             exit 1
           fi
