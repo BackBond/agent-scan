@@ -215,6 +215,14 @@ test('known Claude Code files without exported tools are recognized as coverage 
   }), /permissions\.allow must be an array/);
   assert.throws(() => collectEvidence({
     now: NOW,
+    documents: [{ kind: 'config', name: 'bad-allow-entry.json', adapter: 'claude-code', document: { permissions: { allow: [42] } } }],
+  }), /permissions\.allow must contain only non-empty strings/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'empty-ask-entry.json', adapter: 'claude-code', document: { permissions: { ask: [''] } } }],
+  }), /permissions\.ask must contain only non-empty strings/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
     documents: [{ kind: 'config', name: 'bad-mode.json', adapter: 'claude-code', document: { permissions: { defaultMode: true } } }],
   }), /permissions\.defaultMode must be a string/);
 });
@@ -262,6 +270,21 @@ test('capability inference distinguishes documentation from executable parameter
   });
   assert.equal(scanEvidence(conjunctionDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
 
+  for (const [name, description] of [
+    ['imperative_runner', 'Use this tool to execute shell commands supplied by the user.'],
+    ['delegated_runner', 'Allows users to run shell commands inside a workspace.'],
+  ]) {
+    const evidence = collectEvidence({
+      now: NOW,
+      documents: [{ kind: 'tool_schema', name: `${name}.json`, document: { tools: [{
+        name,
+        description,
+        inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+      }] } }],
+    });
+    assert.equal(scanEvidence(evidence, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+  }
+
   const explanatoryDocumentation = collectEvidence({
     now: NOW,
     documents: [{ kind: 'tool_schema', name: 'explanatory-docs.json', document: { tools: [{
@@ -271,6 +294,18 @@ test('capability inference distinguishes documentation from executable parameter
     }] } }],
   });
   assert.equal(scanEvidence(explanatoryDocumentation, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  const countryLookup = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'country-lookup.json', document: { tools: [{
+      name: 'search_countries',
+      description: 'Looks up a country using its ISO 3166 code.',
+      inputSchema: { type: 'object', properties: {
+        code: { type: 'string', description: 'ISO 3166 country code', enum: ['US', 'GB'] },
+      } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(countryLookup, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
 
   const sqlQuery = collectEvidence({
     now: NOW,
