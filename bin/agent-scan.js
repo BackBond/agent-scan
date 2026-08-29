@@ -6,15 +6,16 @@ const path = require('node:path');
 const { questionSet } = require('../lib/assessment.js');
 const { sha256 } = require('../lib/canonical.js');
 const { discover } = require('../lib/discovery.js');
-const { collectEvidence, publicEvidence } = require('../lib/evidence.js');
+const { collectEvidence, MAX_ARTIFACT_BYTES, publicEvidence } = require('../lib/evidence.js');
 const { startMcpServer } = require('../lib/mcp-server.js');
+const { liveToolsNextAction, renderNextAction } = require('../lib/next-action.js');
 const { renderHuman } = require('../lib/output.js');
 const { suggestPolicy } = require('../lib/policy.js');
 const { createPublicScanRecord, renderCompactRecord } = require('../lib/record.js');
 const { createScanReceipt, verifyScanReceipt } = require('../lib/receipt.js');
-const { meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
+const { isPromptLintFinding, meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
 const { toSarif } = require('../lib/sarif.js');
-const { scanEvidence, scannerContract } = require('../lib/scanner.js');
+const { scanEvidence, scannerContract, SCANNER_VERSION } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
 const { safeInline } = require('../lib/text.js');
 
@@ -36,12 +37,21 @@ Artifact options:
   --trace <file>        backbond-trace/v1 or OpenTelemetry OTLP JSON.
   --stdin               Read a live tool manifest from stdin; use --input for claims.
 
+Live tools/list recipe:
+  1. Ask the agent client for its current MCP tools/list response.
+  2. Save the complete JSON response as tools-list.json.
+  3. Expected shape: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
+  4. POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin < tools-list.json
+  5. PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin
+
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
-  --fail-on <severity>  Exit 1 at critical, high, medium, or low; none disables (default: high).
+  --fail-on <severity>  Gate BB001-BB008 and BB012 (default: high).
+  --fail-on-prompt <severity>  Separately gate BB009-BB011 (default: none).
   --receipt <file>      Write a tamper-evident receipt without overwriting.
   --signing-key <file>  Sign the receipt with an Ed25519 private key.
   --record-public <file>  Write a redacted self-run scan record without overwriting.
+  --record-commit <sha>  Bind that record to a 40- or 64-character Git commit (record v2).
   --record-include-tool-names  Include tool names in that public record (off by default).
   --record-include-fingerprints  Include input hashes and byte lengths (off by default).
   --require-coverage    Exit 3 unless coverage is complete.
@@ -63,15 +73,15 @@ function parseArgs(argv) {
   const command = argv[0] && !argv[0].startsWith('-') ? argv[0] : 'start';
   const rest = command === argv[0] ? argv.slice(1) : argv;
   const options = {
-    command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high',
+    command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high', failOnPrompt: 'none',
     requireCoverage: false, recordIncludeToolNames: false, recordIncludeFingerprints: false,
     toolSchemaPath: null, permissionsPath: null, tracePath: null, configPaths: [],
-    receiptPath: null, signingKeyPath: null, recordPath: null,
+    receiptPath: null, signingKeyPath: null, recordPath: null, recordCommit: null,
   };
   const paths = {
     '--input': 'input', '--tool-schema': 'toolSchemaPath', '--permissions': 'permissionsPath',
     '--trace': 'tracePath', '--receipt': 'receiptPath', '--signing-key': 'signingKeyPath', '--fail-on': 'failOn',
-    '--record-public': 'recordPath',
+    '--fail-on-prompt': 'failOnPrompt', '--record-public': 'recordPath', '--record-commit': 'recordCommit',
   };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
@@ -97,16 +107,27 @@ function parseArgs(argv) {
     else throw new Error(`unexpected argument: ${argument}`);
   }
   if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOn)) throw new Error('--fail-on must be critical, high, medium, low, or none');
+  if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOnPrompt)) throw new Error('--fail-on-prompt must be critical, high, medium, low, or none');
   if (options.json && options.sarif) throw new Error('use either --json or --sarif, not both');
-  if ((options.recordIncludeToolNames || options.recordIncludeFingerprints) && !options.recordPath) {
-    throw new Error('record disclosure options require --record-public <file>');
+  if ((options.recordIncludeToolNames || options.recordIncludeFingerprints || options.recordCommit) && !options.recordPath) {
+    throw new Error('record options require --record-public <file>');
   }
+  if (options.recordCommit && !/^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/.test(options.recordCommit)) {
+    throw new Error('--record-commit must be a 40- or 64-character hexadecimal Git commit');
+  }
+  if (options.recordCommit) options.recordCommit = options.recordCommit.toLowerCase();
   return options;
 }
 
 async function readStdin() {
+  process.stdin.setEncoding('utf8');
   let input = '';
-  for await (const chunk of process.stdin) input += chunk;
+  let bytes = 0;
+  for await (const chunk of process.stdin) {
+    bytes += Buffer.byteLength(chunk, 'utf8');
+    if (bytes > MAX_ARTIFACT_BYTES) throw new Error(`stdin tool manifest exceeds ${MAX_ARTIFACT_BYTES} bytes`);
+    input += chunk;
+  }
   return input;
 }
 
@@ -150,6 +171,12 @@ function recordScopeMode(options) {
   return hasExplicitArtifacts(options) ? 'explicit-artifacts' : 'discovery';
 }
 
+function thresholdMet(findings, options) {
+  const promptLint = findings.filter(isPromptLintFinding);
+  const runtimeExposure = findings.filter(item => !isPromptLintFinding(item));
+  return meetsThreshold(runtimeExposure, options.failOn) || meetsThreshold(promptLint, options.failOnPrompt);
+}
+
 async function main() {
   let options;
   try { options = parseArgs(process.argv.slice(2)); }
@@ -191,6 +218,7 @@ async function main() {
     }
     const claims = loadClaims(options);
     const scan = scanEvidence(evidence, { now, claims: claims.submission });
+    const nextAction = plan ? liveToolsNextAction(SCANNER_VERSION) : null;
     const policy = options.suggestPolicy ? suggestPolicy(scan) : null;
     const receipt = createScanReceipt(scan, { claimInput: claims.metadata, signingKeyPath: options.signingKeyPath });
     const receiptPath = options.receiptPath ? writeNew(options.receiptPath, receipt) : null;
@@ -198,9 +226,10 @@ async function main() {
       mode: recordScopeMode(options),
       includeToolNames: options.recordIncludeToolNames,
       includeFingerprints: options.recordIncludeFingerprints,
+      commit: options.recordCommit,
     }) : null;
     const recordPath = record ? writeNew(options.recordPath, record) : null;
-    const output = { ...scan, receipt, receipt_path: receiptPath, policy_suggestion: policy };
+    const output = { ...scan, ...(nextAction ? { next_action: nextAction } : {}), receipt, receipt_path: receiptPath, policy_suggestion: policy };
     if (record) {
       output.public_record = record;
       output.public_record_path = recordPath;
@@ -209,9 +238,10 @@ async function main() {
     else if (options.sarif) process.stdout.write(`${JSON.stringify(toSarif(scan), null, 2)}\n`);
     else {
       process.stdout.write(renderHuman(scan, { policy, receiptPath }));
+      if (nextAction) process.stdout.write(`\n${renderNextAction(nextAction)}\n`);
       if (record) process.stdout.write(`\n${renderCompactRecord(record)}\n${safeInline(`Saved: ${recordPath}`)}\n`);
     }
-    if (meetsThreshold(scan.findings, options.failOn)) process.exitCode = 1;
+    if (thresholdMet(scan.findings, options)) process.exitCode = 1;
     else if (options.requireCoverage && scan.coverage.status !== 'complete') process.exitCode = 3;
   } catch (error) {
     fail(error.message);

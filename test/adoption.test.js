@@ -5,9 +5,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { PassThrough } = require('node:stream');
 const { discover } = require('../lib/discovery.js');
-const { collectEvidence } = require('../lib/evidence.js');
-const { handleMessage, TOOL } = require('../lib/mcp-server.js');
+const { collectEvidence, MAX_ARTIFACT_BYTES } = require('../lib/evidence.js');
+const { handleMessage, startMcpServer, TOOL } = require('../lib/mcp-server.js');
 const { renderHuman } = require('../lib/output.js');
 const { scanEvidence } = require('../lib/scanner.js');
 const { CLI, ROOT, tempDirectory, writeJson } = require('./helpers.js');
@@ -117,6 +118,295 @@ test('messy non-BackBond fixtures produce named findings with derived evidence',
   assert.equal(scanEvidence(trustedFetch, { now: NOW }).findings.some(item => item.id === 'BB012'), false);
 });
 
+test('config adapters infer server identities, root scopes, and Claude Code wildcards', (t) => {
+  const directory = tempDirectory(t);
+  const desktop = writeJson(directory, 'claude_desktop_config.json', {
+    mcpServers: {
+      filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/'] },
+      shell: { command: 'mcp-server-shell' },
+      fetch: { command: 'mcp-server-fetch' },
+      onepassword: { command: 'mcp-server-1password', env: { OP_SERVICE_ACCOUNT_TOKEN: 'MUST_NOT_SURVIVE' } },
+    },
+  });
+  const desktopEvidence = collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: desktop, adapter: 'claude-desktop' }],
+  });
+  const desktopScan = scanEvidence(desktopEvidence, { now: NOW });
+  assert.equal(desktopScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(desktopScan.findings.some(item => item.id === 'BB002'), true);
+  const wildcard = desktopScan.findings.find(item => item.id === 'BB006');
+  assert.match(wildcard.detail, /filesystem\.read/);
+  assert.match(wildcard.detail, /filesystem\.write/);
+  assert.match(wildcard.detail, /network\.egress/);
+  assert.doesNotMatch(JSON.stringify({ desktopEvidence, desktopScan }), /MUST_NOT_SURVIVE/);
+
+  const readOnlyDesktop = writeJson(directory, 'claude_desktop_read_only_config.json', {
+    mcpServers: {
+      filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/', '--read-only'] },
+    },
+  });
+  const readOnlyScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: readOnlyDesktop, adapter: 'claude-desktop' }],
+  }), { now: NOW });
+  const readOnlyWildcard = readOnlyScan.findings.find(item => item.id === 'BB006');
+  assert.match(readOnlyWildcard.detail, /filesystem\.read/);
+  assert.doesNotMatch(readOnlyWildcard.detail, /filesystem\.write/);
+
+  const settings = writeJson(directory, 'settings.local.json', {
+    permissions: { allow: ['Bash(*)', 'Read(//**)', 'Edit(//**)', 'WebFetch(domain:*)'] },
+  });
+  const settingsScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: settings, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const settingsWildcard = settingsScan.findings.find(item => item.id === 'BB006');
+  assert.match(settingsWildcard.detail, /filesystem\.read/);
+  assert.match(settingsWildcard.detail, /filesystem\.write/);
+  assert.match(settingsWildcard.detail, /network\.egress/);
+  assert.match(settingsWildcard.detail, /subprocess\.allow/);
+
+  const bareSettings = writeJson(directory, 'bare-settings.local.json', {
+    permissions: { allow: ['Bash', 'Read', 'Write', 'WebFetch'] },
+  });
+  const bareScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: bareSettings, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const bareWildcard = bareScan.findings.find(item => item.id === 'BB006');
+  assert.match(bareWildcard.detail, /filesystem\.read/);
+  assert.match(bareWildcard.detail, /filesystem\.write/);
+  assert.match(bareWildcard.detail, /network\.egress/);
+  assert.match(bareWildcard.detail, /subprocess\.allow/);
+
+  const bypassAndScoped = writeJson(directory, 'bypass-and-scoped.json', {
+    permissions: { defaultMode: 'bypassPermissions', allow: ['Read(/workspace/**)'] },
+  });
+  const bypassScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: bypassAndScoped, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const bypassWildcard = bypassScan.findings.find(item => item.id === 'BB006');
+  assert.match(bypassWildcard.detail, /subprocess\.allow/);
+  assert.doesNotMatch(bypassWildcard.detail, /filesystem\.read/);
+
+  const unrelatedArgs = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'notes.json', adapter: 'claude-desktop', document: {
+      mcpServers: { notes: { command: 'node', args: ['server.js', '/workspace/notes'] } },
+    } }],
+  });
+  assert.equal(scanEvidence(unrelatedArgs, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+
+  const unrelatedCommandDirectory = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'command-path.json', adapter: 'claude-desktop', document: {
+      mcpServers: {
+        notes: { command: 'C:/Users/vault/bin/node.exe', args: ['server.js'] },
+        fetch: { command: 'mcp-server-fetch' },
+      },
+    } }],
+  });
+  assert.equal(scanEvidence(unrelatedCommandDirectory, { now: NOW }).findings.some(item => item.id === 'BB002'), false);
+});
+
+test('known Claude Code files without exported tools are recognized as coverage gaps', () => {
+  const evidence = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: '.claude.json', adapter: 'claude-code', document: {} }],
+  });
+  assert.equal(evidence.artifacts[0].dialect, 'claude-code-settings/v1');
+  assert.equal(evidence.coverage_gaps.some(item => item.status === 'unsupported'), false);
+  assert.equal(evidence.coverage_gaps.some(item => item.code === 'BB-COV-CLAUDE-TOOLS-NOT-EXPORTED'), true);
+  assert.equal(evidence.coverage_gaps.some(item => item.code === 'BB-COV-MISSING-PERMISSIONS'), true);
+
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-code', document: { permissions: [] } }],
+  }), /Claude Code permissions must be a JSON object/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'bad-allow.json', adapter: 'claude-code', document: { permissions: { allow: 'Bash' } } }],
+  }), /permissions\.allow must be an array/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'bad-allow-entry.json', adapter: 'claude-code', document: { permissions: { allow: [42] } } }],
+  }), /permissions\.allow must contain only non-empty strings/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'empty-ask-entry.json', adapter: 'claude-code', document: { permissions: { ask: [''] } } }],
+  }), /permissions\.ask must contain only non-empty strings/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'bad-mode.json', adapter: 'claude-code', document: { permissions: { defaultMode: true } } }],
+  }), /permissions\.defaultMode must be a string/);
+});
+
+test('capability inference distinguishes documentation from executable parameters', () => {
+  const documentation = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'docs.json', document: { tools: [{
+      name: 'handbook_search',
+      description: 'Returns the list of shell commands documented in the handbook. Read-only, no execution.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(documentation, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+
+  const executable = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'exec.json', document: { tools: [
+      { name: 'runner_a', inputSchema: { type: 'object', properties: { cmd: { type: 'string' } } } },
+      { name: 'runner_b', inputSchema: { type: 'object', properties: { python: { type: 'string' } } } },
+      { name: 'runner_c', inputSchema: { type: 'object', properties: { code: { type: 'string' } } } },
+    ] } }],
+  });
+  const executableScan = scanEvidence(executable, { now: NOW });
+  assert.equal(executableScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(executableScan.findings.find(item => item.id === 'BB007').affected_tools.length, 3);
+
+  const mixedDescription = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'mixed-execution.json', document: { tools: [{
+      name: 'local_runner',
+      description: 'Does not execute code remotely. Executes local shell commands supplied in input.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(mixedDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+
+  const conjunctionDescription = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'conjunction-execution.json', document: { tools: [{
+      name: 'local_runner',
+      description: 'Does not execute code remotely and can run shell commands locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(conjunctionDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+
+  for (const [name, description] of [
+    ['imperative_runner', 'Use this tool to execute shell commands supplied by the user.'],
+    ['delegated_runner', 'Allows users to run shell commands inside a workspace.'],
+    ['contrast_connector', 'Does not execute code, yet it runs shell commands.'],
+    ['instead_connector', 'Does not execute code, instead it runs shell commands.'],
+    ['passive_connector', 'Shell commands are executed by the remote service.'],
+    ['modified_passive_connector', 'User-supplied shell commands will be executed in a sandbox.'],
+    ['singular_passive_connector', 'The supplied shell command is executed in a sandbox.'],
+  ]) {
+    const evidence = collectEvidence({
+      now: NOW,
+      documents: [{ kind: 'tool_schema', name: `${name}.json`, document: { tools: [{
+        name,
+        description,
+        inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+      }] } }],
+    });
+    assert.equal(scanEvidence(evidence, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+  }
+
+  const explanatoryDocumentation = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'explanatory-docs.json', document: { tools: [{
+      name: 'search_docs',
+      description: 'Does not execute code; documentation explains how shell commands execute.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Search terms' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(explanatoryDocumentation, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  for (const [name, description] of [
+    ['shell_docs', 'Shell commands are executed in examples; this tool is read-only documentation.'],
+    ['search_docs', 'Shell commands may be executed safely, according to this reference guide.'],
+    ['safe_connector', 'Does not execute code, and never runs shell commands.'],
+  ]) {
+    const evidence = collectEvidence({
+      now: NOW,
+      documents: [{ kind: 'tool_schema', name: `${name}.json`, document: { tools: [{
+        name,
+        description,
+        inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+      }] } }],
+    });
+    assert.equal(scanEvidence(evidence, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+  }
+
+  const countryLookup = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'country-lookup.json', document: { tools: [{
+      name: 'search_countries',
+      description: 'Looks up a country using its ISO 3166 code.',
+      inputSchema: { type: 'object', properties: {
+        code: { type: 'string', description: 'ISO 3166 country code', enum: ['US', 'GB'] },
+      } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(countryLookup, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  const sqlQuery = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'sql-query.json', document: { tools: [{
+      name: 'database_lookup',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'SQL query to execute' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(sqlQuery, { now: NOW }).findings.some(item => item.id === 'BB007'), true);
+
+  const nestedCamelCase = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'nested-camel.json', document: { tools: [{
+      name: 'runner',
+      inputSchema: { type: 'object', properties: { payload: { anyOf: [
+        { type: 'object', properties: { pythonCode: { type: 'string' } } },
+        { type: 'null' },
+      ] } } },
+    }] } }],
+  });
+  const nestedScan = scanEvidence(nestedCamelCase, { now: NOW });
+  assert.equal(nestedScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(nestedScan.findings.some(item => item.id === 'BB007'), true);
+
+  const wideProperties = {};
+  for (let index = 0; index < 140000; index += 1) wideProperties[`field_${index}`] = {};
+  const wideSchema = { tools: [{ name: 'wide_lookup', inputSchema: { type: 'object', properties: wideProperties } }] };
+  assert.equal(Buffer.byteLength(JSON.stringify(wideSchema)) < MAX_ARTIFACT_BYTES, true);
+  const wideEvidence = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'wide-schema.json', document: wideSchema }],
+  });
+  assert.equal(scanEvidence(wideEvidence, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+});
+
+test('malformed MCP network allowlists fail closed instead of suppressing egress findings', () => {
+  const config = allowedDomains => ({
+    mcpServers: {
+      'vault-fetch': { command: 'mcp-server-vault-fetch', ...(allowedDomains === undefined ? {} : { allowedDomains }) },
+    },
+  });
+  const unrestricted = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'unrestricted.json', adapter: 'claude-desktop', document: config() }],
+  });
+  assert.equal(scanEvidence(unrestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), true);
+  assert.throws(() => collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-desktop', document: config(42) }],
+  }), /allowedDomains must be a string array/);
+
+  const nestedRestricted = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: ['api.example.com'] } } },
+    } }],
+  });
+  assert.equal(scanEvidence(nestedRestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), false);
+  const nestedWildcard = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested-wildcard.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: ['*'] } } },
+    } }],
+  });
+  const nestedWildcardFinding = scanEvidence(nestedWildcard, { now: NOW }).findings.find(item => item.id === 'BB006');
+  assert.deepEqual(nestedWildcardFinding.evidence.map(item => item.pointer), ['/mcpServers/vault-fetch/network/allowedDomains']);
+  assert.throws(() => collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested-malformed.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: 42 } } },
+    } }],
+  }), /allowedDomains must be a string array/);
+});
+
 test('stdin accepts a live tool manifest and human output stays compact', () => {
   const manifest = fs.readFileSync(path.join(ROOT, 'fixtures', 'wild', 'mcp-shell-tools.json'), 'utf8');
   const run = spawnSync(process.execPath, [CLI, 'scan', '--stdin'], { input: manifest, encoding: 'utf8' });
@@ -190,6 +480,21 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   assert.equal(TOOL.inputSchema.required, undefined);
   const listed = handleMessage({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
   assert.equal(listed.result.tools[0].name, 'scan_my_runtime');
+  const missingLiveTools = handleMessage({
+    jsonrpc: '2.0', id: 10, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: {} },
+  });
+  assert.equal(missingLiveTools.result.isError, false);
+  assert.equal(missingLiveTools.result.structuredContent.next_action.code, 'provide_live_tools');
+  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.3 scan --stdin/);
+  assert.deepEqual(Object.keys(missingLiveTools.result.structuredContent.next_action.stdin_shape.result), ['tools']);
+  const missingLiveRecord = handleMessage({
+    jsonrpc: '2.0', id: 11, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { emit_record: true } },
+  });
+  assert.deepEqual(Object.keys(missingLiveRecord.result.structuredContent), ['record', 'next_action']);
+  assert.equal(missingLiveRecord.result.structuredContent.next_action.code, 'provide_live_tools');
+  assert.doesNotMatch(JSON.stringify(missingLiveRecord.result), /\\Users\\|\/home\//);
   const called = handleMessage({
     jsonrpc: '2.0', id: 2, method: 'tools/call',
     params: { name: 'scan_my_runtime', arguments: { tools: [{ name: 'run_shell', description: 'Execute shell command', inputSchema: { type: 'object', properties: { command: { type: 'string' } } } }], suggest_policy: true } },
@@ -214,4 +519,72 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(failedRecord.result.isError, true);
   assert.equal(failedRecord.result.content[0].text, 'agent-scan: scan failed; no public record was created');
+
+  const unknownArgument = handleMessage({
+    jsonrpc: '2.0', id: 5, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { tool_manifest: { tools: [] } } },
+  });
+  assert.equal(unknownArgument.result.isError, true);
+  assert.match(unknownArgument.result.content[0].text, /unknown argument: tool_manifest/);
+
+  const wrongToolsType = handleMessage({
+    jsonrpc: '2.0', id: 6, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { tools: { name: 'shell' } } },
+  });
+  assert.equal(wrongToolsType.result.isError, true);
+  assert.match(wrongToolsType.result.content[0].text, /tools must be an array/);
+
+  const wrongArgumentsType = handleMessage({
+    jsonrpc: '2.0', id: 7, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: false },
+  });
+  assert.equal(wrongArgumentsType.result.isError, true);
+  assert.match(wrongArgumentsType.result.content[0].text, /arguments must be an object/);
+
+  const nullArguments = handleMessage({
+    jsonrpc: '2.0', id: 8, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: null },
+  });
+  assert.equal(nullArguments.result.isError, true);
+  assert.match(nullArguments.result.content[0].text, /arguments must be an object/);
+
+  const wrongSuggestPolicyType = handleMessage({
+    jsonrpc: '2.0', id: 9, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { suggest_policy: 'yes' } },
+  });
+  assert.equal(wrongSuggestPolicyType.result.isError, true);
+  assert.match(wrongSuggestPolicyType.result.content[0].text, /suggest_policy must be a boolean/);
+
+  const wrongEmitRecordType = handleMessage({
+    jsonrpc: '2.0', id: 10, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { emit_record: 1 } },
+  });
+  assert.equal(wrongEmitRecordType.result.isError, true);
+  assert.match(wrongEmitRecordType.result.content[0].text, /emit_record must be a boolean/);
+});
+
+test('CLI and MCP reject oversized manifests before JSON parsing', () => {
+  const oversized = 'x'.repeat(MAX_ARTIFACT_BYTES + 1);
+  const cli = spawnSync(process.execPath, [CLI, 'scan', '--stdin'], { input: oversized, encoding: 'utf8' });
+  assert.equal(cli.status, 2, cli.stderr);
+  assert.match(cli.stderr, new RegExp(`exceeds ${MAX_ARTIFACT_BYTES} bytes`));
+
+  const input = new PassThrough();
+  const writes = [];
+  startMcpServer(input, { write: chunk => writes.push(chunk) });
+  input.write(`${oversized}\n`);
+  assert.equal(writes.length, 1);
+  const response = JSON.parse(writes[0]);
+  assert.equal(response.error.code, -32600);
+  assert.match(response.error.message, new RegExp(`exceeds ${MAX_ARTIFACT_BYTES} bytes`));
+
+  const streamingInput = new PassThrough();
+  const streamingWrites = [];
+  startMcpServer(streamingInput, { write: chunk => streamingWrites.push(chunk) });
+  streamingInput.write(oversized);
+  assert.equal(JSON.parse(streamingWrites[0]).error.code, -32600);
+  streamingInput.write('{"jsonrpc":"2.0","id":99,"method":"ping"}\n');
+  const recovered = JSON.parse(streamingWrites[1]);
+  assert.equal(recovered.id, 99);
+  assert.deepEqual(recovered.result, {});
 });

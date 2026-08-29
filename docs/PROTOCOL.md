@@ -34,7 +34,7 @@ Schema heuristics detect unconstrained command, expression, code, SQL, URL, URI,
 
 With no explicit artifact and no stdin, the result includes `backbond-discovery-plan/v1`. Discovery checks exact, bounded project and user paths for Claude Desktop/Code, Cursor, VS Code, Windsurf, and Gemini MCP settings. Instruction files are listed as context but never parsed as permissions.
 
-`mcpServers` and VS Code `servers` are normalized. Inline `tools`, `toolSchemas`, and Gemini `includeTools` are accepted. Server commands are not treated as agent-callable tools. Recognizable server roles and sandbox wildcards may produce derived facts; a server with no exported tool list creates `BB-COV-MCP-TOOLS-NOT-EXPORTED`.
+`mcpServers` and VS Code `servers` are normalized. Inline `tools`, `toolSchemas`, and Gemini `includeTools` are accepted. Server commands are never executed or presented as live tool exports, but names, command basenames, and arguments may produce a synthetic server-role observation for recognizable shell, fetch/browser, filesystem, database, and credential servers. Root filesystem mounts, Claude Code `Bash(*)`, root `Read`/`Write`/`Edit`, and `WebFetch(domain:*)` become derived wildcard facts. A server with no exported tool list still creates `BB-COV-MCP-TOOLS-NOT-EXPORTED`.
 
 ## Canonical permissions
 
@@ -83,7 +83,7 @@ OpenTelemetry OTLP JSON is accepted when it contains `resourceSpans`. Tool spans
 
 ## MCP tool
 
-`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime`. The tool has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery. `emit_record: true` returns only compact text and a redacted `backbond-scan-record/v1` in structured output; it omits the full scan, local receipt, discovery paths, artifact names, and tool names. The MCP server performs no network requests and does not execute scanned tools.
+`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime`. The tool has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery and returns a machine-readable `next_action` containing the exact accepted `tools/list` envelope and pinned stdin commands. Undeclared arguments and nonconforming `tools`, `suggest_policy`, or `emit_record` values return an error rather than being ignored. CLI stdin manifests and individual MCP JSON-RPC messages are capped at 4 MiB before JSON parsing. `emit_record: true` returns compact text and a redacted `backbond-scan-record/v1` in structured output; when live tools were omitted, the safe built-in `next_action` is returned alongside it. It omits the full scan, local receipt, discovery paths, artifact names, and tool names. The MCP server performs no network requests and does not execute scanned tools.
 
 The CLI also accepts a captured MCP `tools/list` JSON-RPC response through `scan --stdin`. It does not launch a server or execute a command discovered in configuration.
 
@@ -99,9 +99,13 @@ Malformed JSON or a malformed supported dialect is invalid input and exits `2`. 
 
 ## Public scan record
 
-`--record-public <file>` writes `backbond-scan-record/v1` without overwriting. Its assurance level is `self-run_unverified`; the record is neither proof of execution nor a BackBond attestation.
+`--record-public <file>` writes `backbond-scan-record/v1` without overwriting. Adding `--record-commit <sha>` emits `backbond-scan-record/v2` and binds the full lowercase 40- or 64-character Git commit into the checksummed JSON and compact card. Its assurance level remains `self-run_unverified`; neither version is proof of execution nor a BackBond attestation.
 
 By default, the record contains only scanner/ruleset identity, counts of input kinds and dialects, finding IDs, severities, evidence quality, coverage codes, a trusted pinned rerun command, and integrity linkage to the local receipt. It excludes paths, basenames, descriptions, parameters, bodies, pointers, tool names, and input fingerprints. Tool names and fingerprints require separate explicit disclosure flags. Consumers must construct the pinned command from trusted local policy rather than execute record text.
+
+## CI thresholds
+
+`--fail-on` gates runtime-exposure findings `BB001`–`BB008` and `BB012`. Description-only prompt lint `BB009`–`BB011` is always reported but uses the independent `--fail-on-prompt` threshold, which defaults to `none`. This prevents capability CI from failing solely on aggressive tool copy while allowing repositories to adopt strict prompt lint explicitly.
 
 ## Optional claim protocol
 
