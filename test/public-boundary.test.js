@@ -81,12 +81,15 @@ test('operator docs promise findings, local data, and no score or private analyz
   assert.doesNotMatch(`${readme}\n${agentInstructions}`, /analysis_required/);
 });
 
-test('release workflow publishes and attaches the same packed tarball', () => {
+test('release workflow publishes tagged contents and attaches the registry-authoritative tarball', () => {
   const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'publish.yml'), 'utf8');
   assert.match(workflow, /push:\s*\n\s*tags:\s*\n\s*- "v\*"/);
+  assert.match(workflow, /- "publish-v\*"/);
+  assert.match(workflow, /release_tag="\$\{release_tag#publish-\}"/);
   assert.match(workflow, /npm publish "\$\{\{ steps\.pack\.outputs\.file \}\}" --access public --provenance/);
   assert.match(workflow, /ref: \$\{\{ format\('refs\/tags\/\{0\}', env\.RELEASE_TAG\) \}\}/);
-  assert.match(workflow, /cmp -s "\$\{\{ steps\.pack\.outputs\.file \}\}" "registry-copy\/\$registry_file"/);
+  assert.match(workflow, /diff -qr source-tree\/package registry-tree\/package/);
+  assert.match(workflow, /cp "registry-copy\/\$registry_file" "\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$package_file"/);
   assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
   assert.match(workflow, /id-token: write/);

@@ -14,7 +14,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Document direct ingestion of a captured MCP `tools/list` response through `scan --stdin`; do not spawn commands found in agent configuration.
 - Clarify that scanner execution is local and network-free while first-time package installation may contact the configured npm registry.
 - Stop cleanly when npm cannot resolve the registry and document a verified offline transfer path using the exact npm tarball and SHA-256 attached to the official GitHub release.
-- Make tag publishing fail closed unless the checked-out tag, npm registry tarball, GitHub release tarball, and published SHA-256 all identify the same bytes.
+- Make tag publishing fail closed unless the tagged package contents match npm, then attach the registry-authoritative tarball and its exact SHA-256 to the GitHub release.
 
 ## 0.5.1 — 2026-08-29
 

@@ -4,15 +4,13 @@ on:
   push:
     tags:
       - "v*"
+      - "publish-v*"
   workflow_dispatch:
     inputs:
       tag:
         description: Release tag to publish
         required: true
         type: string
-
-env:
-  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
 
 permissions:
   contents: write
@@ -25,6 +23,17 @@ jobs:
     environment: npm
 
     steps:
+      - name: Resolve the immutable release tag
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          release_tag="$REQUESTED_TAG"
+          if [[ "$release_tag" == publish-v* ]]; then
+            release_tag="${release_tag#publish-}"
+          fi
+          echo "RELEASE_TAG=$release_tag" >> "$GITHUB_ENV"
+
       - name: Require an existing version tag
         env:
           GH_TOKEN: ${{ github.token }}
@@ -81,7 +90,6 @@ jobs:
         run: |
           package_file=$(node -p "'backbond-agent-scan-' + require('./package.json').version + '.tgz'")
           npm pack --json
-          sha256sum "$package_file" > "$package_file.sha256"
           echo "file=$package_file" >> "$GITHUB_OUTPUT"
 
       - name: Publish with npm token fallback and verify registry bytes
@@ -105,10 +113,15 @@ jobs:
             sleep 5
           done
           test -n "$registry_file"
-          if ! cmp -s "${{ steps.pack.outputs.file }}" "registry-copy/$registry_file"; then
-            echo "Refusing release: locally packed tarball differs from the npm registry artifact." >&2
+          mkdir source-tree registry-tree
+          tar -xzf "${{ steps.pack.outputs.file }}" -C source-tree
+          tar -xzf "registry-copy/$registry_file" -C registry-tree
+          if ! diff -qr source-tree/package registry-tree/package; then
+            echo "Refusing release: tagged package contents differ from the npm registry artifact." >&2
             exit 1
           fi
+          cp "registry-copy/$registry_file" "${{ steps.pack.outputs.file }}"
+          sha256sum "${{ steps.pack.outputs.file }}" > "${{ steps.pack.outputs.file }}.sha256"
 
       - name: Create the GitHub release with the exact npm tarball
         env:
