@@ -41,7 +41,7 @@ jobs:
         run: node scripts/assert-clean-history.js
 
       - name: Install an OIDC-capable npm CLI
-        run: npm install --global "npm@^11.5.1"
+        run: npm install --global "npm@12.0.2"
 
       - name: Verify release tag matches package version
         run: >-
