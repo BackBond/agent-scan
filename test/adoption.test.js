@@ -319,4 +319,11 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(wrongArgumentsType.result.isError, true);
   assert.match(wrongArgumentsType.result.content[0].text, /arguments must be an object/);
+
+  const nullArguments = handleMessage({
+    jsonrpc: '2.0', id: 8, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: null },
+  });
+  assert.equal(nullArguments.result.isError, true);
+  assert.match(nullArguments.result.content[0].text, /arguments must be an object/);
 });
