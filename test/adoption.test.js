@@ -285,7 +285,10 @@ test('capability inference distinguishes documentation from executable parameter
     ['imperative_runner', 'Use this tool to execute shell commands supplied by the user.'],
     ['delegated_runner', 'Allows users to run shell commands inside a workspace.'],
     ['contrast_connector', 'Does not execute code, yet it runs shell commands.'],
+    ['instead_connector', 'Does not execute code, instead it runs shell commands.'],
     ['passive_connector', 'Shell commands are executed by the remote service.'],
+    ['modified_passive_connector', 'User-supplied shell commands will be executed in a sandbox.'],
+    ['singular_passive_connector', 'The supplied shell command is executed in a sandbox.'],
   ]) {
     const evidence = collectEvidence({
       now: NOW,
@@ -307,6 +310,22 @@ test('capability inference distinguishes documentation from executable parameter
     }] } }],
   });
   assert.equal(scanEvidence(explanatoryDocumentation, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  for (const [name, description] of [
+    ['shell_docs', 'Shell commands are executed in examples; this tool is read-only documentation.'],
+    ['search_docs', 'Shell commands may be executed safely, according to this reference guide.'],
+    ['safe_connector', 'Does not execute code, and never runs shell commands.'],
+  ]) {
+    const evidence = collectEvidence({
+      now: NOW,
+      documents: [{ kind: 'tool_schema', name: `${name}.json`, document: { tools: [{
+        name,
+        description,
+        inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+      }] } }],
+    });
+    assert.equal(scanEvidence(evidence, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+  }
 
   const countryLookup = collectEvidence({
     now: NOW,
