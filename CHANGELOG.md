@@ -12,6 +12,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Map Claude Code `Bash(*)`, root `Read`/`Write`/`Edit`, and `WebFetch(domain:*)` permissions into derived wildcard scopes; distinguish writable root mounts from read-only mounts.
 - Reject undeclared or mistyped `scan_my_runtime` arguments instead of silently falling back to discovery.
 - Reduce execution false positives for explicitly read-only documentation tools and recognize executable `cmd`, `python`, and `code` parameters.
+- Fail closed on malformed network allowlists, preserve permission coverage gaps for empty Claude settings, and recognize bare Claude tool permissions plus mixed positive/negative execution descriptions.
 - Document known derived-rule overreach and keep the release free of new rules, live command execution, automatic fixes, and custom rulesets.
 
 ## 0.5.2 — 2026-08-29

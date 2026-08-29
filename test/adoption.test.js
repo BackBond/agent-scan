@@ -162,6 +162,18 @@ test('config adapters infer server identities, root scopes, and Claude Code wild
   assert.match(settingsWildcard.detail, /filesystem\.write/);
   assert.match(settingsWildcard.detail, /network\.egress/);
   assert.match(settingsWildcard.detail, /subprocess\.allow/);
+
+  const bareSettings = writeJson(directory, 'bare-settings.local.json', {
+    permissions: { allow: ['Bash', 'Read', 'Write', 'WebFetch'] },
+  });
+  const bareScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: bareSettings, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const bareWildcard = bareScan.findings.find(item => item.id === 'BB006');
+  assert.match(bareWildcard.detail, /filesystem\.read/);
+  assert.match(bareWildcard.detail, /filesystem\.write/);
+  assert.match(bareWildcard.detail, /network\.egress/);
+  assert.match(bareWildcard.detail, /subprocess\.allow/);
 });
 
 test('known Claude Code files without exported tools are recognized as coverage gaps', () => {
@@ -172,6 +184,12 @@ test('known Claude Code files without exported tools are recognized as coverage 
   assert.equal(evidence.artifacts[0].dialect, 'claude-code-settings/v1');
   assert.equal(evidence.coverage_gaps.some(item => item.status === 'unsupported'), false);
   assert.equal(evidence.coverage_gaps.some(item => item.code === 'BB-COV-CLAUDE-TOOLS-NOT-EXPORTED'), true);
+  assert.equal(evidence.coverage_gaps.some(item => item.code === 'BB-COV-MISSING-PERMISSIONS'), true);
+
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-code', document: { permissions: [] } }],
+  }), /Claude Code permissions must be a JSON object/);
 });
 
 test('capability inference distinguishes documentation from executable parameters', () => {
@@ -196,6 +214,31 @@ test('capability inference distinguishes documentation from executable parameter
   const executableScan = scanEvidence(executable, { now: NOW });
   assert.equal(executableScan.findings.some(item => item.id === 'BB001'), true);
   assert.equal(executableScan.findings.find(item => item.id === 'BB007').affected_tools.length, 3);
+
+  const mixedDescription = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'mixed-execution.json', document: { tools: [{
+      name: 'local_runner',
+      description: 'Does not execute code remotely. Executes local shell commands supplied in input.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(mixedDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+});
+
+test('malformed MCP network allowlists fail closed instead of suppressing egress findings', () => {
+  const config = allowedDomains => ({
+    mcpServers: {
+      'vault-fetch': { command: 'mcp-server-vault-fetch', ...(allowedDomains === undefined ? {} : { allowedDomains }) },
+    },
+  });
+  const unrestricted = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'unrestricted.json', adapter: 'claude-desktop', document: config() }],
+  });
+  assert.equal(scanEvidence(unrestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), true);
+  assert.throws(() => collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-desktop', document: config(42) }],
+  }), /allowedDomains must be a string array/);
 });
 
 test('stdin accepts a live tool manifest and human output stays compact', () => {

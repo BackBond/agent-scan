@@ -13,7 +13,7 @@ const { renderHuman } = require('../lib/output.js');
 const { suggestPolicy } = require('../lib/policy.js');
 const { createPublicScanRecord, renderCompactRecord } = require('../lib/record.js');
 const { createScanReceipt, verifyScanReceipt } = require('../lib/receipt.js');
-const { meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
+const { isPromptLintFinding, meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
 const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract, SCANNER_VERSION } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
@@ -165,11 +165,9 @@ function recordScopeMode(options) {
   return hasExplicitArtifacts(options) ? 'explicit-artifacts' : 'discovery';
 }
 
-const PROMPT_LINT_IDS = new Set(['BB009', 'BB010', 'BB011']);
-
 function thresholdMet(findings, options) {
-  const promptLint = findings.filter(item => PROMPT_LINT_IDS.has(item.id));
-  const runtimeExposure = findings.filter(item => !PROMPT_LINT_IDS.has(item.id));
+  const promptLint = findings.filter(isPromptLintFinding);
+  const runtimeExposure = findings.filter(item => !isPromptLintFinding(item));
   return meetsThreshold(runtimeExposure, options.failOn) || meetsThreshold(promptLint, options.failOnPrompt);
 }
 
