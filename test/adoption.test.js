@@ -441,4 +441,14 @@ test('CLI and MCP reject oversized manifests before JSON parsing', () => {
   const response = JSON.parse(writes[0]);
   assert.equal(response.error.code, -32600);
   assert.match(response.error.message, new RegExp(`exceeds ${MAX_ARTIFACT_BYTES} bytes`));
+
+  const streamingInput = new PassThrough();
+  const streamingWrites = [];
+  startMcpServer(streamingInput, { write: chunk => streamingWrites.push(chunk) });
+  streamingInput.write(oversized);
+  assert.equal(JSON.parse(streamingWrites[0]).error.code, -32600);
+  streamingInput.write('{"jsonrpc":"2.0","id":99,"method":"ping"}\n');
+  const recovered = JSON.parse(streamingWrites[1]);
+  assert.equal(recovered.id, 99);
+  assert.deepEqual(recovered.result, {});
 });
