@@ -193,6 +193,17 @@ test('config adapters infer server identities, root scopes, and Claude Code wild
     } }],
   });
   assert.equal(scanEvidence(unrelatedArgs, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+
+  const unrelatedCommandDirectory = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'command-path.json', adapter: 'claude-desktop', document: {
+      mcpServers: {
+        notes: { command: 'C:/Users/vault/bin/node.exe', args: ['server.js'] },
+        fetch: { command: 'mcp-server-fetch' },
+      },
+    } }],
+  });
+  assert.equal(scanEvidence(unrelatedCommandDirectory, { now: NOW }).findings.some(item => item.id === 'BB002'), false);
 });
 
 test('known Claude Code files without exported tools are recognized as coverage gaps', () => {
@@ -329,6 +340,16 @@ test('capability inference distinguishes documentation from executable parameter
   const nestedScan = scanEvidence(nestedCamelCase, { now: NOW });
   assert.equal(nestedScan.findings.some(item => item.id === 'BB001'), true);
   assert.equal(nestedScan.findings.some(item => item.id === 'BB007'), true);
+
+  const wideProperties = {};
+  for (let index = 0; index < 140000; index += 1) wideProperties[`field_${index}`] = {};
+  const wideSchema = { tools: [{ name: 'wide_lookup', inputSchema: { type: 'object', properties: wideProperties } }] };
+  assert.equal(Buffer.byteLength(JSON.stringify(wideSchema)) < MAX_ARTIFACT_BYTES, true);
+  const wideEvidence = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'wide-schema.json', document: wideSchema }],
+  });
+  assert.equal(scanEvidence(wideEvidence, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
 });
 
 test('malformed MCP network allowlists fail closed instead of suppressing egress findings', () => {

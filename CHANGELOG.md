@@ -15,6 +15,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Distinguish constrained data fields such as country codes from executable inputs while recognizing active execution descriptions in ordinary prose.
 - Fail closed on malformed network allowlists, preserve permission coverage gaps for empty Claude settings, and recognize bare Claude tool permissions plus mixed positive/negative execution descriptions.
 - Bound CLI stdin manifests and MCP JSON-RPC messages to 4 MiB before parsing.
+- Keep near-limit wide schemas stack-safe and restrict configured server-command inference to the documented command basename.
 - Advance the public ruleset identity to `backbond-local-rules/1.2.1` so changed rule bytes never reuse the 1.2.0 receipt identity.
 - Document known derived-rule overreach and keep the release free of new rules, live command execution, automatic fixes, and custom rulesets.
 
