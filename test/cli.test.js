@@ -137,6 +137,19 @@ test('--record-commit writes a commit-bound v2 public record', (t) => {
   assert.match(run.stdout, new RegExp(`Commit: ${commit}`));
   assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.3/);
 
+  for (const [name, suppliedCommit] of [
+    ['uppercase', 'ABCDEF0123456789ABCDEF0123456789ABCDEF01'],
+    ['sha256', 'A'.repeat(64)],
+  ]) {
+    const normalizedPath = path.join(directory, `${name}-record.json`);
+    const normalized = spawnSync(process.execPath, [CLI, 'scan',
+      '--tool-schema', hardened.tools, '--permissions', hardened.permissions, '--trace', hardened.trace,
+      '--record-public', normalizedPath, '--record-commit', suppliedCommit,
+    ], { encoding: 'utf8' });
+    assert.equal(normalized.status, 0, normalized.stderr);
+    assert.equal(JSON.parse(fs.readFileSync(normalizedPath, 'utf8')).source.git_commit, suppliedCommit.toLowerCase());
+  }
+
   const missingRecord = spawnSync(process.execPath, [CLI, 'scan', '--record-commit', commit], { encoding: 'utf8' });
   assert.equal(missingRecord.status, 2);
   assert.match(missingRecord.stderr, /require --record-public/);

@@ -139,6 +139,18 @@ test('config adapters infer server identities, root scopes, and Claude Code wild
   assert.match(wildcard.detail, /network\.egress/);
   assert.doesNotMatch(JSON.stringify({ desktopEvidence, desktopScan }), /MUST_NOT_SURVIVE/);
 
+  const readOnlyDesktop = writeJson(directory, 'claude_desktop_read_only_config.json', {
+    mcpServers: {
+      filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/', '--read-only'] },
+    },
+  });
+  const readOnlyScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: readOnlyDesktop, adapter: 'claude-desktop' }],
+  }), { now: NOW });
+  const readOnlyWildcard = readOnlyScan.findings.find(item => item.id === 'BB006');
+  assert.match(readOnlyWildcard.detail, /filesystem\.read/);
+  assert.doesNotMatch(readOnlyWildcard.detail, /filesystem\.write/);
+
   const settings = writeJson(directory, 'settings.local.json', {
     permissions: { allow: ['Bash(*)', 'Read(//**)', 'Edit(//**)', 'WebFetch(domain:*)'] },
   });
@@ -326,4 +338,18 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(nullArguments.result.isError, true);
   assert.match(nullArguments.result.content[0].text, /arguments must be an object/);
+
+  const wrongSuggestPolicyType = handleMessage({
+    jsonrpc: '2.0', id: 9, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { suggest_policy: 'yes' } },
+  });
+  assert.equal(wrongSuggestPolicyType.result.isError, true);
+  assert.match(wrongSuggestPolicyType.result.content[0].text, /suggest_policy must be a boolean/);
+
+  const wrongEmitRecordType = handleMessage({
+    jsonrpc: '2.0', id: 10, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { emit_record: 1 } },
+  });
+  assert.equal(wrongEmitRecordType.result.isError, true);
+  assert.match(wrongEmitRecordType.result.content[0].text, /emit_record must be a boolean/);
 });
