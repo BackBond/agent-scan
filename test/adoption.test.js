@@ -117,6 +117,75 @@ test('messy non-BackBond fixtures produce named findings with derived evidence',
   assert.equal(scanEvidence(trustedFetch, { now: NOW }).findings.some(item => item.id === 'BB012'), false);
 });
 
+test('config adapters infer server identities, root scopes, and Claude Code wildcards', (t) => {
+  const directory = tempDirectory(t);
+  const desktop = writeJson(directory, 'claude_desktop_config.json', {
+    mcpServers: {
+      filesystem: { command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/'] },
+      shell: { command: 'mcp-server-shell' },
+      fetch: { command: 'mcp-server-fetch' },
+      onepassword: { command: 'mcp-server-1password', env: { OP_SERVICE_ACCOUNT_TOKEN: 'MUST_NOT_SURVIVE' } },
+    },
+  });
+  const desktopEvidence = collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: desktop, adapter: 'claude-desktop' }],
+  });
+  const desktopScan = scanEvidence(desktopEvidence, { now: NOW });
+  assert.equal(desktopScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(desktopScan.findings.some(item => item.id === 'BB002'), true);
+  const wildcard = desktopScan.findings.find(item => item.id === 'BB006');
+  assert.match(wildcard.detail, /filesystem\.read/);
+  assert.match(wildcard.detail, /filesystem\.write/);
+  assert.match(wildcard.detail, /network\.egress/);
+  assert.doesNotMatch(JSON.stringify({ desktopEvidence, desktopScan }), /MUST_NOT_SURVIVE/);
+
+  const settings = writeJson(directory, 'settings.local.json', {
+    permissions: { allow: ['Bash(*)', 'Read(//**)', 'Edit(//**)', 'WebFetch(domain:*)'] },
+  });
+  const settingsScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: settings, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const settingsWildcard = settingsScan.findings.find(item => item.id === 'BB006');
+  assert.match(settingsWildcard.detail, /filesystem\.read/);
+  assert.match(settingsWildcard.detail, /filesystem\.write/);
+  assert.match(settingsWildcard.detail, /network\.egress/);
+  assert.match(settingsWildcard.detail, /subprocess\.allow/);
+});
+
+test('known Claude Code files without exported tools are recognized as coverage gaps', () => {
+  const evidence = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: '.claude.json', adapter: 'claude-code', document: {} }],
+  });
+  assert.equal(evidence.artifacts[0].dialect, 'claude-code-settings/v1');
+  assert.equal(evidence.coverage_gaps.some(item => item.status === 'unsupported'), false);
+  assert.equal(evidence.coverage_gaps.some(item => item.code === 'BB-COV-CLAUDE-TOOLS-NOT-EXPORTED'), true);
+});
+
+test('capability inference distinguishes documentation from executable parameters', () => {
+  const documentation = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'docs.json', document: { tools: [{
+      name: 'handbook_search',
+      description: 'Returns the list of shell commands documented in the handbook. Read-only, no execution.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(documentation, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
+
+  const executable = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'exec.json', document: { tools: [
+      { name: 'runner_a', inputSchema: { type: 'object', properties: { cmd: { type: 'string' } } } },
+      { name: 'runner_b', inputSchema: { type: 'object', properties: { python: { type: 'string' } } } },
+      { name: 'runner_c', inputSchema: { type: 'object', properties: { code: { type: 'string' } } } },
+    ] } }],
+  });
+  const executableScan = scanEvidence(executable, { now: NOW });
+  assert.equal(executableScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(executableScan.findings.find(item => item.id === 'BB007').affected_tools.length, 3);
+});
+
 test('stdin accepts a live tool manifest and human output stays compact', () => {
   const manifest = fs.readFileSync(path.join(ROOT, 'fixtures', 'wild', 'mcp-shell-tools.json'), 'utf8');
   const run = spawnSync(process.execPath, [CLI, 'scan', '--stdin'], { input: manifest, encoding: 'utf8' });
@@ -190,6 +259,21 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   assert.equal(TOOL.inputSchema.required, undefined);
   const listed = handleMessage({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
   assert.equal(listed.result.tools[0].name, 'scan_my_runtime');
+  const missingLiveTools = handleMessage({
+    jsonrpc: '2.0', id: 10, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: {} },
+  });
+  assert.equal(missingLiveTools.result.isError, false);
+  assert.equal(missingLiveTools.result.structuredContent.next_action.code, 'provide_live_tools');
+  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.3 scan --stdin/);
+  assert.deepEqual(Object.keys(missingLiveTools.result.structuredContent.next_action.stdin_shape.result), ['tools']);
+  const missingLiveRecord = handleMessage({
+    jsonrpc: '2.0', id: 11, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { emit_record: true } },
+  });
+  assert.deepEqual(Object.keys(missingLiveRecord.result.structuredContent), ['record', 'next_action']);
+  assert.equal(missingLiveRecord.result.structuredContent.next_action.code, 'provide_live_tools');
+  assert.doesNotMatch(JSON.stringify(missingLiveRecord.result), /\\Users\\|\/home\//);
   const called = handleMessage({
     jsonrpc: '2.0', id: 2, method: 'tools/call',
     params: { name: 'scan_my_runtime', arguments: { tools: [{ name: 'run_shell', description: 'Execute shell command', inputSchema: { type: 'object', properties: { command: { type: 'string' } } } }], suggest_policy: true } },
@@ -214,4 +298,25 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(failedRecord.result.isError, true);
   assert.equal(failedRecord.result.content[0].text, 'agent-scan: scan failed; no public record was created');
+
+  const unknownArgument = handleMessage({
+    jsonrpc: '2.0', id: 5, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { tool_manifest: { tools: [] } } },
+  });
+  assert.equal(unknownArgument.result.isError, true);
+  assert.match(unknownArgument.result.content[0].text, /unknown argument: tool_manifest/);
+
+  const wrongToolsType = handleMessage({
+    jsonrpc: '2.0', id: 6, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: { tools: { name: 'shell' } } },
+  });
+  assert.equal(wrongToolsType.result.isError, true);
+  assert.match(wrongToolsType.result.content[0].text, /tools must be an array/);
+
+  const wrongArgumentsType = handleMessage({
+    jsonrpc: '2.0', id: 7, method: 'tools/call',
+    params: { name: 'scan_my_runtime', arguments: false },
+  });
+  assert.equal(wrongArgumentsType.result.isError, true);
+  assert.match(wrongArgumentsType.result.content[0].text, /arguments must be an object/);
 });

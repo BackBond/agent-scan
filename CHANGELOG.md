@@ -2,6 +2,18 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.3 — 2026-08-29
+
+- Make inconclusive zero-argument and argument-free MCP scans return an exact, pinned `next_action` for captured live `tools/list` input.
+- Put a five-step, cross-shell live tool export recipe directly in `--help`.
+- Separate runtime exposure gating (`--fail-on`) from description-only prompt lint (`--fail-on-prompt`) without hiding `BB009`–`BB011` findings.
+- Add opt-in commit-bound `backbond-scan-record/v2` records through `--record-commit`, while leaving unbound records on v1.
+- Infer capabilities from configured MCP server names, commands, and arguments so shell, fetch, filesystem, database, and credential-server identities cannot disappear behind a missing live export.
+- Map Claude Code `Bash(*)`, root `Read`/`Write`/`Edit`, and `WebFetch(domain:*)` permissions into derived wildcard scopes; distinguish writable root mounts from read-only mounts.
+- Reject undeclared or mistyped `scan_my_runtime` arguments instead of silently falling back to discovery.
+- Reduce execution false positives for explicitly read-only documentation tools and recognize executable `cmd`, `python`, and `code` parameters.
+- Document known derived-rule overreach and keep the release free of new rules, live command execution, automatic fixes, and custom rulesets.
+
 ## 0.5.2 — 2026-08-29
 
 - Add privacy-safe `backbond-scan-record/v1` public records through `--record-public`, with compact pasteable output and self-run/unverified assurance language.

@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { collectEvidence } = require('../lib/evidence.js');
 const {
+  COMMIT_BOUND_RECORD_PROTOCOL,
   createPublicScanRecord,
   renderCompactRecord,
   verifyPublicScanRecord,
@@ -90,4 +91,22 @@ test('record integrity detects tampering', () => {
   const record = createPublicScanRecord(scan, createScanReceipt(scan));
   record.result.interpretation = 'findings';
   assert.equal(verifyPublicScanRecord(record), false);
+});
+
+test('commit-bound records use v2, retain v1 verification, and bind the full commit', () => {
+  const scan = fixtureScan('hardened');
+  const receipt = createScanReceipt(scan);
+  const v1 = createPublicScanRecord(scan, receipt);
+  const commit = 'abcdef0123456789abcdef0123456789abcdef01';
+  const v2 = createPublicScanRecord(scan, receipt, { commit });
+
+  assert.equal(verifyPublicScanRecord(v1), true);
+  assert.equal(v2.protocol, COMMIT_BOUND_RECORD_PROTOCOL);
+  assert.equal(v2.source.git_commit, commit);
+  assert.equal(verifyPublicScanRecord(v2), true);
+  assert.match(renderCompactRecord(v2), new RegExp(`Commit: ${commit}`));
+
+  v2.source.git_commit = '0000000000000000000000000000000000000000';
+  assert.equal(verifyPublicScanRecord(v2), false);
+  assert.throws(() => createPublicScanRecord(scan, receipt, { commit: 'main' }), /lowercase/);
 });
