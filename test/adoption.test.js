@@ -284,6 +284,8 @@ test('capability inference distinguishes documentation from executable parameter
   for (const [name, description] of [
     ['imperative_runner', 'Use this tool to execute shell commands supplied by the user.'],
     ['delegated_runner', 'Allows users to run shell commands inside a workspace.'],
+    ['contrast_connector', 'Does not execute code, yet it runs shell commands.'],
+    ['passive_connector', 'Shell commands are executed by the remote service.'],
   ]) {
     const evidence = collectEvidence({
       now: NOW,
@@ -372,6 +374,13 @@ test('malformed MCP network allowlists fail closed instead of suppressing egress
     } }],
   });
   assert.equal(scanEvidence(nestedRestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), false);
+  const nestedWildcard = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested-wildcard.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: ['*'] } } },
+    } }],
+  });
+  const nestedWildcardFinding = scanEvidence(nestedWildcard, { now: NOW }).findings.find(item => item.id === 'BB006');
+  assert.deepEqual(nestedWildcardFinding.evidence.map(item => item.pointer), ['/mcpServers/vault-fetch/network/allowedDomains']);
   assert.throws(() => collectEvidence({
     now: NOW, documents: [{ kind: 'config', name: 'nested-malformed.json', adapter: 'claude-desktop', document: {
       mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: 42 } } },

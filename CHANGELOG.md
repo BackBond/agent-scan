@@ -13,6 +13,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Reject undeclared or mistyped `scan_my_runtime` arguments instead of silently falling back to discovery.
 - Reduce execution false positives for explicitly read-only documentation tools and recognize executable `cmd`, `python`, and `code` parameters.
 - Distinguish constrained data fields such as country codes from executable inputs while recognizing active execution descriptions in ordinary prose.
+- Recognize passive and contrastive execution descriptions without turning explanatory documentation into execution findings.
 - Fail closed on malformed network allowlists, preserve permission coverage gaps for empty Claude settings, and recognize bare Claude tool permissions plus mixed positive/negative execution descriptions.
 - Bound CLI stdin manifests and MCP JSON-RPC messages to 4 MiB before parsing.
 - Keep near-limit wide schemas stack-safe and restrict configured server-command inference to the documented command basename.
