@@ -18,6 +18,7 @@ const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract, SCANNER_VERSION } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
 const { safeInline } = require('../lib/text.js');
+const { createVetResult, renderVetHuman } = require('../lib/vet-tools.js');
 
 function usage() {
   process.stdout.write(`@backbond/agent-scan — static, local AI-agent tool scanner
@@ -25,6 +26,8 @@ function usage() {
 Usage:
   agent-scan scan                         Auto-discover and scan known local agent configs.
   agent-scan scan --stdin                 Read a live MCP/OpenAI/Anthropic tool manifest.
+  agent-scan vet-tools --stdin            Vet a proposed tool manifest before attachment.
+  agent-scan vet-tools --tool-schema <file>
   agent-scan scan [artifact options]      Scan intentionally exported evidence.
   agent-scan inspect [artifact options]
   agent-scan mcp                          Serve scan_my_runtime over MCP stdio.
@@ -43,6 +46,12 @@ Live tools/list recipe:
   3. Expected shape: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
   4. POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin --require-coverage < tools-list.json
   5. PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} scan --stdin --require-coverage
+
+Pre-attachment gate:
+  POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} vet-tools --stdin < tools-list.json
+  PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} vet-tools --stdin
+  Decisions: block (exit 1), no_blocking_finding (exit 0), review for insufficient profile evidence (exit 3).
+  Scope: tool metadata and composition only; never a runtime safety determination.
 
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
@@ -76,7 +85,7 @@ function parseArgs(argv) {
     command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high', failOnPrompt: 'none',
     requireCoverage: false, recordIncludeToolNames: false, recordIncludeFingerprints: false,
     toolSchemaPath: null, permissionsPath: null, tracePath: null, configPaths: [],
-    receiptPath: null, signingKeyPath: null, recordPath: null, recordCommit: null,
+    receiptPath: null, signingKeyPath: null, recordPath: null, recordCommit: null, provided: new Set(),
   };
   const paths = {
     '--input': 'input', '--tool-schema': 'toolSchemaPath', '--permissions': 'permissionsPath',
@@ -85,6 +94,7 @@ function parseArgs(argv) {
   };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
+    if (argument.startsWith('--')) options.provided.add(argument);
     if (argument === '--help' || argument === '-h') options.command = 'help';
     else if (argument === '--json') options.json = true;
     else if (argument === '--sarif') options.sarif = true;
@@ -117,6 +127,13 @@ function parseArgs(argv) {
   }
   if (options.recordCommit) options.recordCommit = options.recordCommit.toLowerCase();
   return options;
+}
+
+function validateVetOptions(options) {
+  const allowed = new Set(['--stdin', '--tool-schema', '--json']);
+  const unsupported = [...options.provided].filter(argument => !allowed.has(argument));
+  if (unsupported.length) throw new Error(`vet-tools does not accept ${unsupported.join(', ')}`);
+  if (options.stdin === Boolean(options.toolSchemaPath)) throw new Error('vet-tools requires exactly one of --stdin or --tool-schema <file>');
 }
 
 async function readStdin() {
@@ -197,7 +214,19 @@ async function main() {
       if (!valid) process.exitCode = 1;
       return;
     }
-    if (!['scan', 'inspect'].includes(options.command)) throw new Error(`unknown command: ${options.command}`);
+    if (!['scan', 'inspect', 'vet-tools'].includes(options.command)) throw new Error(`unknown command: ${options.command}`);
+    if (options.command === 'vet-tools') {
+      validateVetOptions(options);
+      const documents = await loadStdinManifest(options);
+      const now = new Date();
+      const evidence = collectEvidence({ now, documents, toolSchemaPath: options.toolSchemaPath });
+      const scan = scanEvidence(evidence, { now });
+      const result = createVetResult(scan, evidence);
+      if (options.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      else process.stdout.write(renderVetHuman(result));
+      process.exitCode = result.decision === 'block' ? 1 : result.decision === 'review' ? 3 : 0;
+      return;
+    }
     if (options.command === 'inspect' && (options.recordPath || options.requireCoverage)) {
       throw new Error('--record-public and --require-coverage are scan options');
     }

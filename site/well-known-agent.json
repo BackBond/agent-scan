@@ -7,7 +7,7 @@
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.5.4",
+  "version": "0.5.5",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "capabilities": {
     "streaming": false,
@@ -21,6 +21,12 @@
       "name": "Scan my runtime evidence",
       "description": "Run the open local rule pack and create a tamper-evident receipt or redacted self-run public record.",
       "tags": ["agent-security", "static-analysis", "receipt", "scan-record"]
+    },
+    {
+      "id": "vet_tools_before_attach",
+      "name": "Vet tools before attaching them",
+      "description": "Return a scoped static block, review, or no-blocking-finding decision for a supplied tool manifest.",
+      "tags": ["agent-security", "pre-attachment", "mcp", "static-analysis"]
     }
   ]
 }
