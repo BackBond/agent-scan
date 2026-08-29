@@ -175,6 +175,24 @@ test('config adapters infer server identities, root scopes, and Claude Code wild
   assert.match(bareWildcard.detail, /filesystem\.write/);
   assert.match(bareWildcard.detail, /network\.egress/);
   assert.match(bareWildcard.detail, /subprocess\.allow/);
+
+  const bypassAndScoped = writeJson(directory, 'bypass-and-scoped.json', {
+    permissions: { defaultMode: 'bypassPermissions', allow: ['Read(/workspace/**)'] },
+  });
+  const bypassScan = scanEvidence(collectEvidence({
+    now: NOW, artifactPaths: [{ kind: 'config', path: bypassAndScoped, adapter: 'claude-code' }],
+  }), { now: NOW });
+  const bypassWildcard = bypassScan.findings.find(item => item.id === 'BB006');
+  assert.match(bypassWildcard.detail, /subprocess\.allow/);
+  assert.doesNotMatch(bypassWildcard.detail, /filesystem\.read/);
+
+  const unrelatedArgs = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'notes.json', adapter: 'claude-desktop', document: {
+      mcpServers: { notes: { command: 'node', args: ['server.js', '/workspace/notes'] } },
+    } }],
+  });
+  assert.equal(scanEvidence(unrelatedArgs, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
 });
 
 test('known Claude Code files without exported tools are recognized as coverage gaps', () => {
@@ -191,6 +209,14 @@ test('known Claude Code files without exported tools are recognized as coverage 
     now: NOW,
     documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-code', document: { permissions: [] } }],
   }), /Claude Code permissions must be a JSON object/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'bad-allow.json', adapter: 'claude-code', document: { permissions: { allow: 'Bash' } } }],
+  }), /permissions\.allow must be an array/);
+  assert.throws(() => collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'config', name: 'bad-mode.json', adapter: 'claude-code', document: { permissions: { defaultMode: true } } }],
+  }), /permissions\.defaultMode must be a string/);
 });
 
 test('capability inference distinguishes documentation from executable parameters', () => {
@@ -254,6 +280,20 @@ test('capability inference distinguishes documentation from executable parameter
     }] } }],
   });
   assert.equal(scanEvidence(sqlQuery, { now: NOW }).findings.some(item => item.id === 'BB007'), true);
+
+  const nestedCamelCase = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'nested-camel.json', document: { tools: [{
+      name: 'runner',
+      inputSchema: { type: 'object', properties: { payload: { anyOf: [
+        { type: 'object', properties: { pythonCode: { type: 'string' } } },
+        { type: 'null' },
+      ] } } },
+    }] } }],
+  });
+  const nestedScan = scanEvidence(nestedCamelCase, { now: NOW });
+  assert.equal(nestedScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(nestedScan.findings.some(item => item.id === 'BB007'), true);
 });
 
 test('malformed MCP network allowlists fail closed instead of suppressing egress findings', () => {
@@ -268,6 +308,18 @@ test('malformed MCP network allowlists fail closed instead of suppressing egress
   assert.equal(scanEvidence(unrestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), true);
   assert.throws(() => collectEvidence({
     now: NOW, documents: [{ kind: 'config', name: 'malformed.json', adapter: 'claude-desktop', document: config(42) }],
+  }), /allowedDomains must be a string array/);
+
+  const nestedRestricted = collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: ['api.example.com'] } } },
+    } }],
+  });
+  assert.equal(scanEvidence(nestedRestricted, { now: NOW }).findings.some(item => item.id === 'BB002'), false);
+  assert.throws(() => collectEvidence({
+    now: NOW, documents: [{ kind: 'config', name: 'nested-malformed.json', adapter: 'claude-desktop', document: {
+      mcpServers: { 'vault-fetch': { command: 'mcp-server-vault-fetch', network: { allowedDomains: 42 } } },
+    } }],
   }), /allowedDomains must be a string array/);
 });
 
