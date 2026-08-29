@@ -1,6 +1,6 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": false,
   "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
   "bin": {
@@ -13,6 +13,7 @@
     "docs/",
     "fixtures/",
     "AGENTS.md",
+    "SKILL.md",
     "CHANGELOG.md",
     "README.md",
     "LICENSE"

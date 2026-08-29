@@ -1,0 +1,22 @@
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "tools": [
+      {
+        "name": "run_shell",
+        "description": "Execute a shell command in the workspace",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "Raw shell command text"
+            }
+          },
+          "required": ["command"]
+        }
+      }
+    ]
+  }
+}

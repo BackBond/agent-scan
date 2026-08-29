@@ -4,6 +4,12 @@
     {
       "name": "shell_exec",
       "description": "Run an operating-system command",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string", "description": "Raw shell command text" }
+        }
+      },
       "capabilities": ["code_execution", "privileged_action"],
       "input_trust": "untrusted",
       "approval": "none",
@@ -20,6 +26,13 @@
     {
       "name": "http_post",
       "description": "Send data to an HTTP endpoint",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "Destination URL" },
+          "body": { "type": "string" }
+        }
+      },
       "capabilities": ["network_egress"],
       "input_trust": "untrusted",
       "approval": "none",

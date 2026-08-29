@@ -25,7 +25,7 @@ test('vulnerable fixture exits 1 with all expected finding IDs', () => {
   const run = spawnSync(process.execPath, scanArgs(fixturePaths('vulnerable')), { encoding: 'utf8' });
   assert.equal(run.status, 1, run.stderr);
   const output = JSON.parse(run.stdout);
-  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006']);
+  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008']);
   assert.equal(output.coverage.status, 'complete');
 });
 
@@ -99,6 +99,9 @@ test('invalid inputs and removed analyzer/network options exit 2', (t) => {
   const removed = spawnSync(process.execPath, [CLI, 'scan', '--tool-schema', fixturePaths('hardened').tools, '--analyzer', 'anything'], { encoding: 'utf8' });
   assert.equal(removed.status, 2);
   assert.match(removed.stderr, /unknown option/);
-  const empty = spawnSync(process.execPath, [CLI, 'scan', '--json'], { encoding: 'utf8' });
-  assert.equal(empty.status, 2);
+  const empty = spawnSync(process.execPath, [CLI, 'scan', '--json'], {
+    encoding: 'utf8', cwd: directory, env: { ...process.env, USERPROFILE: directory, APPDATA: directory },
+  });
+  assert.equal(empty.status, 0, empty.stderr);
+  assert.equal(JSON.parse(empty.stdout).discovery.protocol, 'backbond-discovery-plan/v1');
 });

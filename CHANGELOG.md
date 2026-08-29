@@ -2,6 +2,19 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.1 — 2026-08-29
+
+- Make `scan` with no artifact arguments discover bounded project and user MCP configuration for Claude, Cursor, VS Code, Windsurf, and Gemini.
+- Add `scan_my_runtime` over a dependency-free MCP stdio server and accept live tool manifests through `--stdin`.
+- Add OpenAPI 3.x tool ingestion and OpenTelemetry OTLP JSON trace ingestion.
+- Conservatively infer capabilities and input exposure from tool names, descriptions, and parameter schemas; label every inferred finding as `derived`.
+- Add semantic rules `BB007` for unconstrained command/expression/SQL input and `BB008` for unvalidated destinations.
+- Replace verbose default output with finding IDs, affected tools, immediate `Stop` instructions, and compact coverage gaps.
+- Add non-enforcing `--suggest-policy` actions and review-required patch templates; no automatic mutation is implemented.
+- Add SARIF 2.1.0 output and fix receipts to bind evidence to both artifact kind and name when multiple inputs are scanned.
+- Add three anonymized non-BackBond fixtures for MCP tool lists, VS Code wildcard sandbox scopes, and Gemini trusted tools.
+- Ship pinned `AGENTS.md` and `SKILL.md` instructions that keep traces local and distinguish this package from similarly named scanners.
+
 ## 0.5.0 — 2026-08-29
 
 - Replace the capture-only analyzer bridge with a dependency-free local deterministic scanner.

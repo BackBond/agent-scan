@@ -32,9 +32,10 @@ function files(directory) {
 test('package allowlist ships the open engine, rule pack, docs, and fixtures', () => {
   const manifest = require('../package.json');
   assert.equal(manifest.private, false);
-  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
+  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
-    'assessment.js', 'canonical.js', 'evidence.js', 'receipt.js', 'rules.js', 'scanner.js', 'teaser.js',
+    'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'mcp-server.js', 'output.js',
+    'policy.js', 'receipt.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js',
   ]);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'vulnerable', 'tool-schema.json')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'hardened', 'tool-schema.json')), true);
@@ -57,7 +58,7 @@ test('published executable sources contain no private fingerprints or execution/
 
 test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.5.0');
+  assert.equal(manifest.version, '0.5.1');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);

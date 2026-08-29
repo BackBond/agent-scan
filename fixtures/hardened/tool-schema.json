@@ -4,6 +4,12 @@
     {
       "name": "shell_exec",
       "description": "Run an allowlisted maintenance command",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "operation": { "type": "string", "enum": ["health_check", "rotate_logs"] }
+        }
+      },
       "capabilities": ["code_execution", "privileged_action"],
       "input_trust": "trusted",
       "approval": "enforced",
@@ -20,6 +26,13 @@
     {
       "name": "http_post",
       "description": "Send to an allowlisted internal status endpoint",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "destination": { "type": "string", "enum": ["internal_status"] },
+          "body": { "type": "string" }
+        }
+      },
       "capabilities": ["network_egress"],
       "input_trust": "trusted",
       "approval": "enforced",

@@ -1,89 +1,140 @@
 # BackBond agent scan
 
-`@backbond/agent-scan` is a dependency-free, local deterministic security scanner for AI-agent tool schemas, runtime permissions, and exported traces.
-
-Version 0.5.0 runs an open rule pack from npm and returns named findings with evidence references and remediation. It needs no private analyzer, makes no network request, and does not turn agent claims into a score.
-
-## Run a scan
-
-Pin the version in local and CI runs:
+Static only: `@backbond/agent-scan@0.5.1` inspects the tool and agent configuration already on your machine. It does not run tools, probe a live agent, upload traces, contact a hosted service, or execute a second binary.
 
 ```bash
-npx @backbond/agent-scan@0.5.0 scan \
-  --tool-schema tools.json \
-  --permissions permissions.json \
-  --trace runtime-trace.json \
-  --fail-on high \
-  --receipt backbond-scan-receipt.json \
-  --json
+npx @backbond/agent-scan@0.5.1 scan
 ```
 
-Exit codes are stable for CI:
+From this repository, prove the whole rule pack with the two fixtures:
 
-- `0`: no finding meets the selected threshold;
-- `1`: at least one finding meets the selected threshold; and
-- `2`: invalid input or scanner failure.
+```bash
+node bin/agent-scan.js scan --tool-schema fixtures/vulnerable/tool-schema.json --permissions fixtures/vulnerable/permissions.json --trace fixtures/vulnerable/trace.json
+node bin/agent-scan.js scan --tool-schema fixtures/hardened/tool-schema.json --permissions fixtures/hardened/permissions.json --trace fixtures/hardened/trace.json
+```
 
-`--fail-on` accepts `critical`, `high`, `medium`, `low`, or `none` and defaults to `high`. A normal local scan always finishes without an external analysis phase.
+The vulnerable case exits `1` with `BB001`–`BB008`. The hardened case exits `0` with no findings and complete coverage.
 
-## What it checks
+## Zero-config first run
 
-The 0.5.0 rule pack is public and version-pinned:
+`scan` with no artifact arguments performs bounded discovery. It checks project ancestors and known user paths for:
+
+- Claude Desktop and Claude Code MCP settings;
+- Cursor `.cursor/mcp.json`;
+- VS Code `.vscode/mcp.json`, portable `.mcp.json`, and user MCP settings;
+- Windsurf `~/.codeium/windsurf/mcp_config.json`;
+- Gemini CLI `.gemini/settings.json`; and
+- nearby `AGENTS.md`, `SKILL.md`, `.claude`, and `.cursor` instruction files, which are listed but never interpreted as security controls.
+
+Discovery reads exact known files; it does not recursively crawl the home directory. A configured MCP server without an exported live tool list produces `BB-COV-MCP-TOOLS-NOT-EXPORTED`, not a silent pass.
+
+The default output is deliberately short:
+
+```text
+3 findings (1 critical, 2 high)
+BB002 vault_read [derived]
+  Stop: Do not attach secret-reading and unrestricted network tools to the same agent.
+BB001 shell_exec [derived]
+  Stop: Disable the named executor for this session, or wrap it with a narrow allowlist.
+Coverage: approval enforcement is not observable for 4 tools
+```
+
+`[derived]` means a capability, trust boundary, wildcard, or schema risk was inferred from names, descriptions, or parameter schemas. Derived evidence is useful triage, not a claim that the runtime declared that fact.
+
+## Scan the live tool list
+
+Pipe an MCP `tools/list` response, an OpenAI function-tool list, or an Anthropic tool list directly:
+
+```bash
+agent-scan scan --stdin < tools.json
+```
+
+Or expose the dependency-free MCP stdio server:
+
+```json
+{
+  "mcpServers": {
+    "backbond-agent-scan": {
+      "command": "npx",
+      "args": ["-y", "@backbond/agent-scan@0.5.1", "mcp"]
+    }
+  }
+}
+```
+
+It provides `scan_my_runtime` with no required arguments. A caller may supply its live `tools` array; otherwise the tool uses the same bounded discovery plan. Pin `0.5.1`—do not replace it with `@latest`.
+
+## Inputs and adapters
+
+Explicit inputs remain available when discovery cannot see the runtime:
+
+```bash
+agent-scan scan \
+  --config claude_desktop_config.json \
+  --tool-schema tools.json \
+  --permissions permissions.json \
+  --trace otel-export.json \
+  --fail-on high
+```
+
+Supported tool inputs are `backbond-tool-schema/v1`, MCP `tools/list`, OpenAI/Anthropic tool arrays, and OpenAPI 3.x JSON. Supported traces are `backbond-trace/v1` and OpenTelemetry OTLP JSON. Raw span attributes, prompts, tool arguments, environment values, and config bodies are not copied into results or receipts.
+
+Raw evidence bodies never leave the machine through this package.
+
+LangChain, CrewAI, and AutoGen can use the scanner today by exporting their runtime tool list to one of the generic formats or stdin. Version 0.5.1 does not execute or import arbitrary framework code to discover tools; first-party code extractors need framework-specific isolation and belong after this deterministic intake.
+
+## Findings
+
+The public `backbond-local-rules/1.1.0` pack contains:
 
 - `BB001` — untrusted input can reach code or shell execution;
 - `BB002` — secret access is combined with unrestricted egress;
 - `BB003` — a consequential action lacks enforced approval;
 - `BB004` — untrusted content can reach persistent memory;
-- `BB005` — a privileged action lacks observable audit evidence; and
-- `BB006` — filesystem, subprocess, credential, or network permission scopes contain wildcards.
+- `BB005` — a privileged action lacks observable audit evidence;
+- `BB006` — filesystem, subprocess, credential, or network scopes contain wildcards;
+- `BB007` — a tool accepts unconstrained command, expression, code, or SQL text; and
+- `BB008` — a tool accepts an unvalidated URL or destination.
 
-Every finding includes severity, evidence pointers, affected tool identities when available, and a concrete remediation. The rules describe detected configuration exposure; they do not claim to enforce the remediation.
+Each finding includes a stable ID, severity, affected tools, evidence pointers, evidence quality, an immediate `Stop` instruction, and remediation. See [docs/RULES.md](docs/RULES.md).
 
-See [docs/RULES.md](docs/RULES.md) for the complete rule contract.
+Three anonymized non-BackBond examples in [`fixtures/wild`](fixtures/wild) prove that findings fire on MCP, VS Code, and Gemini-shaped files rather than only on canonical fixtures.
 
-## Supported evidence
+## Agent-safe remediation loop
 
-Tool schemas:
-
-- `backbond-tool-schema/v1`;
-- OpenAI function-tool arrays;
-- Anthropic tool arrays; and
-- MCP `tools/list` results.
-
-Runtime controls and traces use the explicit `backbond-permissions/v1` and `backbond-trace/v1` dialects. Plain tool formats do not normally encode runtime-enforced approval, audit, or permission scope. When those facts are absent, the scanner reports a coverage gap instead of inventing a finding or a pass.
-
-The canonical formats are documented in [docs/PROTOCOL.md](docs/PROTOCOL.md). Working examples ship in [`fixtures/vulnerable`](fixtures/vulnerable) and [`fixtures/hardened`](fixtures/hardened).
-
-## Prove the engine locally
-
-From this repository:
+`--suggest-policy` adds a machine-readable `backbond-policy-suggestion/v1` object:
 
 ```bash
-node bin/agent-scan.js scan \
-  --tool-schema fixtures/vulnerable/tool-schema.json \
-  --permissions fixtures/vulnerable/permissions.json \
-  --trace fixtures/vulnerable/trace.json
+agent-scan scan --suggest-policy --json
 ```
 
-That fixture exits `1` and reports `BB001` through `BB006`. Replacing `vulnerable` with `hardened` exits `0`, produces no findings, and reports complete coverage.
+It identifies tools to disable or wrap and emits review-required JSON Patch templates for supported findings. Suggestions are never applied automatically and never claim to be enforced. Placeholder patches have `safe_to_apply_automatically: false`.
 
-## Privacy and receipts
+## CI and SARIF
 
-Artifact JSON is read and normalized locally. Raw prompts, trace arguments, file bodies, secret values, and environment values are not placed in scan output or receipts and never leave the machine through this package. Receipts contain input basenames, sizes, SHA-256 hashes, detected dialects, the ruleset digest, finding IDs, severities, and evidence pointers.
+Exit codes are stable:
 
-`--signing-key` optionally signs the receipt with Ed25519. The embedded key proves integrity under that key; deciding whether to trust the key remains an operator responsibility.
+- `0`: no finding meets `--fail-on`;
+- `1`: at least one finding meets it; and
+- `2`: invalid input or scanner failure.
+
+`--fail-on` accepts `critical`, `high`, `medium`, `low`, or `none` and defaults to `high`. Use `--json` for CI data or `--sarif` for SARIF 2.1.0 suitable for GitHub Code Scanning and IDE consumers.
+
+## Receipts and permission gates
+
+`--receipt receipt.json` writes input hashes, ruleset identity, findings, and coverage gaps. `--signing-key` optionally signs the receipt with Ed25519. The signature proves integrity under that key; it does not make an inferred finding true or prove the environment safe.
+
+A gatekeeper should accept a zero-finding receipt only when coverage is `complete`, the input set matches the requested action, the exact scanner/ruleset is allowed, and the signing key is independently trusted. Partial coverage plus zero findings is not proof of safety.
 
 ```bash
-agent-scan verify-receipt --input backbond-scan-receipt.json
+agent-scan verify-receipt --input receipt.json
 ```
 
-## Optional claims
+This package is `@backbond/agent-scan`. It is not the Snyk CLI's agent scanning feature; pin the package name and version in agent instructions so the two are not confused.
 
-A `backbond-agent-teaser/v4` claim document may be supplied with `--input`. Claims are hypotheses only. They can produce contradiction annotations such as “claimed approval always, evidence shows no enforced gate.” Claims cannot create, suppress, or reduce a finding or its severity, and omitting them does not reduce artifact rule execution.
+## Deliberate 0.5.1 limits
 
-## Deliberate 0.5.0 limits
-
-This release performs static deterministic analysis of exported evidence. It has no score, behavioral challenge harness, MCP server, hosted upload, SARIF exporter, or bundled GitHub Action. Seeded runtime challenges and trace grading belong in a later release; a hosted service, if added, must consume the same finding IDs and stay opt-in.
+There is no score, hosted upload, automatic fix mode, runtime middleware, or active probe. Active challenges must execute in an isolated harness and grade runtime traces, not model self-reports; that trust boundary is intentionally deferred to v0.6.
 
 ## License
 

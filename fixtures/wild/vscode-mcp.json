@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "workspace-files": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]
+    }
+  },
+  "sandbox": {
+    "filesystem": {
+      "allowRead": ["**"],
+      "allowWrite": ["**"]
+    },
+    "network": {
+      "allowedDomains": ["*"]
+    }
+  }
+}

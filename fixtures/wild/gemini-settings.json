@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "release-control": {
+      "httpUrl": "https://mcp.internal.example/api",
+      "trust": true,
+      "includeTools": ["delete_release"]
+    }
+  }
+}

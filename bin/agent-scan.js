@@ -5,36 +5,46 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { questionSet } = require('../lib/assessment.js');
 const { sha256 } = require('../lib/canonical.js');
+const { discover } = require('../lib/discovery.js');
 const { collectEvidence, publicEvidence } = require('../lib/evidence.js');
+const { startMcpServer } = require('../lib/mcp-server.js');
+const { renderHuman } = require('../lib/output.js');
+const { suggestPolicy } = require('../lib/policy.js');
 const { createScanReceipt, verifyScanReceipt } = require('../lib/receipt.js');
 const { meetsThreshold, SEVERITY_ORDER } = require('../lib/rules.js');
+const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
 
 function usage() {
-  process.stdout.write(`@backbond/agent-scan — local deterministic AI-agent evidence scanner
+  process.stdout.write(`@backbond/agent-scan — static, local AI-agent tool scanner
 
 Usage:
-  agent-scan scan [artifact options] [--input claims.json] [--fail-on high] [--json]
+  agent-scan scan                         Auto-discover and scan known local agent configs.
+  agent-scan scan --stdin                 Read a live MCP/OpenAI/Anthropic tool manifest.
+  agent-scan scan [artifact options]      Scan intentionally exported evidence.
   agent-scan inspect [artifact options]
+  agent-scan mcp                          Serve scan_my_runtime over MCP stdio.
   agent-scan verify-receipt --input receipt.json
-  agent-scan start
 
 Artifact options:
-  --tool-schema <file>  Supported tool/function schema JSON.
+  --config <file>       Claude/Cursor/VS Code/Windsurf/Gemini MCP config (repeatable).
+  --tool-schema <file>  BackBond, MCP, OpenAI, Anthropic, or OpenAPI JSON.
   --permissions <file>  backbond-permissions/v1 JSON.
-  --trace <file>        backbond-trace/v1 JSON.
+  --trace <file>        backbond-trace/v1 or OpenTelemetry OTLP JSON.
+  --stdin               Read a live tool manifest from stdin; use --input for claims.
 
 Scan options:
-  --input <file>        Optional v4 claim document; used only for contradictions.
-  --stdin               Read the optional claim document from stdin.
+  --input <file>        Optional v4 claims; hypotheses used only for contradictions.
   --fail-on <severity>  Exit 1 at critical, high, medium, or low; none disables (default: high).
-  --receipt <file>      Write the tamper-evident scan receipt without overwriting.
-  --signing-key <file>  Optionally sign the receipt with an Ed25519 private key.
+  --receipt <file>      Write a tamper-evident receipt without overwriting.
+  --signing-key <file>  Sign the receipt with an Ed25519 private key.
+  --suggest-policy      Include non-enforcing disable/wrap and patch templates.
   --json                Emit the complete JSON result.
+  --sarif               Emit SARIF 2.1.0 for code scanning and IDEs.
 
 Exit codes: 0 below threshold, 1 threshold met, 2 invalid input or scanner failure.
-The scanner performs no network requests and requires no private analyzer.
+Static only: no network requests, second binary, automatic fixes, or active probes.
 `);
 }
 
@@ -47,21 +57,27 @@ function parseArgs(argv) {
   const command = argv[0] && !argv[0].startsWith('-') ? argv[0] : 'start';
   const rest = command === argv[0] ? argv.slice(1) : argv;
   const options = {
-    command, input: null, stdin: false, json: false, failOn: 'high',
-    toolSchemaPath: null, permissionsPath: null, tracePath: null,
+    command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high',
+    toolSchemaPath: null, permissionsPath: null, tracePath: null, configPaths: [],
     receiptPath: null, signingKeyPath: null,
   };
   const paths = {
     '--input': 'input', '--tool-schema': 'toolSchemaPath', '--permissions': 'permissionsPath',
-    '--trace': 'tracePath', '--receipt': 'receiptPath', '--signing-key': 'signingKeyPath',
-    '--fail-on': 'failOn',
+    '--trace': 'tracePath', '--receipt': 'receiptPath', '--signing-key': 'signingKeyPath', '--fail-on': 'failOn',
   };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
     if (argument === '--help' || argument === '-h') options.command = 'help';
     else if (argument === '--json') options.json = true;
+    else if (argument === '--sarif') options.sarif = true;
     else if (argument === '--stdin') options.stdin = true;
-    else if (paths[argument]) {
+    else if (argument === '--suggest-policy') options.suggestPolicy = true;
+    else if (argument === '--config') {
+      const value = rest[index + 1];
+      if (!value || value.startsWith('--')) throw new Error('--config needs a value');
+      options.configPaths.push(value);
+      index += 1;
+    } else if (paths[argument]) {
       const value = rest[index + 1];
       if (!value || value.startsWith('--')) throw new Error(`${argument} needs a value`);
       options[paths[argument]] = value;
@@ -70,7 +86,7 @@ function parseArgs(argv) {
     else throw new Error(`unexpected argument: ${argument}`);
   }
   if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOn)) throw new Error('--fail-on must be critical, high, medium, low, or none');
-  if (options.stdin && options.input) throw new Error('use either --stdin or --input, not both');
+  if (options.json && options.sarif) throw new Error('use either --json or --sarif, not both');
   return options;
 }
 
@@ -80,10 +96,20 @@ async function readStdin() {
   return input;
 }
 
-async function loadClaims(options) {
-  if (!options.stdin && !options.input) return { submission: null, metadata: null };
-  const raw = options.stdin ? await readStdin() : fs.readFileSync(options.input);
-  const bytes = Buffer.isBuffer(raw) ? raw : Buffer.from(raw, 'utf8');
+async function loadStdinManifest(options) {
+  if (!options.stdin) return [];
+  const raw = await readStdin();
+  if (!raw.trim()) throw new Error('stdin tool manifest is empty');
+  let document;
+  try { document = JSON.parse(raw); }
+  catch (error) { throw new Error(`stdin tool manifest is not valid JSON: ${error.message}`); }
+  if (document && document.protocol === 'backbond-agent-teaser/v4') throw new Error('--stdin accepts a live tool manifest; use --input <file> for claims');
+  return [{ kind: 'tool_schema', name: '<stdin>', document, raw }];
+}
+
+function loadClaims(options) {
+  if (!options.input) return { submission: null, metadata: null };
+  const bytes = fs.readFileSync(options.input);
   if (!bytes.toString('utf8').trim()) throw new Error('claim document is empty');
   let submission;
   try { submission = JSON.parse(bytes.toString('utf8')); }
@@ -91,20 +117,8 @@ async function loadClaims(options) {
   validateTeaserSubmission(submission);
   return {
     submission,
-    metadata: {
-      kind: 'claims',
-      name: options.input ? path.basename(path.resolve(options.input)) : '<stdin>',
-      bytes: bytes.length,
-      sha256: sha256(bytes),
-      dialect: submission.protocol,
-    },
+    metadata: { kind: 'claims', name: path.basename(path.resolve(options.input)), bytes: bytes.length, sha256: sha256(bytes), dialect: submission.protocol },
   };
-}
-
-function requireArtifacts(options) {
-  if (!options.toolSchemaPath && !options.permissionsPath && !options.tracePath) {
-    throw new Error('scan requires at least one of --tool-schema, --permissions, or --trace');
-  }
 }
 
 function writeNew(filename, value) {
@@ -113,18 +127,8 @@ function writeNew(filename, value) {
   return target;
 }
 
-function renderHuman(scan, threshold, receiptPath) {
-  process.stdout.write(`\nBackBond local scan: ${scan.summary.total} finding(s)\n`);
-  process.stdout.write(`Coverage: ${scan.coverage.status}${scan.coverage.gaps.length ? ` (${scan.coverage.gaps.length} gap(s))` : ''}\n`);
-  for (const item of scan.findings) {
-    process.stdout.write(`\n[${item.severity.toUpperCase()}] ${item.id} ${item.title}\n`);
-    process.stdout.write(`  ${item.detail}\n`);
-    process.stdout.write(`  Fix: ${item.remediation}\n`);
-  }
-  if (scan.claim_contradictions.length) process.stdout.write(`\nClaim contradictions: ${scan.claim_contradictions.map(item => item.code).join(', ')}\n`);
-  if (scan.coverage.gaps.length) process.stdout.write(`Coverage gaps: ${scan.coverage.gaps.map(item => item.code).join(', ')}\n`);
-  if (receiptPath) process.stdout.write(`Receipt: ${receiptPath}\n`);
-  process.stdout.write(`Threshold: ${threshold}\n\n`);
+function hasExplicitArtifacts(options) {
+  return Boolean(options.toolSchemaPath || options.permissionsPath || options.tracePath || options.configPaths.length || options.stdin);
 }
 
 async function main() {
@@ -134,13 +138,13 @@ async function main() {
   if (options.command === 'help') { usage(); return; }
   if (options.command === 'start') { process.stdout.write(`${JSON.stringify(scannerContract(), null, 2)}\n`); return; }
   if (options.command === 'questions') { process.stdout.write(`${JSON.stringify(questionSet(), null, 2)}\n`); return; }
+  if (options.command === 'mcp') { startMcpServer(); return; }
 
   try {
     if (options.command === 'verify-receipt') {
       if (options.stdin || !options.input) throw new Error('verify-receipt requires --input <file>');
-      const raw = fs.readFileSync(options.input, 'utf8');
       let receipt;
-      try { receipt = JSON.parse(raw); }
+      try { receipt = JSON.parse(fs.readFileSync(options.input, 'utf8')); }
       catch (error) { throw new Error(`receipt is not valid JSON: ${error.message}`); }
       const valid = verifyScanReceipt(receipt);
       process.stdout.write(`${JSON.stringify({ valid, protocol: receipt.protocol || null })}\n`);
@@ -148,25 +152,30 @@ async function main() {
       return;
     }
     if (!['scan', 'inspect'].includes(options.command)) throw new Error(`unknown command: ${options.command}`);
-    requireArtifacts(options);
+    const documents = await loadStdinManifest(options);
+    const plan = hasExplicitArtifacts(options) ? null : discover();
+    const artifactPaths = [
+      ...options.configPaths.map(filename => ({ kind: 'config', path: filename, adapter: 'explicit' })),
+      ...(plan ? plan.files : []),
+    ];
     const now = new Date();
     const evidence = collectEvidence({
-      now,
-      toolSchemaPath: options.toolSchemaPath,
-      permissionsPath: options.permissionsPath,
-      tracePath: options.tracePath,
+      now, documents, artifactPaths, discovery: plan,
+      toolSchemaPath: options.toolSchemaPath, permissionsPath: options.permissionsPath, tracePath: options.tracePath,
     });
     if (options.command === 'inspect') {
       process.stdout.write(`${JSON.stringify(publicEvidence(evidence), null, 2)}\n`);
       return;
     }
-    const claims = await loadClaims(options);
+    const claims = loadClaims(options);
     const scan = scanEvidence(evidence, { now, claims: claims.submission });
+    const policy = options.suggestPolicy ? suggestPolicy(scan) : null;
     const receipt = createScanReceipt(scan, { claimInput: claims.metadata, signingKeyPath: options.signingKeyPath });
     const receiptPath = options.receiptPath ? writeNew(options.receiptPath, receipt) : null;
-    const output = { ...scan, receipt, receipt_path: receiptPath };
+    const output = { ...scan, receipt, receipt_path: receiptPath, policy_suggestion: policy };
     if (options.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
-    else renderHuman(scan, options.failOn, receiptPath);
+    else if (options.sarif) process.stdout.write(`${JSON.stringify(toSarif(scan), null, 2)}\n`);
+    else process.stdout.write(renderHuman(scan, { policy, receiptPath }));
     if (meetsThreshold(scan.findings, options.failOn)) process.exitCode = 1;
   } catch (error) {
     fail(error.message);
