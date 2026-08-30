@@ -107,7 +107,7 @@ Scan and pre-attachment JSON may include `backbond-exposure-paths/v1`. `EP001`�
 
 ## Policy suggestions and SARIF
 
-`--suggest-policy` adds `backbond-policy-suggestion/v1`. Its disable/wrap actions and JSON Patch templates are suggestions only. Every patch is marked `safe_to_apply_automatically: false`; no mutation path exists in this version.
+`--suggest-policy` adds `backbond-policy-suggestion/v1`. Its disable/wrap actions and JSON Patch templates are suggestions only. `vet-tools --suggest-policy --json` can emit review-only BB007 templates for constraining free-form operations and BB013 templates for rewriting selection-manipulation text. Placeholder values are never inferred from the application. Every patch is marked `safe_to_apply_automatically: false`; no mutation path exists in this version.
 
 `--sarif` emits SARIF 2.1.0. Finding IDs are SARIF rule IDs, JSON pointers are logical locations, and evidence quality and affected tools are result properties.
 
@@ -124,6 +124,8 @@ By default, the record contains only scanner/ruleset identity, counts of input k
 ## CI thresholds
 
 `--fail-on` gates runtime-exposure findings `BB001`–`BB008` and `BB012`. Description-only prompt lint `BB009`–`BB011` and `BB013` is always reported but uses the independent `--fail-on-prompt` threshold, which defaults to `none`. This prevents capability CI from failing solely on aggressive tool copy while allowing repositories to adopt strict prompt lint explicitly.
+
+The official Action supports `mode: scan` and `mode: vet-tools`. Scan mode retains the configurable thresholds, requires complete relevant coverage, verifies explicit committed inputs, and writes a redacted v2 record. Vet mode accepts exactly one committed tool manifest, uses the fixed pre-attachment rule set and high threshold, emits privacy-safe decision, coverage, finding-count, ruleset, and commit outputs, and preserves the CLI's `0`/`1`/`3` decision exits. Vet mode does not create a public record or claim independent BackBond verification.
 
 ## Optional claim protocol
 

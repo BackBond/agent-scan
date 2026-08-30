@@ -1,10 +1,10 @@
-# BackBond Agent Scan 0.5.9 distribution kit
+# BackBond Agent Scan 0.5.10 distribution kit
 
-This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.9`. Keep every command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
+This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.10`. Keep every new command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
 
 ## Campaign objective
 
-The first launch stage ends only after five external users complete a pinned 0.5.9 run. Until then:
+The first launch stage still ends only after five external users complete a pinned 0.5.9-or-later run. Existing 0.5.9 runs count; new instructions use 0.5.10. Until then:
 
 - publish one canonical post containing the pinned command and a named finding ID;
 - do not start a multi-post content calendar;
@@ -39,19 +39,19 @@ Do not lead developer channels with insurance. Lead with the tool decision they 
 Before attachment:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json
 ```
 
 Broader inventory and coverage gate:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.9 scan --stdin --require-coverage < tools-list.json
+npx -y @backbond/agent-scan@0.5.10 scan --stdin --require-coverage < tools-list.json
 ```
 
 PowerShell:
 
 ```powershell
-Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin
+Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin
 ```
 
 ## Distribution order
@@ -85,5 +85,8 @@ BackBond's broader product is deeper assessment, continuous runtime evidence fro
 - [`design-partner-outreach.md`](design-partner-outreach.md): controlled-launch email and feedback questions.
 - [`first-five-launch.md`](first-five-launch.md): the launch gate before any follow-up content.
 - [`demo/`](demo): sanitized runnable manifests and exact demo instructions.
-- [`assets/terminal-demo-0.5.9.webm`](assets/terminal-demo-0.5.9.webm): 20-second 1280×720 demo generated from the sanitized scenarios.
+- [`schema-check-workflow.yml`](schema-check-workflow.yml): strict committed-manifest workflow template.
+- [`schema-check-badge.md`](schema-check-badge.md): honest dynamic status badge language and commercial boundary.
+- [`supply-chain-proof.md`](supply-chain-proof.md): reproducible package and standalone verification commands.
+- [`assets/terminal-demo-0.5.8.webm`](assets/terminal-demo-0.5.8.webm): 20-second 1280×720 demo generated from the sanitized scenarios.
 - [`assets/public-record-example.txt`](assets/public-record-example.txt): safe share-card example.

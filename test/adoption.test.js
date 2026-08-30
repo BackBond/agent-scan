@@ -491,7 +491,10 @@ test('policy suggestions are structured, non-enforcing, and never auto-applied',
   assert.equal(policy.actions.some(item => item.tool === 'shell_exec' && item.action === 'disable'), true);
   assert.equal(policy.actions.some(item => item.finding_id === 'BB013' && item.action === 'disable'), true);
   assert.equal(policy.patches.some(item => item.finding_id === 'BB006' && item.template === true), true);
+  assert.equal(policy.patches.some(item => item.finding_id === 'BB007' && item.patch_kind === 'constrain_free_form_operation'), true);
+  assert.equal(policy.patches.some(item => item.finding_id === 'BB013' && item.patch_kind === 'rewrite_selection_manipulation'), true);
   assert.equal(policy.patches.every(item => item.safe_to_apply_automatically === false), true);
+  assert.equal(policy.patches.filter(item => ['BB007', 'BB013'].includes(item.finding_id)).every(item => item.review_required === true), true);
 });
 
 test('MCP exposes scan_my_runtime with no required args and accepts live tools', () => {

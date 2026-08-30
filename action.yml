@@ -1,6 +1,10 @@
 name: BackBond agent-scan
-description: Verify committed scanner inputs, run the pinned local scanner, and write a redacted public record.
+description: Verify committed inputs and run either the broad scan or the fail-closed schema check.
 inputs:
+  mode:
+    description: Use scan for the broader evidence gate or vet-tools for a strict pre-attachment schema check.
+    required: false
+    default: scan
   tool-schema:
     description: Repository-relative tool schema or tools/list JSON file.
     required: false
@@ -26,8 +30,16 @@ inputs:
     required: false
     default: none
 outputs:
+  decision:
+    description: Pre-attachment decision in vet-tools mode; empty in scan mode.
+  coverage-status:
+    description: Coverage status reported by the selected mode.
+  finding-count:
+    description: Number of findings reported by the selected mode.
+  ruleset-sha256:
+    description: Public ruleset digest used by the selected mode.
   record-path:
-    description: Absolute path of the generated redacted public record.
+    description: Absolute path of the generated redacted public record in scan mode; empty in vet-tools mode.
   record-sha256:
     description: Integrity digest of the generated public record.
   commit:
