@@ -138,6 +138,12 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /cp "registry-copy\/\$registry_file" "\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /npm deprecate "@backbond\/agent-scan@0\.5\.6" "\$message"/);
   assert.match(workflow, /npm view "@backbond\/agent-scan@0\.5\.6" deprecated --json/);
+  assert.match(workflow, /if \[ "\$actual" != "\$message" \]; then\s+npm deprecate/);
+  assert.equal(
+    workflow.indexOf('npm view "@backbond/agent-scan@0.5.6" deprecated --json')
+      < workflow.indexOf('npm deprecate "@backbond/agent-scan@0.5.6" "$message"'),
+    true,
+  );
   assert.match(workflow, /node scripts\/read-json-string\.js/);
   assert.match(workflow, /node scripts\/build-standalone\.js agent-scan\.cjs/);
   assert.match(workflow, /sha256sum agent-scan\.cjs > agent-scan\.cjs\.sha256/);
