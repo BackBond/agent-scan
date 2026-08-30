@@ -8,7 +8,7 @@ const { spawnSync } = require('node:child_process');
 const { PassThrough } = require('node:stream');
 const { discover } = require('../lib/discovery.js');
 const { collectEvidence, MAX_ARTIFACT_BYTES } = require('../lib/evidence.js');
-const { handleMessage, startMcpServer, TOOL } = require('../lib/mcp-server.js');
+const { handleMessage, startMcpServer, TOOL, VET_TOOL } = require('../lib/mcp-server.js');
 const { renderHuman } = require('../lib/output.js');
 const { scanEvidence } = require('../lib/scanner.js');
 const { CLI, ROOT, tempDirectory, writeJson } = require('./helpers.js');
@@ -478,15 +478,18 @@ test('policy suggestions are structured, non-enforcing, and never auto-applied',
 
 test('MCP exposes scan_my_runtime with no required args and accepts live tools', () => {
   assert.equal(TOOL.inputSchema.required, undefined);
+  assert.deepEqual(VET_TOOL.inputSchema.required, ['tools']);
   const listed = handleMessage({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
   assert.equal(listed.result.tools[0].name, 'scan_my_runtime');
+  assert.equal(listed.result.tools[1].name, 'vet_tools_before_attach');
   const missingLiveTools = handleMessage({
     jsonrpc: '2.0', id: 10, method: 'tools/call',
     params: { name: 'scan_my_runtime', arguments: {} },
   });
   assert.equal(missingLiveTools.result.isError, false);
   assert.equal(missingLiveTools.result.structuredContent.next_action.code, 'provide_live_tools');
-  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage/);
+  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.5 scan --stdin --require-coverage/);
+  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.5 vet-tools --stdin/);
   assert.deepEqual(Object.keys(missingLiveTools.result.structuredContent.next_action.stdin_shape.result), ['tools']);
   const missingLiveRecord = handleMessage({
     jsonrpc: '2.0', id: 11, method: 'tools/call',

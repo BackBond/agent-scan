@@ -136,7 +136,7 @@ test('--record-commit writes a v2 public record with an honestly labeled source 
   assert.equal(record.source.git_commit, commit);
   assert.match(record.assurance.statement, /supplied by the caller and was not verified/);
   assert.match(run.stdout, new RegExp(`Commit \\(caller-supplied, unverified\\): ${commit}`));
-  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.4/);
+  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.5/);
 
   for (const [name, suppliedCommit] of [
     ['uppercase', 'ABCDEF0123456789ABCDEF0123456789ABCDEF01'],
@@ -243,13 +243,15 @@ test('invalid inputs and removed analyzer/network options exit 2', (t) => {
   assert.equal(emptyOutput.status, 'inconclusive');
   assert.equal(emptyOutput.next_action.code, 'provide_live_tools');
   assert.deepEqual(Object.keys(emptyOutput.next_action.stdin_shape.result), ['tools']);
-  assert.match(emptyOutput.next_action.commands.posix_or_cmd, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage/);
+  assert.match(emptyOutput.next_action.commands.posix_or_cmd, /@backbond\/agent-scan@0\.5\.5 scan --stdin --require-coverage/);
+  assert.match(emptyOutput.next_action.commands.vet_posix_or_cmd, /@backbond\/agent-scan@0\.5\.5 vet-tools --stdin/);
 });
 
 test('--help puts the pinned live tools/list recipe on the first screen', () => {
   const run = spawnSync(process.execPath, [CLI, '--help'], { encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /Expected shape: \{"jsonrpc":"2\.0","id":1,"result":\{"tools":\[\.\.\.\]\}\}/);
-  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.4 scan --stdin --require-coverage < tools-list\.json/);
+  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.5 scan --stdin --require-coverage < tools-list\.json/);
+  assert.match(run.stdout, /@backbond\/agent-scan@0\.5\.5 vet-tools --stdin < tools-list\.json/);
   assert.match(run.stdout, /Get-Content -Raw/);
 });

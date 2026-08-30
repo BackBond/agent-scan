@@ -1,6 +1,6 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "private": false,
   "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
   "bin": {
@@ -38,6 +38,8 @@
     "runtime-evidence",
     "offline-first",
     "mcp-security",
+    "mcp-tool-vetting",
+    "pre-attachment-security",
     "shareable-scan-record"
   ],
   "homepage": "https://backbond.ai",

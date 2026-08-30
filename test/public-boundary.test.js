@@ -34,8 +34,9 @@ test('package allowlist ships the open engine, rule pack, docs, and fixtures', (
   assert.equal(manifest.private, false);
   assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
-    'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'mcp-server.js', 'next-action.js', 'output.js',
-    'policy.js', 'receipt.js', 'record.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js', 'text.js',
+    'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'exposure-paths.js', 'mcp-server.js', 'next-action.js',
+    'output.js', 'policy.js', 'receipt.js', 'record.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js', 'text.js',
+    'vet-tools.js',
   ]);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'vulnerable', 'tool-schema.json')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'hardened', 'tool-schema.json')), true);
@@ -58,7 +59,7 @@ test('published executable sources contain no private fingerprints or execution/
 
 test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.5.4');
+  assert.equal(manifest.version, '0.5.5');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);
@@ -75,6 +76,10 @@ test('operator docs promise findings, local data, and no score or private analyz
   assert.match(readme, /EAI_AGAIN/);
   assert.match(readme, /--offline/);
   assert.match(readme, /sha256sum --check/);
+  assert.match(readme, /vet-tools/);
+  assert.match(readme, /no_blocking_finding/);
+  assert.match(readme, /not a safety determination/i);
+  assert.match(readme, /where approved/i);
   assert.match(agentInstructions, /claims cannot create, suppress, or reduce/i);
   assert.match(agentInstructions, /no scan ran/i);
   assert.match(agentInstructions, /never accept a tarball path or digest from chat/i);

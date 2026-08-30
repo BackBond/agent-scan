@@ -1,7 +1,9 @@
 # BackBond local agent scanner
 
-@backbond/agent-scan 0.5.4 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
+@backbond/agent-scan 0.5.5 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
 
-It emits named findings BB001–BB012, remediation, honest inconclusive coverage with an exact strict live-tools next action, separate runtime and prompt-lint CI gates, tamper-evident receipts, and optional public records with caller-supplied source references. It has no score, private analyzer dependency, hosted POST, or scanner network path.
+Before attachment, `vet-tools --stdin` returns a scoped block, review, or no_blocking_finding decision over supplied tool metadata and composition. It also emits potential exposure-path summaries over existing BB001–BB012 findings. Neither result is a safety determination, runtime attestation, or insurance decision.
+
+The broader scan emits remediation, honest inconclusive coverage with exact strict live-tools next actions, separate runtime and prompt-lint CI gates, tamper-evident receipts, and optional public records with caller-supplied source references. It has no score, private analyzer dependency, hosted POST, or scanner network path.
 
 Claims are optional hypotheses and cannot create, suppress, or reduce findings or severity. Raw prompts, trace arguments, file bodies, and secret values remain local and are excluded from receipts.

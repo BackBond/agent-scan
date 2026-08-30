@@ -2,6 +2,16 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.5 — 2026-08-30
+
+- Add the scoped `vet-tools` pre-attachment profile for MCP, OpenAI, Anthropic, and OpenAPI manifests, with fixed `block`/`review`/`no_blocking_finding` decisions and exit codes `1`/`3`/`0`.
+- Require complete tool metadata for a non-blocking profile result and state explicitly that profile completeness is not a safety determination, runtime attestation, policy enforcement fact, or insurance decision.
+- Expose the same strict profile as `vet_tools_before_attach` over the dependency-free MCP stdio server; do not fall back to discovery or accept record, receipt, threshold, or policy arguments.
+- Add `EP001`–`EP003` potential exposure-path summaries over existing findings without adding rules, changing severity, changing thresholds, or changing receipt/public-record protocols.
+- Put the pinned pre-attachment command in `--help` and incomplete-discovery next actions alongside the broader strict scan command.
+- Keep the public ruleset at `backbond-local-rules/1.2.1`; this release changes presentation and scoped workflow, not detector logic.
+- Clarify that the free package is local awareness and triage, while BackBond's separate complete solution combines deeper evaluation, continuous runtime evidence, and—where approved—financial protection. Running the package creates no coverage or eligibility implication.
+
 ## 0.5.4 — 2026-08-29
 
 - Make every generated and `--help` live `tools/list` command retain strict coverage gating with `--require-coverage`.

@@ -83,9 +83,27 @@ OpenTelemetry OTLP JSON is accepted when it contains `resourceSpans`. Tool spans
 
 ## MCP tool
 
-`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime`. The tool has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery and returns a machine-readable `next_action` containing the exact accepted `tools/list` envelope and pinned stdin commands with `--require-coverage`. Undeclared arguments and nonconforming `tools`, `suggest_policy`, or `emit_record` values return an error rather than being ignored. CLI stdin manifests and individual MCP JSON-RPC messages are capped at 4 MiB before JSON parsing. `emit_record: true` returns compact text and a redacted `backbond-scan-record/v1` in structured output; when live tools were omitted, the safe built-in `next_action` is returned alongside it. It omits the full scan, local receipt, discovery paths, artifact names, and tool names. The MCP server performs no network requests and does not execute scanned tools.
+`agent-scan mcp` speaks newline-delimited JSON-RPC over stdio and exposes `scan_my_runtime` and `vet_tools_before_attach`. `scan_my_runtime` has no required arguments. Its optional `tools` array accepts the same generic tool shapes; omitting the array uses bounded discovery and returns a machine-readable `next_action` containing the exact accepted `tools/list` envelope and pinned stdin commands for both `scan --stdin --require-coverage` and `vet-tools --stdin`. Undeclared arguments and nonconforming `tools`, `suggest_policy`, or `emit_record` values return an error rather than being ignored. CLI stdin manifests and individual MCP JSON-RPC messages are capped at 4 MiB before JSON parsing. `emit_record: true` returns compact text and a redacted `backbond-scan-record/v1` in structured output; when live tools were omitted, the safe built-in `next_action` is returned alongside it. It omits the full scan, local receipt, discovery paths, artifact names, and tool names.
+
+`vet_tools_before_attach` requires exactly one `tools` array, does not fall back to discovery, and accepts no record, receipt, threshold, or policy-suggestion arguments. It returns the same `backbond-pre-attach/v1` result as the CLI profile. The MCP server performs no network requests and does not execute scanned tools.
 
 The CLI also accepts a captured MCP `tools/list` JSON-RPC response through `scan --stdin`. It does not launch a server or execute a command discovered in configuration.
+
+## Pre-attachment profile
+
+`vet-tools --stdin` and `vet-tools --tool-schema <manifest>` emit `backbond-pre-attach/v1`. This profile is intentionally narrower than `scan`: it assesses tool identities, descriptions, supplied input schemas, and same-manifest composition using `BB001`, `BB002`, `BB004`, and `BB007`–`BB012`. A non-blocking result requires unique tool names, a description or title, and one unambiguous, analyzable object input schema per tool. Opaque references or branches, conflicting schema aliases, duplicate identities, or missing metadata return `review`; mixed supported dialect markers are invalid input. It does not assess permission enforcement, approval enforcement, audit behavior, runtime traces, or actual execution; `BB003`, `BB005`, and `BB006` are excluded from the profile.
+
+The fixed profile threshold is high. Therefore `BB009`–`BB011` block by default in this pre-attachment context even though the general scan keeps prompt lint on the separate `--fail-on-prompt` threshold. The decision and exit mapping is:
+
+- `block`, exit `1`: at least one scoped high-or-critical finding;
+- `review`, exit `3`: no blocking finding, but the supplied profile evidence is incomplete or unsupported; and
+- `no_blocking_finding`, exit `0`: no scoped high-or-critical finding and complete coverage of the metadata profile.
+
+Profile completeness is not environment completeness. `no_blocking_finding` is never a safety determination, runtime attestation, policy enforcement fact, or insurance decision. `vet-tools` intentionally cannot create a receipt or public record.
+
+## Potential exposure paths
+
+Scan and pre-attachment JSON may include `backbond-exposure-paths/v1`. `EP001`–`EP003` group existing BB findings into concise potential chains: untrusted retrieval plus privileged tools, secret access plus unrestricted egress, and untrusted input plus code execution. Paths do not add findings, severity, thresholds, receipt fields, or public-record fields. Each path states that it is inferred from static co-residence and is not an observed runtime data flow.
 
 ## Policy suggestions and SARIF
 
