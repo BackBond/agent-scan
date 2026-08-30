@@ -20,7 +20,7 @@ function vulnerableScan() {
 test('receipt records input hashes, ruleset, finding IDs, and no raw bodies', () => {
   const receipt = createScanReceipt(vulnerableScan());
   assert.equal(verifyScanReceipt(receipt), true);
-  assert.deepEqual(receipt.result.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012']);
+  assert.deepEqual(receipt.result.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012', 'BB013']);
   assert.match(receipt.ruleset.sha256, /^[a-f0-9]{64}$/);
   assert.equal(receipt.inputs.every(item => /^[a-f0-9]{64}$/.test(item.sha256)), true);
   assert.doesNotMatch(JSON.stringify(receipt), /Run an operating-system command/);

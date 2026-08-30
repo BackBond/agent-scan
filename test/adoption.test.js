@@ -67,7 +67,7 @@ test('messy non-BackBond fixtures produce named findings with derived evidence',
       { name: 'credential_status', description: 'Return whether an API key is configured', inputSchema: { type: 'object' } },
     ] } }],
   });
-  assert.equal(scanEvidence(benignDescriptions, { now: NOW }).findings.some(item => ['BB009', 'BB010', 'BB011'].includes(item.id)), false);
+  assert.equal(scanEvidence(benignDescriptions, { now: NOW }).findings.some(item => ['BB009', 'BB010', 'BB011', 'BB013'].includes(item.id)), false);
 
   const directSolicitation = collectEvidence({
     now: NOW,
@@ -316,6 +316,12 @@ test('capability inference distinguishes documentation from executable parameter
     ['shell_docs', 'Shell commands are executed in examples; this tool is read-only documentation.'],
     ['search_docs', 'Shell commands may be executed safely, according to this reference guide.'],
     ['safe_connector', 'Does not execute code, and never runs shell commands.'],
+    ['explain_shell', 'It does not execute anything; output is prose only.'],
+    ['describe_command', 'It does not run commands; output is read-only documentation.'],
+    ['lint_script', 'It does not execute scripts; output is text only.'],
+    ['analyze_sql', 'It does not evaluate SQL; output is a read-only report.'],
+    ['parse_shell', 'It does not run shell commands; output is text only.'],
+    ['preview_script', 'It does not execute scripts; output is read-only documentation.'],
   ]) {
     const evidence = collectEvidence({
       now: NOW,
@@ -327,6 +333,16 @@ test('capability inference distinguishes documentation from executable parameter
     });
     assert.equal(scanEvidence(evidence, { now: NOW }).findings.some(item => item.id === 'BB001'), false);
   }
+
+  const misleadingDocumentationName = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'misleading-docs.json', document: { tools: [{
+      name: 'explain_shell',
+      description: 'Does not execute remotely, but runs arbitrary shell commands locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    }] } }],
+  });
+  assert.equal(scanEvidence(misleadingDocumentationName, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
 
   const countryLookup = collectEvidence({
     now: NOW,
@@ -473,6 +489,7 @@ test('policy suggestions are structured, non-enforcing, and never auto-applied',
   const policy = JSON.parse(run.stdout).policy_suggestion;
   assert.equal(policy.enforced, false);
   assert.equal(policy.actions.some(item => item.tool === 'shell_exec' && item.action === 'disable'), true);
+  assert.equal(policy.actions.some(item => item.finding_id === 'BB013' && item.action === 'disable'), true);
   assert.equal(policy.patches.some(item => item.finding_id === 'BB006' && item.template === true), true);
   assert.equal(policy.patches.every(item => item.safe_to_apply_automatically === false), true);
 });

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { RULESET_DIGEST } = require('../lib/rules.js');
 const { ROOT, fixturePaths, tempDirectory } = require('./helpers.js');
 
 function npmInvocation(args, options) {
@@ -46,6 +47,8 @@ test('the packed release tarball runs with an empty npm cache and offline mode',
   const packedManifest = JSON.parse(fs.readFileSync(path.join(unpacked, 'package', 'package.json'), 'utf8'));
   const packedRegistry = JSON.parse(fs.readFileSync(path.join(unpacked, 'package', 'server.json'), 'utf8'));
   assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'check-mcp-registry.js')), false);
+  assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'build-standalone.js')), false);
+  assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'read-json-string.js')), false);
   assert.equal(packedManifest.mcpName, 'io.github.BackBond/agent-scan');
   assert.equal(packedRegistry.name, packedManifest.mcpName);
   assert.equal(packedRegistry.version, packedManifest.version);
@@ -56,7 +59,7 @@ test('the packed release tarball runs with an empty npm cache and offline mode',
     'exec', '--yes', '--offline', '--cache', path.join(directory, 'empty-target-cache'),
     `--package=${archive}`, '--', 'agent-scan', 'scan',
     '--tool-schema', fixture.tools, '--permissions', fixture.permissions, '--trace', fixture.trace,
-    '--fail-on', 'none',
+    '--fail-on', 'none', '--json',
   ], {
     cwd: runDirectory,
     encoding: 'utf8',
@@ -64,8 +67,10 @@ test('the packed release tarball runs with an empty npm cache and offline mode',
   });
 
   assert.equal(scanned.status, 0, scanned.stderr);
-  assert.match(scanned.stdout, /BB012/);
-  assert.match(scanned.stdout, /Coverage: complete/);
+  const packagedScan = JSON.parse(scanned.stdout);
+  assert.equal(packagedScan.findings.some(item => item.id === 'BB012'), true);
+  assert.equal(packagedScan.coverage.status, 'complete');
+  assert.equal(packagedScan.ruleset.sha256, RULESET_DIGEST);
   assert.doesNotMatch(`${scanned.stdout}\n${scanned.stderr}`, /EAI_AGAIN|ENETUNREACH|registry timeout/i);
 
   const mcpInput = [

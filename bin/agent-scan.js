@@ -56,7 +56,7 @@ Pre-attachment gate:
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
   --fail-on <severity>  Gate BB001-BB008 and BB012 (default: high).
-  --fail-on-prompt <severity>  Separately gate BB009-BB011 (default: none).
+  --fail-on-prompt <severity>  Separately gate BB009-BB011 and BB013 (default: none).
   --receipt <file>      Write a tamper-evident receipt without overwriting.
   --signing-key <file>  Sign the receipt with an Ed25519 private key.
   --record-public <file>  Write a redacted self-run scan record without overwriting.
@@ -219,7 +219,7 @@ async function main() {
       validateVetOptions(options);
       const documents = await loadStdinManifest(options);
       const now = new Date();
-      const evidence = collectEvidence({ now, documents, toolSchemaPath: options.toolSchemaPath });
+      const evidence = collectEvidence({ now, documents, toolSchemaPath: options.toolSchemaPath, reviewAmbiguousToolManifest: true });
       const scan = scanEvidence(evidence, { now });
       const result = createVetResult(scan, evidence);
       if (options.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);

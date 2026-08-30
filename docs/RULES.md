@@ -1,6 +1,6 @@
 # Open local rule pack
 
-Ruleset `backbond-local-rules/1.2.1` is implemented in `lib/rules.js`. Its SHA-256 digest is emitted in every scan, receipt, and public record.
+Ruleset `backbond-local-rules/1.3.0` is implemented in `lib/rules.js` and fed by the evidence inference in `lib/evidence.js`. Its SHA-256 digest is computed from canonical public rule definitions, shared rule helpers, and the normalized evidence-detector source hash, so packaging the same logic does not change its identity while behavioral changes do. A test binds the source manifest to the current evidence implementation. The digest is emitted in every scan, receipt, and public record.
 
 | ID | Severity | Requires | Finding condition |
 |---|---|---|---|
@@ -16,10 +16,11 @@ Ruleset `backbond-local-rules/1.2.1` is implemented in `lib/rules.js`. Its SHA-2
 | BB010 | high | tool description | Tool metadata asks the agent to conceal behavior from the user or operator. |
 | BB011 | high | tool description | Tool metadata directs sensitive data into a result or transmission. |
 | BB012 | high | tool inventory + input trust | A fetch-like untrusted network tool shares an agent with a privileged tool. |
+| BB013 | high | tool description | Tool metadata demands mandatory selection, invocation before responding, or exclusion of competing tools. |
 
 Rules only fire from observed supported evidence. An unknown approval or audit value causes a coverage gap for the relevant rule; it is not silently treated as safe or unsafe. Findings derived from generic schemas or config heuristics have `evidence_quality: "derived"` and are displayed with `[derived]`.
 
-`BB009`–`BB011` inspect only top-level tool titles and descriptions using narrow local patterns. Raw text is discarded after derived risk IDs and evidence pointers are created. `BB012` requires fetch-like metadata rather than treating all outbound HTTP tools as network intake, and both sides must appear in the same observed tool inventory; tools found in separate agent-client manifests are not paired.
+`BB009`–`BB011` inspect tool titles, descriptions, and schema metadata using narrow local patterns. `BB013` is deliberately restricted to the top-level tool title and description so ordinary parameter requirements are not mistaken for forced tool selection. Raw text is discarded after derived risk IDs and evidence pointers are created. `BB012` requires fetch-like metadata rather than treating all outbound HTTP tools as network intake, and both sides must appear in the same observed tool inventory; tools found in separate agent-client manifests are not paired.
 
 ### Potential exposure paths
 
@@ -29,10 +30,10 @@ Rules only fire from observed supported evidence. An unknown approval or audit v
 - `EP002`: secret access → shared agent authority → unrestricted network egress; and
 - `EP003`: untrusted input → model-selected tool call → code or shell execution.
 
-They do not affect severity or exit status and do not claim observed taint, sanitization, exploitability, or runtime data flow. The rule pack remains `backbond-local-rules/1.2.1`.
+They do not affect severity or exit status and do not claim observed taint, sanitization, exploitability, or runtime data flow. The rule pack is `backbond-local-rules/1.3.0`.
 
 ### Known heuristic overreach
 
-Derived findings can be wrong. In particular, broad third-party copy that says an image-search tool will “save” or “store” results can make an otherwise read-only `search_images` tool look like an untrusted persistent write (`BB004`). Aggressive marketing language can also resemble `BB009`–`BB011`. Explicitly read-only/no-execution documentation language suppresses the narrow execution-description heuristic, but cannot override an executable parameter schema. Confirm derived capabilities against the implementation or runtime policy; do not suppress explicit findings or coverage gaps because a neighboring derived finding overreached.
+Derived findings can be wrong. In particular, broad third-party copy that says an image-search tool will “save” or “store” results can make an otherwise read-only `search_images` tool look like an untrusted persistent write (`BB004`). Aggressive marketing language can also resemble `BB009`–`BB011` or `BB013`. Explicitly read-only/no-execution explanation, description, lint, analysis, and documentation language suppresses the narrow execution-description heuristic, but cannot override an executable parameter schema. Confirm derived capabilities against the implementation or runtime policy; do not suppress explicit findings or coverage gaps because a neighboring derived finding overreached.
 
-Every finding has an immediate `stop` instruction and longer remediation. Version 0.5.7 can emit non-enforcing policy and patch templates, but it does not apply them and does not claim to enforce approval, sandbox, allowlist, or audit controls.
+Every finding has an immediate `stop` instruction and longer remediation. Version 0.5.8 can emit non-enforcing policy and patch templates, but it does not apply them and does not claim to enforce approval, sandbox, allowlist, or audit controls.
