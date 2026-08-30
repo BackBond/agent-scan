@@ -91,7 +91,7 @@ The CLI also accepts a captured MCP `tools/list` JSON-RPC response through `scan
 
 ## Pre-attachment profile
 
-`vet-tools --stdin` and `vet-tools --tool-schema <manifest>` emit `backbond-pre-attach/v1`. This profile is intentionally narrower than `scan`: it assesses tool identities, descriptions, supplied input schemas, and same-manifest composition using `BB001`, `BB002`, `BB004`, and `BB007`–`BB012`. It does not assess permission enforcement, approval enforcement, audit behavior, runtime traces, or actual execution; `BB003`, `BB005`, and `BB006` are excluded from the profile.
+`vet-tools --stdin` and `vet-tools --tool-schema <manifest>` emit `backbond-pre-attach/v1`. This profile is intentionally narrower than `scan`: it assesses tool identities, descriptions, supplied input schemas, and same-manifest composition using `BB001`, `BB002`, `BB004`, and `BB007`–`BB012`. A non-blocking result requires a description or title plus one unambiguous, analyzable object input schema per tool. Opaque references, conflicting schema aliases, or missing metadata return `review`. It does not assess permission enforcement, approval enforcement, audit behavior, runtime traces, or actual execution; `BB003`, `BB005`, and `BB006` are excluded from the profile.
 
 The fixed profile threshold is high. Therefore `BB009`–`BB011` block by default in this pre-attachment context even though the general scan keeps prompt lint on the separate `--fail-on-prompt` threshold. The decision and exit mapping is:
 
