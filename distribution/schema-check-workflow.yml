@@ -2,8 +2,22 @@ name: BackBond Schema Check
 
 on:
   pull_request:
+    paths:
+      - 'tools-list.json'
+      - '**/tools-list.json'
+      - 'mcp.json'
+      - '**/mcp.json'
+      - '.mcp.json'
+      - '**/.mcp.json'
   push:
     branches: [main]
+    paths:
+      - 'tools-list.json'
+      - '**/tools-list.json'
+      - 'mcp.json'
+      - '**/mcp.json'
+      - '.mcp.json'
+      - '**/.mcp.json'
 
 permissions:
   contents: read

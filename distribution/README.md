@@ -4,7 +4,7 @@ This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.10`. Keep 
 
 ## Campaign objective
 
-The first launch stage still ends only after five external users complete a pinned 0.5.9-or-later run. Existing 0.5.9 runs count; new instructions use 0.5.10. Until then:
+The first launch stage ends only after five external users attempt the pinned 0.5.10 command and the checklist in [`first-five-launch.md`](first-five-launch.md) is complete. Until then:
 
 - publish one canonical post containing the pinned command and a named finding ID;
 - do not start a multi-post content calendar;
@@ -84,6 +84,7 @@ BackBond's broader product is deeper assessment, continuous runtime evidence fro
 - [`launch-copy.md`](launch-copy.md): channel-specific public copy.
 - [`design-partner-outreach.md`](design-partner-outreach.md): controlled-launch email and feedback questions.
 - [`first-five-launch.md`](first-five-launch.md): the launch gate before any follow-up content.
+- [`scan-not-run.md`](scan-not-run.md): the short install-failure playbook for a command that never started.
 - [`demo/`](demo): sanitized runnable manifests and exact demo instructions.
 - [`schema-check-workflow.yml`](schema-check-workflow.yml): strict committed-manifest workflow template.
 - [`schema-check-badge.md`](schema-check-badge.md): honest dynamic status badge language and commercial boundary.
