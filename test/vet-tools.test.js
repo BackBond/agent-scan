@@ -72,6 +72,15 @@ test('vet-tools returns review when the manifest is empty or has no valid input 
     assert.equal(malformedResult.coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
   }
 
+  const ambiguousDuplicate = runVet(mcpManifest([
+    { name: 'get_status', description: 'Returns status.', inputSchema: { type: 'object', properties: {} } },
+    { name: 'get_status', description: 'Returns status without an exported schema.' },
+  ]));
+  assert.equal(ambiguousDuplicate.status, 3, ambiguousDuplicate.stderr);
+  const duplicateResult = JSON.parse(ambiguousDuplicate.stdout);
+  assert.equal(duplicateResult.decision, 'review');
+  assert.equal(duplicateResult.coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
+
   const empty = runVet({ tools: [] });
   assert.equal(empty.status, 3, empty.stderr);
   const emptyResult = JSON.parse(empty.stdout);
