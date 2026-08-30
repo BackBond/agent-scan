@@ -13,6 +13,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Advance the public ruleset to `backbond-local-rules/1.3.0`; keep receipt/public-record protocols, static-only behavior, and local/network boundaries unchanged.
 - Keep the official MCP Registry entrypoint as the local stdio `mcp` command exposing `scan_my_runtime` and `vet_tools_before_attach`; it does not probe or execute registered servers.
 - Lead the README with trusted-host delivery and document the Erika no-egress case without suggesting that operators weaken the sandbox.
+- Deprecate npm version `0.5.6` during the protected release because it carried an MCP Registry identity outside BackBond's case-sensitive namespace.
 
 ## 0.5.7 — 2026-08-30
 

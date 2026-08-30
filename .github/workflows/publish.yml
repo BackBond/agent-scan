@@ -155,6 +155,21 @@ jobs:
           cp "registry-copy/$registry_file" "${{ steps.pack.outputs.file }}"
           sha256sum "${{ steps.pack.outputs.file }}" > "${{ steps.pack.outputs.file }}.sha256"
 
+      - name: Deprecate the incorrect 0.5.6 MCP identity
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        shell: bash
+        run: |
+          message="Superseded by 0.5.7: incorrect MCP Registry name."
+          npm deprecate "@backbond/agent-scan@0.5.6" "$message"
+          actual=""
+          for attempt in 1 2 3 4 5 6; do
+            actual=$(npm view "@backbond/agent-scan@0.5.6" deprecated --json | node -e "let input=''; process.stdin.on('data', chunk => input += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(input)))")
+            [ "$actual" = "$message" ] && break
+            sleep 5
+          done
+          test "$actual" = "$message"
+
       - name: Create the GitHub release with the exact npm tarball
         env:
           GH_TOKEN: ${{ github.token }}
