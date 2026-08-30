@@ -2,6 +2,12 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.6 — 2026-08-30
+
+- Add the npm `mcpName` ownership marker and a version-locked `server.json` for the official MCP Registry name `io.github.backbond/agent-scan`.
+- Publish registry metadata only after the exact npm artifact and GitHub release have been verified, using GitHub Actions OIDC and a checksum-pinned official `mcp-publisher` binary.
+- Keep the scanner, public ruleset, findings, thresholds, receipt protocols, public-record protocols, and local/network boundary unchanged from 0.5.5.
+
 ## 0.5.5 — 2026-08-30
 
 - Add the scoped `vet-tools` pre-attachment profile for MCP, OpenAI, Anthropic, and OpenAPI manifests, with fixed `block`/`review`/`no_blocking_finding` decisions and exit codes `1`/`3`/`0`.

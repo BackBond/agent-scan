@@ -32,7 +32,7 @@ function files(directory) {
 test('package allowlist ships the open engine, rule pack, docs, and fixtures', () => {
   const manifest = require('../package.json');
   assert.equal(manifest.private, false);
-  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'LICENSE']);
+  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'server.json', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
     'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'exposure-paths.js', 'mcp-server.js', 'next-action.js',
     'output.js', 'policy.js', 'receipt.js', 'record.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js', 'text.js',
@@ -59,10 +59,48 @@ test('published executable sources contain no private fingerprints or execution/
 
 test('package discovery metadata describes a local deterministic scanner', () => {
   const manifest = require('../package.json');
-  assert.equal(manifest.version, '0.5.5');
+  const { SCANNER_VERSION } = require('../lib/scanner.js');
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
+  assert.equal(SCANNER_VERSION, manifest.version);
+  assert.equal(manifest.mcpName, 'io.github.backbond/agent-scan');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);
+});
+
+test('all current public version surfaces follow package.json', () => {
+  const manifest = require('../package.json');
+  const currentSurfaces = [
+    'README.md', 'AGENTS.md', 'SKILL.md',
+    path.join('docs', 'RECORDS.md'), path.join('docs', 'RULES.md'), path.join('docs', 'PUBLICATION.md'),
+    path.join('site', 'llms.txt'), path.join('.github', 'ISSUE_TEMPLATE', 'scan-feedback.yml'),
+  ];
+  const versions = currentSurfaces.flatMap(target =>
+    fs.readFileSync(path.join(ROOT, target), 'utf8').match(/\b0\.\d+\.\d+\b/g) || []
+  );
+  assert.equal(versions.length > 0, true);
+  assert.deepEqual([...new Set(versions)], [manifest.version]);
+  assert.equal(require('../site/well-known-agent.json').version, manifest.version);
+  assert.match(fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8'), new RegExp(`^# Changelog[\\s\\S]*?^## ${manifest.version.replace(/\./g, '\\.')} `, 'm'));
+});
+
+test('official MCP Registry metadata is version-locked to the published npm package', () => {
+  const manifest = require('../package.json');
+  const registry = require('../server.json');
+  assert.equal(registry.$schema, 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json');
+  assert.equal(registry.name, manifest.mcpName);
+  assert.equal(registry.version, manifest.version);
+  assert.deepEqual(registry.repository, {
+    url: 'https://github.com/BackBond/agent-scan',
+    source: 'github',
+    id: '1350044063',
+  });
+  assert.equal(registry.packages.length, 1);
+  assert.equal(registry.packages[0].registryType, 'npm');
+  assert.equal(registry.packages[0].identifier, manifest.name);
+  assert.equal(registry.packages[0].version, manifest.version);
+  assert.deepEqual(registry.packages[0].transport, { type: 'stdio' });
+  assert.deepEqual(registry.packages[0].packageArguments, [{ type: 'positional', value: 'mcp' }]);
 });
 
 test('operator docs promise findings, local data, and no score or private analyzer dependency', () => {
@@ -101,6 +139,13 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
   assert.match(workflow, /id-token: write/);
   assert.match(workflow, /contents: write/);
+  assert.match(workflow, /modelcontextprotocol\/registry\/releases\/download\/v1\.8\.1\/mcp-publisher_linux_amd64\.tar\.gz/);
+  assert.match(workflow, /a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc/);
+  assert.match(workflow, /\.\/mcp-publisher validate server\.json/);
+  assert.match(workflow, /\.\/mcp-publisher login github-oidc --registry https:\/\/registry\.modelcontextprotocol\.io/);
+  assert.match(workflow, /\.\/mcp-publisher publish server\.json/);
+  assert.doesNotMatch(workflow, /mcp-publisher publish server\.json --registry/);
+  assert.match(workflow, /node scripts\/check-mcp-registry\.js --require-published/);
 });
 
 test('official Action verifies committed inputs before invoking the exact tagged scanner locally', () => {

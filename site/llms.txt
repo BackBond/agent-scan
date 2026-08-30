@@ -1,6 +1,8 @@
 # BackBond local agent scanner
 
-@backbond/agent-scan 0.5.5 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
+@backbond/agent-scan 0.5.6 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
+
+Its dependency-free stdio server is listed in the official MCP Registry as `io.github.backbond/agent-scan`, version-locked to the npm package.
 
 Before attachment, `vet-tools --stdin` returns a scoped block, review, or no_blocking_finding decision over supplied tool metadata and composition. It also emits potential exposure-path summaries over existing BB001–BB012 findings. Neither result is a safety determination, runtime attestation, or insurance decision.
 
