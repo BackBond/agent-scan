@@ -10,10 +10,11 @@ const { discover } = require('../lib/discovery.js');
 const { collectEvidence, MAX_ARTIFACT_BYTES } = require('../lib/evidence.js');
 const { handleMessage, startMcpServer, TOOL, VET_TOOL } = require('../lib/mcp-server.js');
 const { renderHuman } = require('../lib/output.js');
-const { scanEvidence } = require('../lib/scanner.js');
+const { scanEvidence, SCANNER_VERSION } = require('../lib/scanner.js');
 const { CLI, ROOT, tempDirectory, writeJson } = require('./helpers.js');
 
 const NOW = new Date('2026-08-29T12:00:00.000Z');
+const VERSION_PATTERN = SCANNER_VERSION.replace(/\./g, '\\.');
 
 test('bounded discovery finds known project/user configs and instruction files', (t) => {
   const root = tempDirectory(t);
@@ -488,8 +489,8 @@ test('MCP exposes scan_my_runtime with no required args and accepts live tools',
   });
   assert.equal(missingLiveTools.result.isError, false);
   assert.equal(missingLiveTools.result.structuredContent.next_action.code, 'provide_live_tools');
-  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.5 scan --stdin --require-coverage/);
-  assert.match(missingLiveTools.result.content[0].text, /@backbond\/agent-scan@0\.5\.5 vet-tools --stdin/);
+  assert.match(missingLiveTools.result.content[0].text, new RegExp(`@backbond/agent-scan@${VERSION_PATTERN} scan --stdin --require-coverage`));
+  assert.match(missingLiveTools.result.content[0].text, new RegExp(`@backbond/agent-scan@${VERSION_PATTERN} vet-tools --stdin`));
   assert.deepEqual(Object.keys(missingLiveTools.result.structuredContent.next_action.stdin_shape.result), ['tools']);
   const missingLiveRecord = handleMessage({
     jsonrpc: '2.0', id: 11, method: 'tools/call',
