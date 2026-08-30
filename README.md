@@ -12,7 +12,7 @@ Before attaching a proposed MCP/OpenAI/Anthropic tool list, use the narrower age
 npx -y @backbond/agent-scan@0.5.5 vet-tools --stdin < tools-list.json
 ```
 
-`vet-tools` returns `block` (exit `1`), `review` for insufficient profile evidence (exit `3`), or `no_blocking_finding` (exit `0`). It checks supplied tool identities, descriptions, input schemas, and same-manifest composition. A non-blocking result requires a description or title and one unambiguous, analyzable object input schema per tool; opaque references or conflicting schema aliases return `review`. It does not assess runtime enforcement, approvals, audit behavior, traces, or actual execution. `no_blocking_finding` is not a safety determination or runtime attestation.
+`vet-tools` returns `block` (exit `1`), `review` for insufficient profile evidence (exit `3`), or `no_blocking_finding` (exit `0`). It checks supplied tool identities, descriptions, input schemas, and same-manifest composition. A non-blocking result requires unique tool names, a description or title, and one unambiguous, analyzable object input schema per tool; opaque branches, conflicting schema aliases, or mixed manifest dialects cannot produce a non-blocking result. It does not assess runtime enforcement, approvals, audit behavior, traces, or actual execution. `no_blocking_finding` is not a safety determination or runtime attestation.
 
 From this repository, prove the whole rule pack with the two fixtures:
 

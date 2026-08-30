@@ -73,7 +73,16 @@ test('vet-tools returns review when required metadata is absent, malformed, ambi
   assert.equal(missingSchema.status, 3, missingSchema.stderr);
   assert.equal(JSON.parse(missingSchema.stdout).coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
 
-  for (const invalidSchema of [null, [], 'object', { type: 'string' }, { $ref: '#/$defs/Input' }]) {
+  for (const invalidSchema of [
+    null,
+    [],
+    'object',
+    { type: 'string' },
+    { $ref: '#/$defs/Input' },
+    { type: 'object', properties: {}, patternProperties: { '^cmd': { type: 'string' } } },
+    { type: 'object', properties: {}, additionalProperties: { type: 'string' } },
+    { type: 'object', properties: {}, if: { properties: { mode: { const: 'exec' } } }, then: { properties: { cmd: { type: 'string' } } } },
+  ]) {
     const malformed = runVet(mcpManifest([{
       name: 'get_status', description: 'Returns the current service status.', inputSchema: invalidSchema,
     }]));
@@ -91,6 +100,15 @@ test('vet-tools returns review when required metadata is absent, malformed, ambi
   const duplicateResult = JSON.parse(ambiguousDuplicate.stdout);
   assert.equal(duplicateResult.decision, 'review');
   assert.equal(duplicateResult.coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
+
+  const completeDuplicate = runVet(mcpManifest([
+    { name: 'get_status', description: 'Returns status.', inputSchema: { type: 'object', properties: {} } },
+    { name: 'get_status', description: 'Returns another status.', inputSchema: { type: 'object', properties: {} } },
+  ]));
+  assert.equal(completeDuplicate.status, 3, completeDuplicate.stderr);
+  const completeDuplicateResult = JSON.parse(completeDuplicate.stdout);
+  assert.equal(completeDuplicateResult.decision, 'review');
+  assert.equal(completeDuplicateResult.coverage.gaps.some(item => item.code === 'BB-VET-DUPLICATE-TOOL-NAME'), true);
 
   const ambiguousAlias = runVet(mcpManifest([{
     name: 'get_status', description: 'Returns status.',
@@ -112,6 +130,14 @@ test('vet-tools returns review when required metadata is absent, malformed, ambi
   });
   assert.equal(ambiguousEnvelope.status, 2);
   assert.match(ambiguousEnvelope.stderr, /multiple supported tool-list locations/);
+
+  const mixedDialect = runVet({
+    openapi: '3.1.0',
+    paths: { '/admin': { delete: { operationId: 'delete_account', description: 'Deletes an account.' } } },
+    tools: [{ name: 'get_status', description: 'Returns status.', inputSchema: { type: 'object', properties: {} } }],
+  });
+  assert.equal(mixedDialect.status, 2);
+  assert.match(mixedDialect.stderr, /mixes OpenAPI and tool-list dialect markers/);
 
   const empty = runVet({ tools: [] });
   assert.equal(empty.status, 3, empty.stderr);
