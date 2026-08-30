@@ -8,15 +8,20 @@ const { spawnSync } = require('node:child_process');
 const { ROOT, fixturePaths, tempDirectory } = require('./helpers.js');
 
 function npmInvocation(args, options) {
+  const environment = { ...process.env, ...(options.env || {}) };
+  for (const key of Object.keys(environment)) {
+    if (key.toLowerCase() === 'npm_config_dry_run') delete environment[key];
+  }
+  const invocationOptions = { ...options, env: environment };
   const configuredCli = process.env.npm_execpath;
   if (configuredCli && fs.existsSync(configuredCli)) {
-    return spawnSync(process.execPath, [configuredCli, ...args], options);
+    return spawnSync(process.execPath, [configuredCli, ...args], invocationOptions);
   }
   if (process.platform === 'win32') {
     const cli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-    return spawnSync(process.execPath, [cli, ...args], options);
+    return spawnSync(process.execPath, [cli, ...args], invocationOptions);
   }
-  return spawnSync('npm', args, options);
+  return spawnSync('npm', args, invocationOptions);
 }
 
 test('the packed release tarball runs with an empty npm cache and offline mode', (t) => {
@@ -41,7 +46,7 @@ test('the packed release tarball runs with an empty npm cache and offline mode',
   const packedManifest = JSON.parse(fs.readFileSync(path.join(unpacked, 'package', 'package.json'), 'utf8'));
   const packedRegistry = JSON.parse(fs.readFileSync(path.join(unpacked, 'package', 'server.json'), 'utf8'));
   assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'check-mcp-registry.js')), false);
-  assert.equal(packedManifest.mcpName, 'io.github.backbond/agent-scan');
+  assert.equal(packedManifest.mcpName, 'io.github.BackBond/agent-scan');
   assert.equal(packedRegistry.name, packedManifest.mcpName);
   assert.equal(packedRegistry.version, packedManifest.version);
   assert.deepEqual(packedRegistry.packages[0].packageArguments, [{ type: 'positional', value: 'mcp' }]);

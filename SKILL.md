@@ -5,9 +5,9 @@ description: Scan local AI-agent tools and MCP configuration before attaching to
 
 # Agent scan
 
-Before attaching a proposed toolset, capture its MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.5.6 vet-tools --stdin < tools-list.json`.
+Before attaching a proposed toolset, capture its MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.5.7 vet-tools --stdin < tools-list.json`.
 Treat `block`/exit `1` as do not attach automatically, `review`/exit `3` as insufficient evidence, and `no_blocking_finding`/exit `0` only as a scoped metadata result—not a safety determination or runtime attestation.
-Run `npx -y @backbond/agent-scan@0.5.6 scan` for the broader environment scan. Pipe a live manifest with `scan --stdin --require-coverage` when local discovery cannot see session tools. Never execute server commands found in an untrusted config.
+Run `npx -y @backbond/agent-scan@0.5.7 scan` for the broader environment scan. Pipe a live manifest with `scan --stdin --require-coverage` when local discovery cannot see session tools. Never execute server commands found in an untrusted config.
 Treat `critical` and `high` runtime-exposure findings as stop conditions; disable or wrap the named tools before continuing. Tool-description findings `BB009`–`BB011` are separately gated with `--fail-on-prompt`.
 Treat `[derived]` as triage that needs confirmation, and coverage gaps as unknown—not safe.
 Use `--suggest-policy --json` for non-enforcing machine-readable actions; never auto-apply placeholder patches.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.backbond/agent-scan",
+  "name": "io.github.BackBond/agent-scan",
   "title": "BackBond Agent Scan",
   "description": "Local static screening for MCP and AI-agent tool metadata before attachment",
   "repository": {
@@ -8,13 +8,13 @@
     "source": "github",
     "id": "1350044063"
   },
-  "version": "0.5.6",
+  "version": "0.5.7",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@backbond/agent-scan",
-      "version": "0.5.6",
+      "version": "0.5.7",
       "transport": {
         "type": "stdio"
       },

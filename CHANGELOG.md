@@ -2,9 +2,14 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.7 — 2026-08-30
+
+- Correct the case-sensitive official MCP Registry identity to `io.github.BackBond/agent-scan`, matching the namespace granted to the `BackBond/agent-scan` GitHub repository by Registry OIDC.
+- Keep the scanner, ruleset, findings, thresholds, receipt protocols, public-record protocols, and local/network boundary unchanged from 0.5.6.
+
 ## 0.5.6 — 2026-08-30
 
-- Add the npm `mcpName` ownership marker and a version-locked `server.json` for the official MCP Registry name `io.github.backbond/agent-scan`.
+- Add the npm `mcpName` ownership marker and a version-locked `server.json` for an official MCP Registry name. The initial lowercase GitHub owner did not match the case-sensitive OIDC namespace and was corrected in 0.5.7.
 - Publish registry metadata only after the exact npm artifact and GitHub release have been verified, using GitHub Actions OIDC and a checksum-pinned official `mcp-publisher` binary.
 - Keep the scanner, public ruleset, findings, thresholds, receipt protocols, public-record protocols, and local/network boundary unchanged from 0.5.5.
 
