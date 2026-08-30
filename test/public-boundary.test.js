@@ -62,7 +62,7 @@ test('package discovery metadata describes a local deterministic scanner', () =>
   const { SCANNER_VERSION } = require('../lib/scanner.js');
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.equal(SCANNER_VERSION, manifest.version);
-  assert.equal(manifest.mcpName, 'io.github.backbond/agent-scan');
+  assert.equal(manifest.mcpName, 'io.github.BackBond/agent-scan');
   assert.match(manifest.description, /local deterministic/i);
   assert.equal(manifest.keywords.includes('agent-security-scanner'), true);
   assert.equal(manifest.keywords.includes('risk-score'), false);

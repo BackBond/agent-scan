@@ -1,8 +1,8 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "private": false,
-  "mcpName": "io.github.backbond/agent-scan",
+  "mcpName": "io.github.BackBond/agent-scan",
   "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
   "bin": {
     "agent-scan": "bin/agent-scan.js",

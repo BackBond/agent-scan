@@ -13,7 +13,7 @@ const { ROOT, tempDirectory } = require('./helpers.js');
 test('official registry lookup uses the exact encoded server name and version endpoint', () => {
   assert.equal(
     exactRegistryUrl('https://registry.modelcontextprotocol.io', card.name, card.version).href,
-    `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.backbond%2Fagent-scan/versions/${card.version}`,
+    `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.BackBond%2Fagent-scan/versions/${card.version}`,
   );
 });
 
