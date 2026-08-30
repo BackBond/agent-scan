@@ -1,0 +1,21 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "calculate_total",
+        "description": "Adds two numeric values and returns the total.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "left": { "type": "number" },
+            "right": { "type": "number" }
+          },
+          "required": ["left", "right"],
+          "additionalProperties": false
+        }
+      }
+    ]
+  }
+}
