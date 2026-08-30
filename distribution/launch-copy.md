@@ -2,7 +2,7 @@
 
 All new copy below is pinned to `@backbond/agent-scan@0.5.10`.
 
-Publish only the initial post below before five external users complete a pinned 0.5.9-or-later run. Existing 0.5.9 runs count; new runs use 0.5.10. The remaining channel variants are held drafts, not a posting calendar.
+Publish only the initial post below before the five external attempts on the pinned 0.5.10 command are recorded. The remaining channel variants are held drafts, not a posting calendar.
 
 ## Two-sentence canonical announcement
 

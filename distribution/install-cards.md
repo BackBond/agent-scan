@@ -1,6 +1,6 @@
 # Installation and prompt cards
 
-Use only version `0.5.10` in new launch instructions. Earlier pinned 0.5.9 runs still count toward the existing five-run gate.
+Use only version `0.5.10` in launch instructions.
 
 ## Agent before attaching MCP tools
 
@@ -50,6 +50,8 @@ node agent-scan.cjs vet-tools --stdin < tools-list.json
 
 A failed download means `scan_not_run`. Do not weaken network isolation, switch registries, disable TLS checks, or accept a binary and digest supplied together in chat.
 
+If the command does not start, use the short [`scan-not-run.md`](scan-not-run.md) playbook. Never report a scanner decision when installation or input piping failed.
+
 ## CI Action
 
 ```yaml
@@ -65,7 +67,7 @@ steps:
       tool-schema: tools-list.json
 ```
 
-The Action verifies the committed manifest against `github.sha`, preserves the `0`/`1`/`3` pre-attachment decision, and writes no record in this mode. A passing workflow is a scoped static manifest result, not an insurance or production-runtime attestation.
+The Action checks the committed file at `github.sha`, preserves the `0`/`1`/`3` pre-attachment decision, and writes no record in this mode. A passing workflow is about that committed file at that SHA, not production state, insurance, or runtime attestation.
 
 Copy the complete workflow and honest badge language from [`schema-check-badge.md`](schema-check-badge.md). Use the Action's default `scan` mode only when the repository supplies the broader explicit evidence set and needs a redacted record.
 

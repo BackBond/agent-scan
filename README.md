@@ -259,8 +259,22 @@ name: BackBond Schema Check
 
 on:
   pull_request:
+    paths:
+      - 'tools-list.json'
+      - '**/tools-list.json'
+      - 'mcp.json'
+      - '**/mcp.json'
+      - '.mcp.json'
+      - '**/.mcp.json'
   push:
     branches: [main]
+    paths:
+      - 'tools-list.json'
+      - '**/tools-list.json'
+      - 'mcp.json'
+      - '**/mcp.json'
+      - '.mcp.json'
+      - '**/.mcp.json'
 
 permissions:
   contents: read
@@ -283,7 +297,7 @@ After saving that workflow as `.github/workflows/backbond-schema.yml`, a reposit
 [![BackBond Schema Check](https://github.com/OWNER/REPOSITORY/actions/workflows/backbond-schema.yml/badge.svg?branch=main)](https://github.com/OWNER/REPOSITORY/actions/workflows/backbond-schema.yml)
 ```
 
-Call this a **schema check**, never verification or certification. The badge must link to the workflow evidence. A passing badge means only that the committed manifest produced `no_blocking_finding` under the pinned static pre-attachment profile; it is not runtime verification, insurance coverage, or proof that the deployed server matches the manifest.
+Call this a **schema check**, never verification or certification. The badge must link to the workflow evidence. A passing badge means only that the committed file at this SHA produced `no_blocking_finding` under the pinned static pre-attachment profile; it is not production state, runtime verification, insurance coverage, or proof that the deployed server matches the manifest. If the badge is repeatedly represented as verified, certified, or production-safe, remove it.
 
 Running this check does not create coverage or determine eligibility. Need deeper assessment, continuous runtime evidence, or information about financial protection where approved? Contact [hello@backbond.ai](mailto:hello@backbond.ai).
 
