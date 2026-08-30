@@ -155,26 +155,13 @@ jobs:
           cp "registry-copy/$registry_file" "${{ steps.pack.outputs.file }}"
           sha256sum "${{ steps.pack.outputs.file }}" > "${{ steps.pack.outputs.file }}.sha256"
 
-      - name: Deprecate the incorrect 0.5.6 MCP identity
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify the incorrect 0.5.6 MCP identity is deprecated
         shell: bash
         run: |
           message="Superseded by 0.5.7: incorrect MCP Registry name."
-          read_deprecation() {
-            local output
-            output=$(npm view "@backbond/agent-scan@0.5.6" deprecated --json 2>/dev/null || true)
-            printf '%s' "$output" | node scripts/read-json-string.js
-          }
-          actual=$(read_deprecation)
-          if [ "$actual" != "$message" ]; then
-            npm deprecate "@backbond/agent-scan@0.5.6" "$message"
-          fi
-          for attempt in 1 2 3 4 5 6; do
-            actual=$(read_deprecation)
-            [ "$actual" = "$message" ] && break
-            sleep 5
-          done
+          actual=$(curl --fail --location --silent --show-error --retry 6 --retry-delay 5 --retry-all-errors \
+            "https://registry.npmjs.org/@backbond%2fagent-scan/0.5.6" \
+            | node -e "let input=''; process.stdin.setEncoding('utf8'); process.stdin.on('data', chunk => { input += chunk; }); process.stdin.on('end', () => { const value=JSON.parse(input).deprecated; if (typeof value === 'string') process.stdout.write(value); });")
           test "$actual" = "$message"
 
       - name: Create the GitHub release with the exact npm tarball
