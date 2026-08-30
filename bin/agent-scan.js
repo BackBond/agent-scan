@@ -52,6 +52,7 @@ Pre-attachment gate:
   PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} vet-tools --stdin
   Decisions: block (exit 1), no_blocking_finding (exit 0), review for insufficient profile evidence (exit 3).
   Scope: tool metadata and composition only; never a runtime safety determination.
+  Review-only templates: add --json --suggest-policy; placeholders are never applied automatically.
 
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
@@ -130,7 +131,7 @@ function parseArgs(argv) {
 }
 
 function validateVetOptions(options) {
-  const allowed = new Set(['--stdin', '--tool-schema', '--json']);
+  const allowed = new Set(['--stdin', '--tool-schema', '--json', '--suggest-policy']);
   const unsupported = [...options.provided].filter(argument => !allowed.has(argument));
   if (unsupported.length) throw new Error(`vet-tools does not accept ${unsupported.join(', ')}`);
   if (options.stdin === Boolean(options.toolSchemaPath)) throw new Error('vet-tools requires exactly one of --stdin or --tool-schema <file>');
@@ -222,7 +223,8 @@ async function main() {
       const evidence = collectEvidence({ now, documents, toolSchemaPath: options.toolSchemaPath, reviewAmbiguousToolManifest: true });
       const scan = scanEvidence(evidence, { now });
       const result = createVetResult(scan, evidence);
-      if (options.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      const output = options.suggestPolicy ? { ...result, policy_suggestion: suggestPolicy(result) } : result;
+      if (options.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
       else process.stdout.write(renderVetHuman(result));
       process.exitCode = vetExitCode(result.decision);
       return;

@@ -2,6 +2,14 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.10 — 2026-08-30
+
+- Add a strict `mode: vet-tools` path to the official Action. It accepts exactly one committed tool manifest, preserves the CLI's `block`/`review`/`no_blocking_finding` exit codes, emits privacy-safe workflow outputs and a job summary, and creates no public record.
+- Add a dynamic **BackBond Schema Check** workflow badge kit. The badge links to workflow evidence and is explicitly a static committed-manifest status—not independent verification, runtime assurance, deployed-state proof, insurance coverage, or a permanently green certification image.
+- Add structured, review-only BB007 and BB013 remediation templates through `vet-tools --suggest-policy --json`. Templates retain placeholders, require environment-specific review, are marked unsafe for automatic application, and have no mutation path.
+- Add a restrained next step after the coverage disclaimer for users seeking deeper assessment, continuous runtime evidence, or information about financial protection where approved.
+- Keep BB001–BB013 detector behavior, ruleset `backbond-local-rules/1.3.0`, scan/record protocols, zero scanner-network boundary, and the existing five-external-run launch gate unchanged. Existing pinned 0.5.9 runs still count; new instructions pin 0.5.10.
+
 ## 0.5.9 — 2026-08-30
 
 - Remove third-party company, product, reviewer, and person references from public prose; identify the scanner only by its exact scoped package name and pinned version. Retain external names only inside technical URLs, protocol IDs, source adapters, tests, and release automation where compatibility requires them.

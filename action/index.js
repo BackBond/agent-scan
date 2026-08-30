@@ -9,6 +9,7 @@ const { verifyPublicScanRecord } = require('../lib/record.js');
 const ROOT = path.join(__dirname, '..');
 const CLI = path.join(ROOT, 'bin', 'agent-scan.js');
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
+const NEXT_STEP = 'Running this check does not create coverage or determine eligibility. Need deeper assessment, continuous runtime evidence, or information about financial protection where approved? [Contact BackBond](mailto:hello@backbond.ai).';
 
 function getInput(name, fallback = '') {
   const key = `INPUT_${name.toUpperCase()}`;
@@ -108,7 +109,44 @@ function renderJobSummary(record, commit) {
     '',
     'The Action verified this checkout for this run. The portable record remains self-run and unverified; it is not a safety certificate or BackBond attestation.',
     '',
+    NEXT_STEP,
+    '',
   ].join('\n');
+}
+
+function renderVetJobSummary(result, commit) {
+  const ids = [...new Set(result.findings.map(item => item.id))].sort();
+  const gaps = result.coverage.gaps.map(item => item.code);
+  const patches = result.policy_suggestion && Array.isArray(result.policy_suggestion.patches)
+    ? result.policy_suggestion.patches
+    : [];
+  const patchIds = [...new Set(patches.map(item => item.finding_id))].sort();
+  return [
+    '## BackBond Schema Check',
+    '',
+    `- Checkout and tool manifest verified against \`${commit}\` by the pinned Action.`,
+    `- Decision: **${result.decision}**`,
+    `- Findings: ${countSummary(result.summary.by_severity)}${ids.length ? ` (${ids.join(', ')})` : ''}`,
+    `- Coverage: ${result.coverage.status}${gaps.length ? ` (${gaps.join(', ')})` : ''}`,
+    `- Scanner: \`${result.scanner.name}@${result.scanner.version}\``,
+    `- Ruleset: \`${result.ruleset.version}\` (\`${result.ruleset.sha256}\`)`,
+    `- Review-only remediation templates: ${patches.length}${patchIds.length ? ` (${patchIds.join(', ')})` : ''}`,
+    '',
+    'This committed manifest passed only when the decision is `no_blocking_finding`. This is a static pre-attachment check, not runtime verification, insurance coverage, or proof that a deployed server matches the manifest.',
+    '',
+    NEXT_STEP,
+    '',
+  ].join('\n');
+}
+
+function parseVetResult(output) {
+  let result;
+  try { result = JSON.parse(output); }
+  catch (error) { throw new Error(`vet-tools returned invalid JSON: ${error.message}`); }
+  if (!result || result.protocol !== 'backbond-pre-attach/v1') throw new Error('vet-tools returned an unexpected protocol');
+  if (!['block', 'review', 'no_blocking_finding'].includes(result.decision)) throw new Error('vet-tools returned an unexpected decision');
+  if (!result.coverage || !['complete', 'partial'].includes(result.coverage.status)) throw new Error('vet-tools returned an unexpected coverage status');
+  return result;
 }
 
 function main() {
@@ -118,6 +156,8 @@ function main() {
     if (!workspaceValue) throw new Error('GITHUB_WORKSPACE is required');
     const workspace = fs.realpathSync(workspaceValue);
     const commit = verifyCheckout(workspace, expectedCommit);
+    const mode = getInput('mode', 'scan');
+    if (!['scan', 'vet-tools'].includes(mode)) throw new Error('mode must be scan or vet-tools');
     const inputDefinitions = [
       ['tool-schema', '--tool-schema'],
       ['permissions', '--permissions'],
@@ -131,6 +171,28 @@ function main() {
     if (!supplied.length) {
       throw new Error('at least one explicit tracked input is required: tool-schema, permissions, trace, or config');
     }
+    appendKeyValue(process.env.GITHUB_OUTPUT, 'commit', commit);
+
+    if (mode === 'vet-tools') {
+      if (supplied.length !== 1 || supplied[0].name !== 'tool-schema') {
+        throw new Error('vet-tools mode requires exactly one tracked tool-schema input and accepts no permissions, trace, or config input');
+      }
+      const vet = run(process.execPath, [
+        CLI, 'vet-tools', '--tool-schema', supplied[0].file.absolute, '--json', '--suggest-policy',
+      ], { cwd: workspace });
+      if (vet.stderr) process.stderr.write(vet.stderr);
+      if (vet.error) throw new Error(`scanner failed to start: ${vet.error.message}`);
+      const result = parseVetResult(vet.stdout);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'decision', result.decision);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'coverage-status', result.coverage.status);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'finding-count', result.summary.total);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'ruleset-sha256', result.ruleset.sha256);
+      process.stdout.write(`BackBond Schema Check: ${result.decision}; ${result.summary.total} finding(s); coverage ${result.coverage.status}\n`);
+      if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderVetJobSummary(result, commit), 'utf8');
+      process.exitCode = Number.isInteger(vet.status) ? vet.status : 2;
+      return;
+    }
+
     const recordPath = resolveRecordPath(workspace, getInput('record-path', 'backbond-scan-record.json'));
     const args = [
       CLI, 'scan', '--require-coverage',
@@ -151,7 +213,9 @@ function main() {
       if (!record.source || record.source.git_commit !== commit) throw new Error('generated public record does not reference the verified commit');
       appendKeyValue(process.env.GITHUB_OUTPUT, 'record-path', recordPath);
       appendKeyValue(process.env.GITHUB_OUTPUT, 'record-sha256', record.integrity.sha256);
-      appendKeyValue(process.env.GITHUB_OUTPUT, 'commit', commit);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'coverage-status', record.result.coverage.status);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'finding-count', Object.values(record.result.summary).reduce((total, count) => total + count, 0));
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'ruleset-sha256', record.ruleset.sha256);
       if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderJobSummary(record, commit), 'utf8');
     }
     process.exitCode = Number.isInteger(scan.status) ? scan.status : 2;
@@ -167,7 +231,9 @@ module.exports = {
   getInput,
   isInside,
   main,
+  parseVetResult,
   renderJobSummary,
+  renderVetJobSummary,
   resolveRecordPath,
   resolveTrackedInput,
   verifyCheckout,

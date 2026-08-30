@@ -1,10 +1,10 @@
 # First-five-runs launch gate
 
-Do not run a multi-post campaign yet. Publish one initial post from [`launch-copy.md`](launch-copy.md), then wait until five external users have completed a pinned `@backbond/agent-scan@0.5.9` run.
+Do not run a multi-post campaign yet. Publish one initial post from [`launch-copy.md`](launch-copy.md), then wait until five external users have completed a pinned `@backbond/agent-scan@0.5.9` or later run. Existing 0.5.9 runs count; new runs use 0.5.10.
 
 The initial post must contain:
 
-- `npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json`;
+- `npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json`;
 - one named finding example, `BB013`;
 - exit `1` = block, exit `3` = review, exit `0` = scoped metadata result;
 - the statement that exit `0` is not a certificate, runtime attestation, insurance decision, or coverage.

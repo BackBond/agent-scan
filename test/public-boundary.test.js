@@ -181,6 +181,15 @@ test('official Action verifies committed inputs before invoking the exact tagged
   assert.match(source, /ls-files', '--error-unmatch/);
   assert.match(source, /'diff', '--quiet', 'HEAD'/);
   assert.match(source, /CLI, 'scan', '--require-coverage'/);
+  assert.match(metadata, /mode:/);
+  assert.match(metadata, /decision:/);
+  assert.match(metadata, /coverage-status:/);
+  assert.match(metadata, /finding-count:/);
+  assert.match(metadata, /ruleset-sha256:/);
+  assert.match(source, /CLI, 'vet-tools', '--tool-schema'/);
+  assert.match(source, /'--json', '--suggest-policy'/);
+  assert.match(source, /vet-tools mode requires exactly one tracked tool-schema input/);
+  assert.match(source, /static pre-attachment check, not runtime verification/);
   assert.match(source, /caller-supplied|self-run and unverified/);
   assert.doesNotMatch(source, /@latest|node:(?:http|https|net|tls)/);
   for (const token of source.match(/[A-Za-z_][A-Za-z0-9_]*/g) || []) {
