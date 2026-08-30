@@ -1,6 +1,6 @@
 # Open local rule pack
 
-Ruleset `backbond-local-rules/1.3.0` is implemented in `lib/rules.js`. Its SHA-256 digest is computed from a canonical serialization of the public rule metadata and normalized detector functions, so packaging the same rules does not change their identity. The digest is emitted in every scan, receipt, and public record.
+Ruleset `backbond-local-rules/1.3.0` is implemented in `lib/rules.js` and fed by the evidence inference in `lib/evidence.js`. Its SHA-256 digest is computed from canonical public rule definitions, shared rule helpers, and the normalized evidence-detector source hash, so packaging the same logic does not change its identity while behavioral changes do. A test binds the source manifest to the current evidence implementation. The digest is emitted in every scan, receipt, and public record.
 
 | ID | Severity | Requires | Finding condition |
 |---|---|---|---|
@@ -20,7 +20,7 @@ Ruleset `backbond-local-rules/1.3.0` is implemented in `lib/rules.js`. Its SHA-2
 
 Rules only fire from observed supported evidence. An unknown approval or audit value causes a coverage gap for the relevant rule; it is not silently treated as safe or unsafe. Findings derived from generic schemas or config heuristics have `evidence_quality: "derived"` and are displayed with `[derived]`.
 
-`BB009`–`BB011` and `BB013` inspect tool titles, descriptions, and schema metadata using narrow local patterns. Raw text is discarded after derived risk IDs and evidence pointers are created. `BB012` requires fetch-like metadata rather than treating all outbound HTTP tools as network intake, and both sides must appear in the same observed tool inventory; tools found in separate agent-client manifests are not paired.
+`BB009`–`BB011` inspect tool titles, descriptions, and schema metadata using narrow local patterns. `BB013` is deliberately restricted to the top-level tool title and description so ordinary parameter requirements are not mistaken for forced tool selection. Raw text is discarded after derived risk IDs and evidence pointers are created. `BB012` requires fetch-like metadata rather than treating all outbound HTTP tools as network intake, and both sides must appear in the same observed tool inventory; tools found in separate agent-client manifests are not paired.
 
 ### Potential exposure paths
 

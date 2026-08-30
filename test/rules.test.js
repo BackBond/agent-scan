@@ -3,8 +3,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const { collectEvidence } = require('../lib/evidence.js');
 const { scanEvidence } = require('../lib/scanner.js');
+const { sha256 } = require('../lib/canonical.js');
+const { RULESET_DIGEST, createRulesetDigest } = require('../lib/rules.js');
+const rulesetSources = require('../lib/ruleset-sources.json');
 const { fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
 
 const NOW = new Date('2026-08-29T12:00:00.000Z');
@@ -27,6 +31,13 @@ test('every open rule has a positive vulnerable fixture and a negative hardened 
 
 test('rule output is deterministic for identical bytes and time', () => {
   assert.deepEqual(scanFixture('vulnerable'), scanFixture('vulnerable'));
+});
+
+test('ruleset identity covers normalized evidence-detector source and rule evaluators', () => {
+  const evidenceSource = fs.readFileSync(path.join(__dirname, '..', 'lib', 'evidence.js'), 'utf8').replace(/\r\n?/g, '\n');
+  assert.equal(rulesetSources.evidence_sha256, sha256(evidenceSource));
+  assert.notEqual(createRulesetDigest('0'.repeat(64)), RULESET_DIGEST);
+  assert.notEqual(createRulesetDigest(rulesetSources.evidence_sha256, ['changed helper']), RULESET_DIGEST);
 });
 
 test('missing evidence becomes coverage gaps, never a synthetic finding', (t) => {

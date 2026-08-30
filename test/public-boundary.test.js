@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { spawnSync } = require('node:child_process');
 const { ROOT } = require('./helpers.js');
 
 const forbiddenTokenHashes = new Set([
@@ -35,8 +36,8 @@ test('package allowlist ships the open engine, rule pack, docs, and fixtures', (
   assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'server.json', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
     'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'exposure-paths.js', 'mcp-server.js', 'next-action.js',
-    'output.js', 'policy.js', 'receipt.js', 'record.js', 'rules.js', 'sarif.js', 'scanner.js', 'teaser.js', 'text.js',
-    'vet-tools.js',
+    'output.js', 'policy.js', 'receipt.js', 'record.js', 'rules.js', 'ruleset-sources.json', 'sarif.js', 'scanner.js',
+    'teaser.js', 'text.js', 'vet-tools.js',
   ]);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'vulnerable', 'tool-schema.json')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'fixtures', 'hardened', 'tool-schema.json')), true);
@@ -137,6 +138,7 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /cp "registry-copy\/\$registry_file" "\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /npm deprecate "@backbond\/agent-scan@0\.5\.6" "\$message"/);
   assert.match(workflow, /npm view "@backbond\/agent-scan@0\.5\.6" deprecated --json/);
+  assert.match(workflow, /node scripts\/read-json-string\.js/);
   assert.match(workflow, /node scripts\/build-standalone\.js agent-scan\.cjs/);
   assert.match(workflow, /sha256sum agent-scan\.cjs > agent-scan\.cjs\.sha256/);
   assert.match(workflow, /sudo unshare --net -- "\$node_binary" agent-scan\.cjs scan/);
@@ -152,6 +154,22 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /\.\/mcp-publisher publish server\.json/);
   assert.doesNotMatch(workflow, /mcp-publisher publish server\.json --registry/);
   assert.match(workflow, /node scripts\/check-mcp-registry\.js --require-published/);
+});
+
+test('npm deprecation metadata parser tolerates stale null before the exact message', () => {
+  const parser = path.join(ROOT, 'scripts', 'read-json-string.js');
+  const absent = spawnSync(process.execPath, [parser], { input: '', encoding: 'utf8' });
+  assert.equal(absent.status, 0, absent.stderr);
+  assert.equal(absent.stdout, '');
+
+  const stale = spawnSync(process.execPath, [parser], { input: 'null\n', encoding: 'utf8' });
+  assert.equal(stale.status, 0, stale.stderr);
+  assert.equal(stale.stdout, '');
+
+  const message = 'Superseded by 0.5.7: incorrect MCP Registry name.';
+  const current = spawnSync(process.execPath, [parser], { input: JSON.stringify(message), encoding: 'utf8' });
+  assert.equal(current.status, 0, current.stderr);
+  assert.equal(current.stdout, message);
 });
 
 test('official Action verifies committed inputs before invoking the exact tagged scanner locally', () => {

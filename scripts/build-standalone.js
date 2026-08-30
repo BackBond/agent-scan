@@ -8,6 +8,8 @@ const ROOT = path.resolve(__dirname, '..');
 const ENTRY = path.join(ROOT, 'bin', 'agent-scan.js');
 const output = path.resolve(process.argv[2] || path.join(ROOT, 'agent-scan.cjs'));
 const modules = new Map();
+const license = fs.readFileSync(path.join(ROOT, 'LICENSE'), 'utf8').replace(/\r\n?/g, '\n').trim();
+const licenseComment = license.split('\n').map(line => ` * ${line.replace(/\*\//g, '* /')}`).join('\n');
 
 function moduleId(filename) {
   return path.relative(ROOT, filename).split(path.sep).join('/');
@@ -55,6 +57,10 @@ const bundle = `#!/usr/bin/env node
  * @backbond/agent-scan standalone release asset.
  * Generated deterministically by scripts/build-standalone.js.
  * Local modules are embedded below without minification; Node built-ins remain native.
+ */
+
+/*
+${licenseComment}
  */
 
 const __nativeRequire = require;

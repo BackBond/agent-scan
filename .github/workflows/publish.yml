@@ -164,7 +164,7 @@ jobs:
           npm deprecate "@backbond/agent-scan@0.5.6" "$message"
           actual=""
           for attempt in 1 2 3 4 5 6; do
-            actual=$(npm view "@backbond/agent-scan@0.5.6" deprecated --json | node -e "let input=''; process.stdin.on('data', chunk => input += chunk); process.stdin.on('end', () => process.stdout.write(JSON.parse(input)))")
+            actual=$(npm view "@backbond/agent-scan@0.5.6" deprecated --json | node scripts/read-json-string.js)
             [ "$actual" = "$message" ] && break
             sleep 5
           done

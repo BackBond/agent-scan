@@ -48,6 +48,7 @@ test('the packed release tarball runs with an empty npm cache and offline mode',
   const packedRegistry = JSON.parse(fs.readFileSync(path.join(unpacked, 'package', 'server.json'), 'utf8'));
   assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'check-mcp-registry.js')), false);
   assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'build-standalone.js')), false);
+  assert.equal(fs.existsSync(path.join(unpacked, 'package', 'scripts', 'read-json-string.js')), false);
   assert.equal(packedManifest.mcpName, 'io.github.BackBond/agent-scan');
   assert.equal(packedRegistry.name, packedManifest.mcpName);
   assert.equal(packedRegistry.version, packedManifest.version);

@@ -489,6 +489,7 @@ test('policy suggestions are structured, non-enforcing, and never auto-applied',
   const policy = JSON.parse(run.stdout).policy_suggestion;
   assert.equal(policy.enforced, false);
   assert.equal(policy.actions.some(item => item.tool === 'shell_exec' && item.action === 'disable'), true);
+  assert.equal(policy.actions.some(item => item.finding_id === 'BB013' && item.action === 'disable'), true);
   assert.equal(policy.patches.some(item => item.finding_id === 'BB006' && item.template === true), true);
   assert.equal(policy.patches.every(item => item.safe_to_apply_automatically === false), true);
 });
