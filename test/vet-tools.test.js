@@ -55,12 +55,22 @@ test('vet-tools blocks high prompt lint without requiring a separate scan thresh
   assert.deepEqual(result.findings.map(item => item.id), ['BB009', 'BB011']);
 });
 
-test('vet-tools returns review when the manifest is empty or omits an input schema', () => {
+test('vet-tools returns review when the manifest is empty or has no valid input schema object', () => {
   const missingSchema = runVet({ tools: [{ type: 'function', function: {
     name: 'get_status', description: 'Returns the current service status.',
   } }] });
   assert.equal(missingSchema.status, 3, missingSchema.stderr);
   assert.equal(JSON.parse(missingSchema.stdout).coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
+
+  for (const invalidSchema of [null, [], 'object']) {
+    const malformed = runVet(mcpManifest([{
+      name: 'get_status', description: 'Returns the current service status.', inputSchema: invalidSchema,
+    }]));
+    assert.equal(malformed.status, 3, malformed.stderr);
+    const malformedResult = JSON.parse(malformed.stdout);
+    assert.equal(malformedResult.decision, 'review');
+    assert.equal(malformedResult.coverage.gaps.some(item => item.code === 'BB-VET-MISSING-INPUT-SCHEMA'), true);
+  }
 
   const empty = runVet({ tools: [] });
   assert.equal(empty.status, 3, empty.stderr);
