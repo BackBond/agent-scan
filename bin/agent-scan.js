@@ -18,7 +18,7 @@ const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract, SCANNER_VERSION } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
 const { safeInline } = require('../lib/text.js');
-const { createVetResult, renderVetHuman } = require('../lib/vet-tools.js');
+const { createVetResult, renderVetHuman, vetExitCode } = require('../lib/vet-tools.js');
 
 function usage() {
   process.stdout.write(`@backbond/agent-scan — static, local AI-agent tool scanner
@@ -224,7 +224,7 @@ async function main() {
       const result = createVetResult(scan, evidence);
       if (options.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       else process.stdout.write(renderVetHuman(result));
-      process.exitCode = result.decision === 'block' ? 1 : result.decision === 'review' ? 3 : 0;
+      process.exitCode = vetExitCode(result.decision);
       return;
     }
     if (options.command === 'inspect' && (options.recordPath || options.requireCoverage)) {
