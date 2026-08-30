@@ -26,15 +26,15 @@ Supported capabilities are `code_execution`, `secret_read`, `network_egress`, `d
 
 `input_trust` is `trusted`, `untrusted`, `mixed`, or `unknown`. Approval is `enforced`, `advisory`, `none`, or `unknown`. Audit is `observable`, `none`, or `unknown`.
 
-OpenAI, Anthropic, MCP, and OpenAPI 3.x JSON are normalized by stable name, description, operation, and parameter-schema heuristics. They may add the same declarations under an `x-backbond` object. Generic tool inputs conservatively derive input trust as mixed because model-generated arguments can reach them; the output labels this fact `derived`. Absent approval and audit controls remain unknown and create coverage gaps when a rule needs them.
+MCP, supported function-tool arrays, and OpenAPI 3.x JSON are normalized by stable name, description, operation, and parameter-schema heuristics. They may add the same declarations under an `x-backbond` object. Generic tool inputs conservatively derive input trust as mixed because model-generated arguments can reach them; the output labels this fact `derived`. Absent approval and audit controls remain unknown and create coverage gaps when a rule needs them.
 
 Schema heuristics detect unconstrained command, expression, code, SQL, URL, URI, endpoint, and webhook fields. Narrow tool-description heuristics detect instruction override, concealed behavior, sensitive-data solicitation, forced tool selection, and fetch-like network intake. A local enum, pattern, validator, sandbox, or allowlist declaration suppresses the relevant parameter heuristic. Heuristics never inspect default or example values and never retain a schema body or raw tool description.
 
 ## Agent config discovery
 
-With no explicit artifact and no stdin, the result includes `backbond-discovery-plan/v1`. Discovery checks exact, bounded project and user paths for Claude Desktop/Code, Cursor, VS Code, Windsurf, and Gemini MCP settings. Instruction files are listed as context but never parsed as permissions.
+With no explicit artifact and no stdin, the result includes `backbond-discovery-plan/v1`. Discovery checks exact, bounded project and user paths for supported desktop and coding-agent MCP settings. Instruction files are listed as context but never parsed as permissions.
 
-`mcpServers` and VS Code `servers` are normalized. Inline `tools`, `toolSchemas`, and Gemini `includeTools` are accepted. Server commands are never executed or presented as live tool exports, but names, command basenames, and arguments may produce a synthetic server-role observation for recognizable shell, fetch/browser, filesystem, database, and credential servers. Root filesystem mounts, Claude Code `Bash(*)`, root `Read`/`Write`/`Edit`, and `WebFetch(domain:*)` become derived wildcard facts. A server with no exported tool list still creates `BB-COV-MCP-TOOLS-NOT-EXPORTED`.
+Recognized MCP server containers and inline tool declarations are normalized. Server commands are never executed or presented as live tool exports, but names, command basenames, and arguments may produce a synthetic server-role observation for recognizable shell, fetch/browser, filesystem, database, and credential servers. Root filesystem mounts and supported wildcard rules for execution, file access, and web fetches become derived wildcard facts. A server with no exported tool list still creates `BB-COV-MCP-TOOLS-NOT-EXPORTED`.
 
 ## Canonical permissions
 

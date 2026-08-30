@@ -1,21 +1,21 @@
 # Launch copy
 
-All copy below is pinned to `@backbond/agent-scan@0.5.8`.
+All copy below is pinned to `@backbond/agent-scan@0.5.9`.
 
-Publish only the initial post below before five external users complete a pinned 0.5.8 run. The remaining channel variants are held drafts, not a posting calendar.
+Publish only the initial post below before five external users complete a pinned 0.5.9 run. The remaining channel variants are held drafts, not a posting calendar.
 
 ## Two-sentence canonical announcement
 
-This is BackBond Agent Scan, not Snyk's agent-scanning feature. Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin`. A forced-invocation description can produce `BB013`; the deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest. Exit 0 is not proof of runtime safety or insurance.
+Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin`. A forced-invocation description can produce `BB013`; the deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest. Exit 0 is not proof of runtime safety or insurance.
 
-## Founder LinkedIn post
+## Founder social post
 
-BackBond Agent Scan is not Snyk's agent-scanning feature. An agent should not attach a third-party MCP tool just because its description sounds useful.
+An agent should not attach a third-party MCP tool just because its description sounds useful.
 
-We released `@backbond/agent-scan@0.5.8`, a free local pre-attachment gate for MCP and AI-agent tools. Pipe in the captured `tools/list` response and it checks dangerous capabilities, tool-description manipulation, confusable tool names, and unsafe tool combinations.
+We released `@backbond/agent-scan@0.5.9`, a free local pre-attachment gate for MCP and AI-agent tools. Pipe in the captured `tools/list` response and it checks dangerous capabilities, tool-description manipulation, confusable tool names, and unsafe tool combinations.
 
 ```text
-npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json
 ```
 
 - exit 1: block automatic attachment
@@ -30,13 +30,11 @@ This is a pre-screen, not a safety certificate or insurance decision. When stati
 
 https://backbond.ai/agent-scan/
 
-## Held draft: Short X / Bluesky post
-
-BackBond Agent Scan is not Snyk's agent-scanning feature.
+## Held draft: Short social post
 
 Vet MCP tools before attachment:
 
-`npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json`
+`npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json`
 
 1 = block · 3 = review · 0 = no blocking finding on supplied metadata.
 
@@ -44,16 +42,16 @@ Local, static, no tool execution, no upload. Exit 0 is not proof of runtime safe
 
 https://backbond.ai/agent-scan/
 
-## Held draft: Hacker News / community post
+## Held draft: Community post
 
 **Title:** Show HN: A local pre-attachment gate for MCP tool manifests
 
-This is BackBond Agent Scan, not Snyk's agent-scanning feature. We built an MIT-licensed, dependency-free Node CLI that vets a captured MCP `tools/list` response before an agent attaches the tools. It uses deterministic public rules for dangerous schemas, prompt-like manipulation in tool descriptions, confusable tool names, and dangerous same-agent composition.
+We built an MIT-licensed, dependency-free Node CLI that vets a captured MCP `tools/list` response before an agent attaches the tools. It uses deterministic public rules for dangerous schemas, prompt-like manipulation in tool descriptions, confusable tool names, and dangerous same-agent composition.
 
 The command is version-pinned:
 
 ```text
-npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json
 ```
 
 The result is deliberately tri-state: block/1, review/3 for ambiguous or incomplete metadata, or no_blocking_finding/0. It does not launch the MCP server, execute tools, upload the manifest, or claim that exit 0 proves runtime safety.
@@ -64,19 +62,19 @@ The feedback we want most: false positives, manifests that should produce review
 
 ## Held draft: MCP community post
 
-This is BackBond Agent Scan, not Snyk's agent-scanning feature. If you maintain or attach MCP tools, we would like feedback on a deterministic pre-attachment check:
+If you maintain or attach MCP tools, we would like feedback on a deterministic pre-attachment check:
 
 ```text
-npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json
 ```
 
 It reviews tool identities, descriptions, input schemas, and same-manifest composition without launching the server. Incomplete or ambiguous manifests return review/exit 3 rather than a pass.
 
 Please do not post raw `tools/list` JSON in feedback. Compact output is enough: https://github.com/BackBond/agent-scan/issues/new?template=scan-feedback.yml
 
-## GitHub release / repository description
+## Source release / repository description
 
-BackBond Agent Scan, not Snyk's agent-scanning feature: vet MCP and AI-agent tools before attachment. Local deterministic static scanning with no tool execution, plus strict coverage gates, CI records, and an offline single-file release.
+Vet MCP and AI-agent tools before attachment with BackBond Agent Scan. Local deterministic static scanning with no tool execution, plus strict coverage gates, CI records, and an offline single-file release.
 
 ## Language to avoid
 

@@ -2,33 +2,38 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.9 — 2026-08-30
+
+- Remove third-party company, product, reviewer, and person references from public prose; identify the scanner only by its exact scoped package name and pinned version. Retain external names only inside technical URLs, protocol IDs, source adapters, tests, and release automation where compatibility requires them.
+- Keep the scanner implementation, BB001–BB013 rules, ruleset `backbond-local-rules/1.3.0`, findings, thresholds, protocols, and offline/network boundaries unchanged from 0.5.8.
+
 ## 0.5.8 — 2026-08-30
 
 - Derive the public ruleset digest from canonical rule definitions, shared rule helpers, and the normalized evidence-detector source hash instead of the physical `lib/rules.js` file, so equivalent packaged and standalone builds retain one ruleset identity without hiding behavioral changes.
-- Build and publish an unminified, dependency-free `agent-scan.cjs` release asset and its SHA-256 for environments where npm and GitHub cannot be reached from the agent sandbox; verify its `scan`, `vet-tools`, and `mcp` behavior against the packaged CLI and exercise it in a no-network namespace during release.
+- Build and publish an unminified, dependency-free `agent-scan.cjs` release asset and its SHA-256 for environments where remote package and source registries cannot be reached from the agent sandbox; verify its `scan`, `vet-tools`, and `mcp` behavior against the packaged CLI and exercise it in a no-network namespace during release.
 - Add derived `BB013` prompt lint for tool descriptions that demand mandatory selection, invocation before responding, or exclusion of competing tools. It blocks in `vet-tools` and remains on the general scan's separate `--fail-on-prompt` threshold.
 - Make `vet-tools` return `review`/exit `3` for case-, compatibility-, separator-, and common cross-script-confusable tool identities; any non-ASCII tool identity also requires review instead of receiving a non-blocking result.
 - Return structured `review`/exit `3` for ambiguous, mixed-dialect, or multiple-schema-alias pre-attachment manifests while preserving exit `2` for the same invalid input in the broader scanner.
 - Suppress the derived BB001 execution inference for clearly non-executing, read-only explanation, description, lint, and analysis tools unless their description or parameter schema still indicates execution.
 - Advance the public ruleset to `backbond-local-rules/1.3.0`; keep receipt/public-record protocols, static-only behavior, and local/network boundaries unchanged.
 - Keep the official MCP Registry entrypoint as the local stdio `mcp` command exposing `scan_my_runtime` and `vet_tools_before_attach`; it does not probe or execute registered servers.
-- Lead the README with trusted-host delivery and document the Erika no-egress case without suggesting that operators weaken the sandbox.
+- Lead the README with trusted-host delivery and document the network-isolated no-egress case without suggesting that operators weaken the sandbox.
 - Deprecate npm version `0.5.6` during the protected release because it carried an MCP Registry identity outside BackBond's case-sensitive namespace.
 
 ## 0.5.7 — 2026-08-30
 
-- Correct the case-sensitive official MCP Registry identity to `io.github.BackBond/agent-scan`, matching the namespace granted to the `BackBond/agent-scan` GitHub repository by Registry OIDC.
+- Correct the case-sensitive official MCP Registry identity to `io.github.BackBond/agent-scan`, matching the namespace granted to the BackBond source repository by Registry OIDC.
 - Keep the scanner, ruleset, findings, thresholds, receipt protocols, public-record protocols, and local/network boundary unchanged from 0.5.6.
 
 ## 0.5.6 — 2026-08-30
 
-- Add the npm `mcpName` ownership marker and a version-locked `server.json` for an official MCP Registry name. The initial lowercase GitHub owner did not match the case-sensitive OIDC namespace and was corrected in 0.5.7.
-- Publish registry metadata only after the exact npm artifact and GitHub release have been verified, using GitHub Actions OIDC and a checksum-pinned official `mcp-publisher` binary.
+- Add the package `mcpName` ownership marker and a version-locked `server.json` for an official MCP Registry name. The initial lowercase source owner did not match the case-sensitive OIDC namespace and was corrected in 0.5.7.
+- Publish registry metadata only after the exact package artifact and source release have been verified, using source-workflow OIDC and a checksum-pinned official `mcp-publisher` binary.
 - Keep the scanner, public ruleset, findings, thresholds, receipt protocols, public-record protocols, and local/network boundary unchanged from 0.5.5.
 
 ## 0.5.5 — 2026-08-30
 
-- Add the scoped `vet-tools` pre-attachment profile for MCP, OpenAI, Anthropic, and OpenAPI manifests, with fixed `block`/`review`/`no_blocking_finding` decisions and exit codes `1`/`3`/`0`.
+- Add the scoped `vet-tools` pre-attachment profile for MCP, supported function-tool, and OpenAPI manifests, with fixed `block`/`review`/`no_blocking_finding` decisions and exit codes `1`/`3`/`0`.
 - Require complete tool metadata for a non-blocking profile result and state explicitly that profile completeness is not a safety determination, runtime attestation, policy enforcement fact, or insurance decision.
 - Expose the same strict profile as `vet_tools_before_attach` over the dependency-free MCP stdio server; do not fall back to discovery or accept record, receipt, threshold, or policy arguments.
 - Add `EP001`–`EP003` potential exposure-path summaries over existing findings without adding rules, changing severity, changing thresholds, or changing receipt/public-record protocols.
@@ -40,7 +45,7 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 
 - Make every generated and `--help` live `tools/list` command retain strict coverage gating with `--require-coverage`.
 - Label v2 commit metadata as caller-supplied and unverified without changing the record protocol shape.
-- Add a dependency-free official GitHub Action that verifies `HEAD` and every explicit tracked input against `github.sha`, runs the scanner bundled with the selected Action version, and writes a redacted record plus job summary while preserving scanner exit codes.
+- Add a dependency-free official CI Action that verifies `HEAD` and every explicit tracked input against `github.sha`, runs the scanner bundled with the selected Action version, and writes a redacted record plus job summary while preserving scanner exit codes.
 - Keep the public ruleset at `backbond-local-rules/1.2.1`; this release adds no findings or inference changes.
 
 ## 0.5.3 — 2026-08-29
@@ -50,12 +55,12 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Separate runtime exposure gating (`--fail-on`) from description-only prompt lint (`--fail-on-prompt`) without hiding `BB009`–`BB011` findings.
 - Add opt-in commit-bound `backbond-scan-record/v2` records through `--record-commit`, while leaving unbound records on v1.
 - Infer capabilities from configured MCP server names, commands, and arguments so shell, fetch, filesystem, database, and credential-server identities cannot disappear behind a missing live export.
-- Map Claude Code `Bash(*)`, root `Read`/`Write`/`Edit`, and `WebFetch(domain:*)` permissions into derived wildcard scopes; distinguish writable root mounts from read-only mounts.
+- Map recognized command, root-file-access, and unrestricted-fetch permissions into derived wildcard scopes; distinguish writable root mounts from read-only mounts.
 - Reject undeclared or mistyped `scan_my_runtime` arguments instead of silently falling back to discovery.
 - Reduce execution false positives for explicitly read-only documentation tools and recognize executable `cmd`, `python`, and `code` parameters.
 - Distinguish constrained data fields such as country codes from executable inputs while recognizing active execution descriptions in ordinary prose.
 - Recognize passive and contrastive execution descriptions without turning explanatory documentation into execution findings.
-- Fail closed on malformed network allowlists, preserve permission coverage gaps for empty Claude settings, and recognize bare Claude tool permissions plus mixed positive/negative execution descriptions.
+- Fail closed on malformed network allowlists, preserve permission coverage gaps for empty supported settings, and recognize bare tool permissions plus mixed positive/negative execution descriptions.
 - Bound CLI stdin manifests and MCP JSON-RPC messages to 4 MiB before parsing.
 - Keep near-limit wide schemas stack-safe and restrict configured server-command inference to the documented command basename.
 - Advance the public ruleset identity to `backbond-local-rules/1.2.1` so changed rule bytes never reuse the 1.2.0 receipt identity.
@@ -72,12 +77,12 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Encode control characters in human, MCP text, and compact-record rendering so artifact-supplied tool names cannot forge output lines or terminal state.
 - Document direct ingestion of a captured MCP `tools/list` response through `scan --stdin`; do not spawn commands found in agent configuration.
 - Clarify that scanner execution is local and network-free while first-time package installation may contact the configured npm registry.
-- Stop cleanly when npm cannot resolve the registry and document a verified offline transfer path using the exact npm tarball and SHA-256 attached to the official GitHub release.
-- Make tag publishing fail closed unless the tagged package contents match npm, then attach the registry-authoritative tarball and its exact SHA-256 to the GitHub release.
+- Stop cleanly when the package client cannot resolve its registry and document a verified offline transfer path using the exact package tarball and SHA-256 attached to the official source release.
+- Make tag publishing fail closed unless the tagged package contents match the registry, then attach the registry-authoritative tarball and its exact SHA-256 to the source release.
 
 ## 0.5.1 — 2026-08-29
 
-- Make `scan` with no artifact arguments discover bounded project and user MCP configuration for Claude, Cursor, VS Code, Windsurf, and Gemini.
+- Make `scan` with no artifact arguments discover bounded project and user MCP configuration for supported desktop and coding-agent clients.
 - Add `scan_my_runtime` over a dependency-free MCP stdio server and accept live tool manifests through `--stdin`.
 - Add OpenAPI 3.x tool ingestion and OpenTelemetry OTLP JSON trace ingestion.
 - Conservatively infer capabilities and input exposure from tool names, descriptions, and parameter schemas; label every inferred finding as `derived`.
@@ -85,21 +90,21 @@ All notable changes to `@backbond/agent-scan` are recorded here.
 - Replace verbose default output with finding IDs, affected tools, immediate `Stop` instructions, and compact coverage gaps.
 - Add non-enforcing `--suggest-policy` actions and review-required patch templates; no automatic mutation is implemented.
 - Add SARIF 2.1.0 output and fix receipts to bind evidence to both artifact kind and name when multiple inputs are scanned.
-- Add three anonymized non-BackBond fixtures for MCP tool lists, VS Code wildcard sandbox scopes, and Gemini trusted tools.
+- Add three anonymized non-BackBond fixtures for MCP tool lists, wildcard sandbox scopes, and trusted-tool settings.
 - Ship pinned `AGENTS.md` and `SKILL.md` instructions that keep traces local and distinguish this package from similarly named scanners.
 
 ## 0.5.0 — 2026-08-29
 
 - Replace the capture-only analyzer bridge with a dependency-free local deterministic scanner.
 - Add the public `backbond-local-rules/1.0.0` rule pack with named findings BB001–BB006, evidence pointers, severity, and remediation.
-- Support canonical BackBond tool, permission, and trace dialects plus OpenAI, Anthropic, and MCP tool schemas.
+- Support canonical BackBond tool, permission, and trace dialects plus MCP and supported function-tool schemas.
 - Add explicit coverage gaps for missing, unsupported, and insufficient evidence instead of inventing findings or passes.
 - Add stable CI exit codes and `--fail-on critical|high|medium|low|none`.
 - Add tamper-evident and optionally Ed25519-signed receipts for input hashes, ruleset identity, and findings.
 - Keep raw artifact bodies, prompts, trace arguments, secret values, and environment values out of output and receipts.
 - Make legacy claims optional hypotheses that can annotate contradictions but never affect findings or severity.
 - Ship vulnerable and hardened fixtures that prove the entire local rule pack.
-- Remove analyzer execution, hosted POST, score, badge, and analyzer-dependent GitHub Action paths.
+- Remove analyzer execution, hosted POST, score, badge, and analyzer-dependent CI Action paths.
 
 ## 0.4.1 — 2026-08-29
 

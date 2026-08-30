@@ -1,10 +1,10 @@
-# BackBond Agent Scan 0.5.8 distribution kit
+# BackBond Agent Scan 0.5.9 distribution kit
 
-This is BackBond's `@backbond/agent-scan@0.5.8` distribution kit, not Snyk's agent-scanning feature. Keep every command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
+This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.9`. Keep every command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
 
 ## Campaign objective
 
-The first launch stage ends only after five external users complete a pinned 0.5.8 run. Until then:
+The first launch stage ends only after five external users complete a pinned 0.5.9 run. Until then:
 
 - publish one canonical post containing the pinned command and a named finding ID;
 - do not start a multi-post content calendar;
@@ -14,7 +14,7 @@ After the first-five gate, the 30-day goals are:
 
 - confirm 25 successful human- or agent-initiated runs;
 - confirm 10 uses of `vet-tools` before a proposed attachment;
-- see five repositories adopt the version-pinned GitHub Action or pinned CLI gate;
+- see five repositories adopt the version-pinned CI Action or pinned CLI gate;
 - collect ten privacy-safe product feedback reports;
 - begin three qualified conversations about runtime evidence, the listener, or financial protection.
 
@@ -32,26 +32,26 @@ Do not lead developer channels with insurance. Lead with the tool decision they 
 
 ## Canonical message
 
-> This is BackBond Agent Scan, not Snyk's agent-scanning feature. Vet MCP and AI-agent tools before attachment with a local deterministic static scan. Exit 1 means do not attach automatically, exit 3 means insufficient evidence, and exit 0 is a scoped metadata result—not a safety, runtime-attestation, or insurance decision.
+> BackBond Agent Scan vets MCP and AI-agent tools before attachment with a local deterministic static scan. Exit 1 means do not attach automatically, exit 3 means insufficient evidence, and exit 0 is a scoped metadata result—not a safety, runtime-attestation, or insurance decision.
 
 ## Canonical commands
 
 Before attachment:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin < tools-list.json
 ```
 
 Broader inventory and coverage gate:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.8 scan --stdin --require-coverage < tools-list.json
+npx -y @backbond/agent-scan@0.5.9 scan --stdin --require-coverage < tools-list.json
 ```
 
 PowerShell:
 
 ```powershell
-Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin
+Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.9 vet-tools --stdin
 ```
 
 ## Distribution order
@@ -59,7 +59,7 @@ Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.8 vet-tools
 1. Publish `https://backbond.ai/agent-scan/` and verify the live command, links, CSP, `llms.txt`, and `/.well-known/agent.json`.
 2. Run the design-partner outreach in [`design-partner-outreach.md`](design-partner-outreach.md).
 3. Publish the single initial post in [`launch-copy.md`](launch-copy.md), then stop public campaign posting until five external users complete a pinned run.
-4. List the existing Action in GitHub Marketplace after an organization owner accepts the Marketplace terms.
+4. List the existing Action in the source host's marketplace after an organization owner accepts its terms.
 5. Share the standard skill in [`../skills/agent-scan`](../skills/agent-scan) for compatible agents.
 6. Submit the existing MCP Registry entry to downstream directories without changing the pinned version or product claims.
 
@@ -85,5 +85,5 @@ BackBond's broader product is deeper assessment, continuous runtime evidence fro
 - [`design-partner-outreach.md`](design-partner-outreach.md): controlled-launch email and feedback questions.
 - [`first-five-launch.md`](first-five-launch.md): the launch gate before any follow-up content.
 - [`demo/`](demo): sanitized runnable manifests and exact demo instructions.
-- [`assets/terminal-demo-0.5.8.webm`](assets/terminal-demo-0.5.8.webm): 20-second 1280×720 demo generated from the sanitized scenarios.
+- [`assets/terminal-demo-0.5.9.webm`](assets/terminal-demo-0.5.9.webm): 20-second 1280×720 demo generated from the sanitized scenarios.
 - [`assets/public-record-example.txt`](assets/public-record-example.txt): safe share-card example.
