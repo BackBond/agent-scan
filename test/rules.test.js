@@ -18,8 +18,8 @@ function scanFixture(name) {
 test('every open rule has a positive vulnerable fixture and a negative hardened fixture', () => {
   const vulnerable = scanFixture('vulnerable');
   const hardened = scanFixture('hardened');
-  assert.equal(vulnerable.ruleset.version, 'backbond-local-rules/1.2.1');
-  assert.deepEqual(vulnerable.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012']);
+  assert.equal(vulnerable.ruleset.version, 'backbond-local-rules/1.3.0');
+  assert.deepEqual(vulnerable.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012', 'BB013']);
   assert.equal(vulnerable.coverage.status, 'complete');
   assert.deepEqual(hardened.findings, []);
   assert.equal(hardened.coverage.status, 'complete');

@@ -135,8 +135,12 @@ test('release workflow publishes tagged contents and attaches the registry-autho
   assert.match(workflow, /diff -qr --strip-trailing-cr source-tree\/package registry-tree\/package/);
   assert.match(workflow, /registry_file="\$\{\{ steps\.pack\.outputs\.file \}\}"/);
   assert.match(workflow, /cp "registry-copy\/\$registry_file" "\$\{\{ steps\.pack\.outputs\.file \}\}"/);
-  assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$package_file"/);
-  assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$package_file" "\$package_file\.sha256"/);
+  assert.match(workflow, /node scripts\/build-standalone\.js agent-scan\.cjs/);
+  assert.match(workflow, /sha256sum agent-scan\.cjs > agent-scan\.cjs\.sha256/);
+  assert.match(workflow, /sudo unshare --net -- "\$node_binary" agent-scan\.cjs scan/);
+  assert.match(workflow, /release_files=\("\$package_file" "\$package_file\.sha256" agent-scan\.cjs agent-scan\.cjs\.sha256\)/);
+  assert.match(workflow, /gh release download "\$RELEASE_TAG" --pattern "\$release_file"/);
+  assert.match(workflow, /gh release create "\$RELEASE_TAG" "\$\{release_files\[@\]\}"/);
   assert.match(workflow, /id-token: write/);
   assert.match(workflow, /contents: write/);
   assert.match(workflow, /modelcontextprotocol\/registry\/releases\/download\/v1\.8\.1\/mcp-publisher_linux_amd64\.tar\.gz/);

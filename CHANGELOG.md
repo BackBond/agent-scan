@@ -2,6 +2,18 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.8 — 2026-08-30
+
+- Derive the public ruleset digest from a canonical serialization of rule metadata and detector source instead of the physical `lib/rules.js` file, so equivalent packaged and standalone builds retain one ruleset identity.
+- Build and publish an unminified, dependency-free `agent-scan.cjs` release asset and its SHA-256 for environments where npm and GitHub cannot be reached from the agent sandbox; verify its `scan`, `vet-tools`, and `mcp` behavior against the packaged CLI and exercise it in a no-network namespace during release.
+- Add derived `BB013` prompt lint for tool descriptions that demand mandatory selection, invocation before responding, or exclusion of competing tools. It blocks in `vet-tools` and remains on the general scan's separate `--fail-on-prompt` threshold.
+- Make `vet-tools` return `review`/exit `3` for case-, compatibility-, separator-, and common cross-script-confusable tool identities; any non-ASCII tool identity also requires review instead of receiving a non-blocking result.
+- Return structured `review`/exit `3` for ambiguous or mixed-dialect pre-attachment manifests while preserving exit `2` for the same invalid input in the broader scanner.
+- Suppress the derived BB001 execution inference for clearly non-executing, read-only explanation, description, lint, and analysis tools unless their description or parameter schema still indicates execution.
+- Advance the public ruleset to `backbond-local-rules/1.3.0`; keep receipt/public-record protocols, static-only behavior, and local/network boundaries unchanged.
+- Keep the official MCP Registry entrypoint as the local stdio `mcp` command exposing `scan_my_runtime` and `vet_tools_before_attach`; it does not probe or execute registered servers.
+- Lead the README with trusted-host delivery and document the Erika no-egress case without suggesting that operators weaken the sandbox.
+
 ## 0.5.7 — 2026-08-30
 
 - Correct the case-sensitive official MCP Registry identity to `io.github.BackBond/agent-scan`, matching the namespace granted to the `BackBond/agent-scan` GitHub repository by Registry OIDC.

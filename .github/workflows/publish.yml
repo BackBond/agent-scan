@@ -93,6 +93,24 @@ jobs:
       - name: Validate official MCP Registry metadata
         run: ./mcp-publisher validate server.json
 
+      - name: Build the auditable standalone release asset
+        shell: bash
+        run: |
+          node scripts/build-standalone.js agent-scan.cjs
+          sha256sum agent-scan.cjs > agent-scan.cjs.sha256
+
+      - name: Verify the standalone scanner without network interfaces
+        shell: bash
+        run: |
+          node_binary=$(command -v node)
+          output=$(mktemp)
+          sudo unshare --net -- "$node_binary" agent-scan.cjs scan \
+            --tool-schema fixtures/hardened/tool-schema.json \
+            --permissions fixtures/hardened/permissions.json \
+            --trace fixtures/hardened/trace.json \
+            --json > "$output"
+          node -e "const result=JSON.parse(require('node:fs').readFileSync(process.argv[1], 'utf8')); if (result.status !== 'no_findings' || result.coverage.status !== 'complete') process.exit(1)" "$output"
+
       - name: Run the complete test suite
         run: node --test
 
@@ -143,29 +161,23 @@ jobs:
         shell: bash
         run: |
           package_file="${{ steps.pack.outputs.file }}"
+          release_files=("$package_file" "$package_file.sha256" agent-scan.cjs agent-scan.cjs.sha256)
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             assets=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')
             mkdir release-assets
-            if grep -Fxq "$package_file" <<<"$assets"; then
-              gh release download "$RELEASE_TAG" --pattern "$package_file" --dir release-assets
-              cmp -s "$package_file" "release-assets/$package_file" || {
-                echo "Refusing release: existing GitHub tarball differs from the npm artifact." >&2
-                exit 1
-              }
-            else
-              gh release upload "$RELEASE_TAG" "$package_file"
-            fi
-            if grep -Fxq "$package_file.sha256" <<<"$assets"; then
-              gh release download "$RELEASE_TAG" --pattern "$package_file.sha256" --dir release-assets
-              cmp -s "$package_file.sha256" "release-assets/$package_file.sha256" || {
-                echo "Refusing release: existing GitHub checksum differs from the npm artifact checksum." >&2
-                exit 1
-              }
-            else
-              gh release upload "$RELEASE_TAG" "$package_file.sha256"
-            fi
+            for release_file in "${release_files[@]}"; do
+              if grep -Fxq "$release_file" <<<"$assets"; then
+                gh release download "$RELEASE_TAG" --pattern "$release_file" --dir release-assets
+                cmp -s "$release_file" "release-assets/$release_file" || {
+                  echo "Refusing release: existing $release_file differs from the tagged release artifact." >&2
+                  exit 1
+                }
+              else
+                gh release upload "$RELEASE_TAG" "$release_file"
+              fi
+            done
           else
-            gh release create "$RELEASE_TAG" "$package_file" "$package_file.sha256" \
+            gh release create "$RELEASE_TAG" "${release_files[@]}" \
               --verify-tag --generate-notes --title "$RELEASE_TAG"
           fi
 

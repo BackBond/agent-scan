@@ -7,7 +7,7 @@
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.5.7",
+  "version": "0.5.8",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "capabilities": {
     "streaming": false,

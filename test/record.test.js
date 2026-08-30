@@ -34,7 +34,7 @@ test('public record is self-checksummed and redacts names, paths, pointers, and 
   assert.equal(verifyPublicScanRecord(record), true);
   assert.equal(record.assurance.level, 'self-run_unverified');
   assert.equal(record.result.interpretation, 'findings');
-  assert.deepEqual(record.result.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012']);
+  assert.deepEqual(record.result.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012', 'BB013']);
   assert.equal(record.result.findings.every(item => item.tools === undefined), true);
   assert.equal(record.scope.input_fingerprints, undefined);
   assert.doesNotMatch(serialized, /shell_exec|vault_read|tool-schema\.json|permissions\.json|trace\.json/);

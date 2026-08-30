@@ -28,7 +28,7 @@ test('vulnerable fixture exits 1 with all expected finding IDs', () => {
   const run = spawnSync(process.execPath, scanArgs(fixturePaths('vulnerable')), { encoding: 'utf8' });
   assert.equal(run.status, 1, run.stderr);
   const output = JSON.parse(run.stdout);
-  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012']);
+  assert.deepEqual(output.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012', 'BB013']);
   assert.equal(output.coverage.status, 'complete');
 });
 
