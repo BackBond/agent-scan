@@ -11,6 +11,8 @@ The initial post must contain:
 
 Record only these five fields. Do not add names, organizations, manifests, or free-form notes.
 
+Organic reports use the repository's [external-run form](https://github.com/BackBond/agent-scan/issues/new?template=external-run.yml). Do not recruit named testers, add telemetry, or treat downloads as completed runs.
+
 | Run | Pin started Y/N | Decision | Attach changed Y/N | OS / Node | Sanitized FP |
 | --- | --- | --- | --- | --- | --- |
 | 1 |  |  |  |  |  |

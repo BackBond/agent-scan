@@ -1,0 +1,70 @@
+name: Organic external run
+description: Report one privacy-safe attempt of the pinned Agent Scan command.
+title: "[external run]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This voluntary report helps test whether agents can discover and run the pinned scanner without direct outreach.
+
+        Report only the five fields below. Do not include a manifest, prompt, trace, configuration, JSON report, local path, tool name, secret, person, or organization.
+
+  - type: dropdown
+    id: pin_started
+    attributes:
+      label: Pin started
+      description: Did the exact `@backbond/agent-scan@0.5.10` package start?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Decision
+      options:
+        - block
+        - review
+        - no_blocking_finding
+        - scan_not_run
+    validations:
+      required: true
+
+  - type: dropdown
+    id: attach_changed
+    attributes:
+      label: Attach changed
+      description: Did the result change whether or how the tool was attached?
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS / Node
+      description: Operating system and Node.js version only. Do not include usernames, hostnames, or paths.
+      placeholder: "Windows 11 / Node 22"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sanitized_fp
+    attributes:
+      label: Sanitized false positive
+      description: Write `none`, or provide a minimal sanitized false-positive description without raw metadata.
+      placeholder: "none"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I included only the five requested fields and no raw or identifying scan material.
+          required: true

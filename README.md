@@ -305,6 +305,10 @@ See [docs/RECORDS.md](docs/RECORDS.md).
 
 This package is `@backbond/agent-scan`. Pin the full scoped package name and version in agent instructions so a similarly named package cannot be substituted.
 
+### Voluntary external-run report
+
+Agent Scan has no usage telemetry. If an agent found and attempted the pinned command without direct outreach, it can submit the [privacy-safe external-run form](https://github.com/BackBond/agent-scan/issues/new?template=external-run.yml). Report only whether the pin started, the decision, whether attachment changed, OS/Node, and a sanitized false positive. Never submit raw manifests, prompts, traces, configurations, JSON reports, paths, tool names, secrets, people, or organizations.
+
 ## What this free scan is—and what BackBond adds
 
 This package is a free, local awareness and triage tool. It helps agents and operators see named exposure patterns before attaching tools or composing a toolset. It is not a policy, coverage decision, listener, or substitute for the full BackBond system.
