@@ -1,0 +1,88 @@
+name: Scan feedback or bug
+description: Report a false positive, unexpected decision, compatibility problem, or documentation issue without exposing scan inputs.
+title: "[scan feedback]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve `@backbond/agent-scan`.
+
+        **Privacy boundary:** share only compact `vet-tools` output or the compact card printed by `--record-public`. Do not attach or paste raw `tools-list.json`, `--json` output, path-bearing receipts, raw traces, prompts, config files, or optional record fields containing tool names or fingerprints. Compact output reduces disclosure; it is not a zero-disclosure guarantee.
+
+  - type: dropdown
+    id: report_type
+    attributes:
+      label: Report type
+      options:
+        - False positive or overreach
+        - Unexpected REVIEW / exit 3
+        - Unexpected BLOCK / exit 1
+        - Unexpected exit 0
+        - Installation or compatibility problem
+        - Documentation problem
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Exact pinned package version
+      description: Do not use `@latest` in a reproduction.
+      placeholder: "@backbond/agent-scan@0.5.5"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: command
+    attributes:
+      label: Command or integration
+      options:
+        - vet-tools
+        - scan
+        - MCP stdio server
+        - GitHub Action
+        - Offline tarball
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: exit_code
+    attributes:
+      label: Exit code or MCP decision
+      placeholder: "0, 1, 2, 3, block, review, or no_blocking_finding"
+
+  - type: textarea
+    id: compact_output
+    attributes:
+      label: Compact output only
+      description: Paste only compact human output from `vet-tools` or the compact `--record-public` card. Redact tool names if they are sensitive.
+      render: text
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and why?
+      description: Describe the behavior without reconstructing the raw manifest or trace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Node.js version, shell, and whether npm installation or offline execution was used. Do not include usernames or local paths.
+      placeholder: "Windows 11, Node 22, PowerShell, npm registry install"
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I used an exact pinned package version and did not substitute `@latest`.
+          required: true
+        - label: I did not include a raw tool manifest, JSON report, path-bearing receipt, trace, prompt, config file, input fingerprint, or sensitive tool name.
+          required: true
+        - label: I understand that compact output and public records reduce disclosure but are not a zero-disclosure guarantee.
+          required: true
