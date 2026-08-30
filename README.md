@@ -44,7 +44,7 @@ Compatible agents can load the repository's standard skill folder from [`skills/
 
 The installed file must be `.agents/skills/agent-scan/SKILL.md`. It keeps commands pinned to `0.5.8`, treats coverage gaps as unknown rather than safe, and tells agents never to post raw manifests, traces, prompts, JSON reports, or path-bearing receipts.
 
-The [`distribution`](distribution) directory contains the canonical launch message, cross-platform install cards, sanitized demos, privacy-safe outreach, and the two-week launch calendar. Public copy should come from that kit rather than being rewritten with `@latest` or stronger claims.
+The [`distribution`](distribution) directory contains the canonical launch message, cross-platform install cards, sanitized demos, privacy-safe outreach, and the first-five-runs launch gate. Public copy should come from that kit rather than being rewritten with `@latest` or stronger claims.
 
 `vet-tools` returns `block` (exit `1`), `review` for insufficient profile evidence (exit `3`), or `no_blocking_finding` (exit `0`). It checks supplied tool identities, descriptions, input schemas, and same-manifest composition. A non-blocking result requires unambiguous tool names, a description or title, and one analyzable object input schema per tool; opaque branches, conflicting schema aliases, mixed manifest dialects, non-ASCII identities, or confusable-name collisions cannot produce a non-blocking result. It does not assess runtime enforcement, approvals, audit behavior, traces, or actual execution. `no_blocking_finding` is not a safety determination or runtime attestation.
 

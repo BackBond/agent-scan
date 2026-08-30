@@ -2,9 +2,11 @@
 
 All copy below is pinned to `@backbond/agent-scan@0.5.8`.
 
+Publish only the initial post below before five external users complete a pinned 0.5.8 run. The remaining channel variants are held drafts, not a posting calendar.
+
 ## Two-sentence canonical announcement
 
-This is BackBond Agent Scan, not Snyk's agent-scanning feature. Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin`. The deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest; exit 0 is not proof of runtime safety or insurance.
+This is BackBond Agent Scan, not Snyk's agent-scanning feature. Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin`. A forced-invocation description can produce `BB013`; the deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest. Exit 0 is not proof of runtime safety or insurance.
 
 ## Founder LinkedIn post
 
@@ -20,13 +22,15 @@ npx -y @backbond/agent-scan@0.5.8 vet-tools --stdin < tools-list.json
 - exit 3: insufficient evidence; stop unknown
 - exit 0: no configured blocking rule fired on the supplied metadata
 
+Example: `BB013` tells the agent to stop when a tool description tries to force its own selection or invocation.
+
 Static only. No tool execution. No scan-input upload. Open rules, MIT license, exact version pinned.
 
 This is a pre-screen, not a safety certificate or insurance decision. When static exposure is not enough, BackBond is working on deeper assessment, continuous runtime evidence from the listener, and, where approved, financial protection.
 
 https://backbond.ai/agent-scan/
 
-## Short X / Bluesky post
+## Held draft: Short X / Bluesky post
 
 BackBond Agent Scan is not Snyk's agent-scanning feature.
 
@@ -40,7 +44,7 @@ Local, static, no tool execution, no upload. Exit 0 is not proof of runtime safe
 
 https://backbond.ai/agent-scan/
 
-## Hacker News / community post
+## Held draft: Hacker News / community post
 
 **Title:** Show HN: A local pre-attachment gate for MCP tool manifests
 
@@ -58,7 +62,7 @@ Source and reproducible release assets: https://github.com/BackBond/agent-scan
 
 The feedback we want most: false positives, manifests that should produce review but do not, and installation failures in hardened environments. Please share only compact output, never raw manifests or traces.
 
-## MCP community post
+## Held draft: MCP community post
 
 This is BackBond Agent Scan, not Snyk's agent-scanning feature. If you maintain or attach MCP tools, we would like feedback on a deterministic pre-attachment check:
 
