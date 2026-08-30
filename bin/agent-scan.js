@@ -25,7 +25,7 @@ function usage() {
 
 Usage:
   agent-scan scan                         Auto-discover and scan known local agent configs.
-  agent-scan scan --stdin                 Read a live MCP/OpenAI/Anthropic tool manifest.
+  agent-scan scan --stdin                 Read a live MCP or supported function-tool manifest.
   agent-scan vet-tools --stdin            Vet a proposed tool manifest before attachment.
   agent-scan vet-tools --tool-schema <file>
   agent-scan scan [artifact options]      Scan intentionally exported evidence.
@@ -34,8 +34,8 @@ Usage:
   agent-scan verify-receipt --input receipt.json
 
 Artifact options:
-  --config <file>       Claude/Cursor/VS Code/Windsurf/Gemini MCP config (repeatable).
-  --tool-schema <file>  BackBond, MCP, OpenAI, Anthropic, or OpenAPI JSON.
+  --config <file>       Recognized desktop or coding-agent MCP config (repeatable).
+  --tool-schema <file>  BackBond, MCP, supported function-tool, or OpenAPI JSON.
   --permissions <file>  backbond-permissions/v1 JSON.
   --trace <file>        backbond-trace/v1 or OpenTelemetry OTLP JSON.
   --stdin               Read a live tool manifest from stdin; use --input for claims.

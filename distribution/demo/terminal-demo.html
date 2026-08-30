@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BackBond Agent Scan 0.5.8 demo</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { width: 1280px; height: 720px; margin: 0; overflow: hidden; background: #f7f8f3; color: #10241a; }
+    .frame { height: 100%; display: grid; grid-template-rows: 72px 1fr 58px; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 0 52px; border-top: 5px solid #195b43; border-bottom: 1px solid #d6dfd8; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+    .mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; background: #132f3c; color: white; }
+    .version { color: #526259; font: 700 14px ui-monospace, Consolas, monospace; }
+    main { padding: 42px 52px 30px; display: grid; grid-template-columns: 1fr 330px; gap: 34px; min-height: 0; }
+    .terminal { overflow: hidden; border: 1px solid #26362e; border-radius: 17px; background: #0c1712; box-shadow: 0 24px 70px rgba(16,36,26,.14); }
+    .bar { height: 46px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #26362e; color: #96a99e; font: 600 12px ui-monospace, Consolas, monospace; }
+    .dots { display: flex; gap: 7px; }.dots i { width: 10px; height: 10px; border-radius: 50%; background: #52645a; }.dots i:first-child { background: #d95f2a; }
+    pre { margin: 0; padding: 30px; color: #e4eee7; font: 600 18px/1.55 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
+    .green { color: #75c896; }.orange { color: #ff9a70; }.gold { color: #e9b667; }.soft { color: #96a99e; }
+    aside { padding: 18px 0; display: flex; flex-direction: column; justify-content: space-between; }
+    .step { color: #d95f2a; font-size: 13px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { margin: 18px 0 14px; font-size: 45px; line-height: .98; letter-spacing: -.055em; }
+    p { margin: 0; color: #526259; font-size: 18px; line-height: 1.5; }
+    .decision { margin-top: 30px; font-size: 18px; font-weight: 850; color: #195b43; }
+    .decision.block { color: #9c3934; }.decision.review { color: #a46a1f; }
+    .progress { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .progress i { height: 5px; border-radius: 9px; background: #d6dfd8; }.progress i.on { background: #195b43; }
+    footer { display: flex; align-items: center; justify-content: space-between; padding: 0 52px; background: #132f3c; color: white; font-weight: 730; }
+    footer span:last-child { color: #bcd0c4; font: 600 13px ui-monospace, Consolas, monospace; }
+    [data-scene] { animation: scene 20s linear infinite; }
+    @keyframes scene { from { opacity: 1; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <header><div class="brand"><span class="mark">B</span><span>BackBond Agent Scan</span></div><span class="version">@backbond/agent-scan@0.5.8</span></header>
+    <main>
+      <div class="terminal"><div class="bar"><div class="dots"><i></i><i></i><i></i></div><span>local pre-attachment gate</span></div><pre id="terminal"></pre></div>
+      <aside><div><span class="step" id="step"></span><h1 id="headline"></h1><p id="explanation"></p><div class="decision" id="decision"></div></div><div class="progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div></aside>
+    </main>
+    <footer><span>Static only · no tool execution · no upload</span><span id="footer-note">exit 0 is not proof of runtime safety</span></footer>
+  </div>
+  <script>
+    const scenes = [
+      {
+        at: 0,
+        step: "1 · Typed tool",
+        headline: "Start with a narrow, explicit schema.",
+        explanation: "The scanner has enough metadata to make a scoped decision.",
+        decision: "NO BLOCKING FINDING · exit 0",
+        kind: "",
+        terminal: '<span class="green">$</span> node bin/agent-scan.js vet-tools --stdin \\\n+  &lt; benign-tools-list.json\n\n<span class="green">NO BLOCKING FINDING — 0 findings</span>\nProfile: pre-attachment tool manifest only\nProfile coverage: complete\n\n<span class="soft">Agent decision: this profile found no reason to block;\nruntime policy still controls attachment.\n\nNot assessed: runtime enforcement, approval, audit\nbehavior, traces, or actual execution.</span>'
+      },
+      {
+        at: 5,
+        step: "2 · Selection hijack",
+        headline: "Stop forced invocation before attachment.",
+        explanation: "A tool description tries to make the model select it before every answer.",
+        decision: "BLOCK · exit 1",
+        kind: "block",
+        terminal: '<span class="green">$</span> node bin/agent-scan.js vet-tools --stdin \\\n+  &lt; forced-invocation-tools-list.json\n\n<span class="orange">BLOCK — 1 finding (1 high)</span>\nProfile: pre-attachment tool manifest only\n\n<span class="orange">BB013 mail_sync [derived]</span>\n  Stop: Do not attach the tool until the selection-\n  manipulation language is removed and the server\n  source is reviewed.\n\n<span class="soft">Profile coverage: complete</span>'
+      },
+      {
+        at: 12,
+        step: "3 · Confusable name",
+        headline: "Ambiguity is review, not a pass.",
+        explanation: "A Cyrillic character makes one tool name visually shadow another.",
+        decision: "REVIEW · exit 3",
+        kind: "review",
+        terminal: '<span class="green">$</span> node bin/agent-scan.js vet-tools --stdin \\\n+  &lt; confusable-shadow-tools-list.json\n\n<span class="gold">REVIEW — 0 findings</span>\nProfile: pre-attachment tool manifest only\n\n<span class="gold">Profile coverage: partial</span>\n  1 tool-name group becomes indistinguishable after\n  compatibility and confusable normalization.\n  1 tool name contains non-ASCII characters.\n\n<span class="soft">Agent decision: do not attach automatically;\nthe manifest is insufficient for this profile.</span>'
+      },
+      {
+        at: 19,
+        step: "Use the exact pin",
+        headline: "Vet the tool. Keep the evidence local.",
+        explanation: "Share compact output only. Never post raw manifests, prompts, traces, configuration, or JSON reports.",
+        decision: "backbond.ai/agent-scan/",
+        kind: "",
+        terminal: '<span class="green">$</span> npx -y @backbond/agent-scan@0.5.8 \\\n+  vet-tools --stdin &lt; tools-list.json\n\n<span class="green">1 = block · 3 = review · 0 = scoped result</span>\n\n<span class="soft">No blocking finding is not a safety, runtime-\nattestation, or insurance decision.</span>'
+      }
+    ];
+    const els = {
+      terminal: document.getElementById("terminal"), step: document.getElementById("step"),
+      headline: document.getElementById("headline"), explanation: document.getElementById("explanation"),
+      decision: document.getElementById("decision"), dots: [...document.querySelectorAll(".progress i")]
+    };
+    let active = -1;
+    function render() {
+      const second = (performance.now() / 1000) % 20;
+      let index = 0;
+      for (let i = 0; i < scenes.length; i += 1) if (second >= scenes[i].at) index = i;
+      if (index !== active) {
+        active = index;
+        const scene = scenes[index];
+        els.terminal.innerHTML = scene.terminal; els.step.textContent = scene.step;
+        els.headline.textContent = scene.headline; els.explanation.textContent = scene.explanation;
+        els.decision.textContent = scene.decision; els.decision.className = "decision " + scene.kind;
+        els.dots.forEach((dot, i) => dot.classList.toggle("on", i <= index));
+      }
+      requestAnimationFrame(render);
+    }
+    render();
+  </script>
+</body>
+</html>

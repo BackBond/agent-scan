@@ -1,6 +1,6 @@
 # BackBond local agent scanner
 
-@backbond/agent-scan 0.5.8 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
+@backbond/agent-scan 0.5.9 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
 
 Its dependency-free stdio server is listed in the official MCP Registry as `io.github.BackBond/agent-scan`, version-locked to the npm package. The Registry entrypoint exposes local metadata checks and does not probe or execute other MCP servers.
 

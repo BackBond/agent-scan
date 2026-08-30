@@ -29,7 +29,7 @@ body:
     attributes:
       label: Exact pinned package version
       description: Do not use `@latest` in a reproduction.
-      placeholder: "@backbond/agent-scan@0.5.8"
+      placeholder: "@backbond/agent-scan@0.5.9"
     validations:
       required: true
 
@@ -42,7 +42,7 @@ body:
         - scan
         - MCP stdio server
         - Official MCP Registry
-        - GitHub Action
+        - CI Action
         - Offline tarball
         - Other
     validations:
