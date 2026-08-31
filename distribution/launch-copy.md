@@ -1,21 +1,21 @@
 # Launch copy
 
-All new copy below is pinned to `@backbond/agent-scan@0.5.10`.
+All new copy below is pinned to `@backbond/agent-scan@0.5.11`.
 
-Publish only the initial post below before the five external attempts on the pinned 0.5.10 command are recorded. The remaining channel variants are held drafts, not a posting calendar.
+Publish only the initial post below before the five external attempts on the pinned 0.5.11 command are recorded. The remaining channel variants are held drafts, not a posting calendar.
 
 ## Two-sentence canonical announcement
 
-Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin`. A forced-invocation description can produce `BB013`; the deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest. Exit 0 is not proof of runtime safety or insurance.
+Before attaching a new MCP tool, vet its `tools/list` metadata locally with `npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin`. A forced-invocation description can produce `BB013`; the deterministic gate returns block, review, or no blocking finding without executing the tool or uploading the manifest. Exit 0 is not proof of runtime safety or insurance.
 
 ## Founder social post
 
 An agent should not attach a third-party MCP tool just because its description sounds useful.
 
-We released `@backbond/agent-scan@0.5.10`, a free local pre-attachment gate for MCP and AI-agent tools. Pipe in the captured `tools/list` response and it checks dangerous capabilities, tool-description manipulation, confusable tool names, and unsafe tool combinations.
+We released `@backbond/agent-scan@0.5.11`, a free local pre-attachment gate for MCP and AI-agent tools. Pipe in the captured `tools/list` response and it checks dangerous capabilities, tool-description manipulation, confusable tool names, and unsafe tool combinations.
 
 ```text
-npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json
 ```
 
 - exit 1: block automatic attachment
@@ -34,7 +34,7 @@ https://backbond.ai/agent-scan/
 
 Vet MCP tools before attachment:
 
-`npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json`
+`npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json`
 
 1 = block · 3 = review · 0 = no blocking finding on supplied metadata.
 
@@ -51,7 +51,7 @@ We built an MIT-licensed, dependency-free Node CLI that vets a captured MCP `too
 The command is version-pinned:
 
 ```text
-npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json
 ```
 
 The result is deliberately tri-state: block/1, review/3 for ambiguous or incomplete metadata, or no_blocking_finding/0. It does not launch the MCP server, execute tools, upload the manifest, or claim that exit 0 proves runtime safety.
@@ -65,7 +65,7 @@ The feedback we want most: false positives, manifests that should produce review
 If you maintain or attach MCP tools, we would like feedback on a deterministic pre-attachment check:
 
 ```text
-npx -y @backbond/agent-scan@0.5.10 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json
 ```
 
 It reviews tool identities, descriptions, input schemas, and same-manifest composition without launching the server. Incomplete or ambiguous manifests return review/exit 3 rather than a pass.

@@ -8,13 +8,13 @@
     "source": "github",
     "id": "1350044063"
   },
-  "version": "0.5.10",
+  "version": "0.5.11",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@backbond/agent-scan",
-      "version": "0.5.10",
+      "version": "0.5.11",
       "transport": {
         "type": "stdio"
       },
