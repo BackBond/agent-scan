@@ -2,6 +2,13 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.11 — 2026-08-31
+
+- Present the official Action in GitHub Marketplace as **BackBond Agent Scan**, with a pre-attachment MCP manifest description and unchanged Action execution behavior.
+- Point npm and the packaged discovery card at `https://backbond.ai/agent-scan/`, and add explicit MCP, Agent Skills, and tool-security discovery keywords.
+- Advance current commands, the bundled Agent Skill, Action examples, and registry metadata to the exact `0.5.11` pin.
+- Keep scanner code, Action code, BB001–BB013 detector behavior, ruleset `backbond-local-rules/1.3.0`, protocols, exit codes, fixtures, and the local/no-network boundary byte-identical to 0.5.10.
+
 ## 0.5.10 — 2026-08-30
 
 - Add a strict `mode: vet-tools` path to the official Action. It accepts exactly one committed tool manifest, preserves the CLI's `block`/`review`/`no_blocking_finding` exit codes, emits privacy-safe workflow outputs and a job summary, and creates no public record.

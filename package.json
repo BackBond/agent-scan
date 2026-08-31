@@ -1,9 +1,9 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "private": false,
   "mcpName": "io.github.BackBond/agent-scan",
-  "description": "Local deterministic security scanner for AI-agent tools, permissions, and traces.",
+  "description": "Local deterministic pre-attachment security scanner for MCP and AI-agent tool manifests.",
   "bin": {
     "agent-scan": "bin/agent-scan.js",
     "backbond-agent-scan": "bin/agent-scan.js"
@@ -40,11 +40,16 @@
     "runtime-evidence",
     "offline-first",
     "mcp-security",
+    "mcp",
+    "mcp-server",
     "mcp-tool-vetting",
+    "model-context-protocol",
+    "agent-skills",
+    "tool-security",
     "pre-attachment-security",
     "shareable-scan-record"
   ],
-  "homepage": "https://backbond.ai",
+  "homepage": "https://backbond.ai/agent-scan/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/BackBond/agent-scan.git"

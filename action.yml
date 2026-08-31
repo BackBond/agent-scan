@@ -1,5 +1,5 @@
-name: BackBond agent-scan
-description: Verify committed inputs and run either the broad scan or the fail-closed schema check.
+name: BackBond Agent Scan
+description: Vet committed MCP and AI-agent tool manifests before attachment with deterministic local rules.
 inputs:
   mode:
     description: Use scan for the broader evidence gate or vet-tools for a strict pre-attachment schema check.

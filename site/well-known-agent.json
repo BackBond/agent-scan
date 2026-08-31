@@ -2,12 +2,12 @@
   "$comment": "Public scanner discovery card",
   "name": "BackBond Agent Scan",
   "description": "Run deterministic local security rules over agent tools, permissions, and traces.",
-  "url": "https://backbond.ai",
+  "url": "https://backbond.ai/agent-scan/",
   "provider": {
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.5.10",
+  "version": "0.5.11",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "capabilities": {
     "streaming": false,
