@@ -98,6 +98,7 @@ test('Agent Plugin is skill-only and cannot start a process merely by being inst
   assert.equal(plugin.version, manifest.version);
   assert.equal(plugin.license, 'MIT');
   assert.equal(plugin.repository, 'https://github.com/BackBond/agent-scan');
+  assert.deepEqual(plugin.skills, ['./skills/agent-scan/']);
   assert.deepEqual(marketplacePlugin, plugin);
   assert.equal(fs.existsSync(path.join(ROOT, 'hooks')), false);
   assert.equal(fs.existsSync(path.join(ROOT, 'mcp.json')), false);

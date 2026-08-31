@@ -2,6 +2,11 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.14 — 2026-08-31
+
+- Declare the bundled `agent-scan` skill explicitly in both Agent Plugin manifests so marketplace lint validates the skill at its real directory instead of treating the staging directory as a skill.
+- Keep the dedicated marketplace source root introduced in 0.5.13 and keep BB001–BB013 detector behavior, ruleset `backbond-local-rules/1.3.0`, protocols, exit codes, Action behavior, and the scanner's no-network boundary unchanged.
+
 ## 0.5.13 — 2026-08-31
 
 - Add a dedicated `plugins/backbond-agent-scan` source root for external Agent Plugin marketplaces so the immutable release installs without treating the repository root as an absolute path.

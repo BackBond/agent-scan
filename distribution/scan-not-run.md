@@ -2,8 +2,8 @@
 
 1. Say `scan_not_run`; do not report `block`, `review`, or `no_blocking_finding`.
 2. Record only OS, `node --version`, and the exact sanitized error category.
-3. Agent Scan 0.5.13 requires Node.js 18 or newer.
-4. Use the exact pin: `@backbond/agent-scan@0.5.13`; never fall forward to `@latest`.
+3. Agent Scan 0.5.14 requires Node.js 18 or newer.
+4. Use the exact pin: `@backbond/agent-scan@0.5.14`; never fall forward to `@latest`.
 5. Confirm `tools-list.json` exists before invoking `vet-tools`.
 6. In PowerShell, pipe with `Get-Content -Raw .\tools-list.json | ...`; `<` is not the file-input form there.
 7. Treat registry DNS, timeout, TLS, and unavailable-package errors as install failures, not scan decisions.
