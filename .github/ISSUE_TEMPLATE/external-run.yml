@@ -13,7 +13,7 @@ body:
     id: pin_started
     attributes:
       label: Pin started
-      description: Did the exact `@backbond/agent-scan@0.5.12` package start?
+      description: Did the exact `@backbond/agent-scan@0.5.13` package start?
       options:
         - "Yes"
         - "No"

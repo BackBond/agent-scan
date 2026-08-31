@@ -74,6 +74,9 @@ test('all current public version surfaces follow package.json', () => {
   const currentSurfaces = [
     'README.md', 'AGENTS.md', 'SKILL.md', 'plugin.json',
     path.join('skills', 'agent-scan', 'SKILL.md'), path.join('skills', 'agent-scan', 'README.md'),
+    path.join('plugins', 'backbond-agent-scan', 'plugin.json'),
+    path.join('plugins', 'backbond-agent-scan', 'skills', 'agent-scan', 'SKILL.md'),
+    path.join('plugins', 'backbond-agent-scan', 'skills', 'agent-scan', 'README.md'),
     path.join('docs', 'RECORDS.md'), path.join('docs', 'RULES.md'), path.join('docs', 'PUBLICATION.md'),
     path.join('site', 'llms.txt'), path.join('.github', 'ISSUE_TEMPLATE', 'scan-feedback.yml'),
   ];
@@ -89,15 +92,26 @@ test('all current public version surfaces follow package.json', () => {
 test('Agent Plugin is skill-only and cannot start a process merely by being installed', () => {
   const manifest = require('../package.json');
   const plugin = require('../plugin.json');
+  const marketplacePlugin = require('../plugins/backbond-agent-scan/plugin.json');
   assert.equal(plugin.$schema, 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json');
   assert.equal(plugin.name, 'backbond-agent-scan');
   assert.equal(plugin.version, manifest.version);
   assert.equal(plugin.license, 'MIT');
   assert.equal(plugin.repository, 'https://github.com/BackBond/agent-scan');
+  assert.deepEqual(marketplacePlugin, plugin);
   assert.equal(fs.existsSync(path.join(ROOT, 'hooks')), false);
   assert.equal(fs.existsSync(path.join(ROOT, 'mcp.json')), false);
   assert.equal(fs.existsSync(path.join(ROOT, 'commands')), false);
+  const marketplaceRoot = path.join(ROOT, 'plugins', 'backbond-agent-scan');
+  assert.equal(fs.existsSync(path.join(marketplaceRoot, 'hooks')), false);
+  assert.equal(fs.existsSync(path.join(marketplaceRoot, 'mcp.json')), false);
+  assert.equal(fs.existsSync(path.join(marketplaceRoot, 'commands')), false);
   assert.match(fs.readFileSync(path.join(ROOT, 'skills', 'agent-scan', 'SKILL.md'), 'utf8'), /pinned offline static gate/i);
+  const normalizeLines = value => value.replace(/\r\n/g, '\n');
+  assert.equal(
+    normalizeLines(fs.readFileSync(path.join(ROOT, 'plugins', 'backbond-agent-scan', 'skills', 'agent-scan', 'SKILL.md'), 'utf8')),
+    normalizeLines(fs.readFileSync(path.join(ROOT, 'skills', 'agent-scan', 'SKILL.md'), 'utf8')),
+  );
 });
 
 test('MCP tools advertise read-only, non-destructive, idempotent local behavior', () => {

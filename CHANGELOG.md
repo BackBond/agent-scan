@@ -2,6 +2,12 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.13 — 2026-08-31
+
+- Add a dedicated `plugins/backbond-agent-scan` source root for external Agent Plugin marketplaces so the immutable release installs without treating the repository root as an absolute path.
+- Keep the marketplace bundle skill-only, with the same `agent-scan` skill instructions and no hooks, commands, or plugin-level MCP configuration.
+- Keep BB001–BB013 detector behavior, ruleset `backbond-local-rules/1.3.0`, protocols, exit codes, Action behavior, and the scanner's no-network boundary unchanged from 0.5.12.
+
 ## 0.5.12 — 2026-08-31
 
 - Add a skill-only Agent Plugin manifest and ship the standard `skills/agent-scan` folder in the npm package. Installing the plugin or skill cannot start a process, attach an MCP server, or run a scan.

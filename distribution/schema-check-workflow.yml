@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - id: backbond
-        uses: BackBond/agent-scan@v0.5.12
+        uses: BackBond/agent-scan@v0.5.13
         with:
           mode: vet-tools
           tool-schema: tools-list.json
