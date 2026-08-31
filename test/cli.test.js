@@ -22,6 +22,7 @@ test('start describes a local scanner with no analyzer or network dependency', (
   assert.equal(output.mode, 'local_deterministic');
   assert.match(output.guarantees.join(' '), /no private analyzer/i);
   assert.match(output.guarantees.join(' '), /no network request/i);
+  assert.match(output.guarantees.join(' '), /counted separately.*non-numeric precision note/i);
 });
 
 test('vulnerable fixture exits 1 with all expected finding IDs', () => {

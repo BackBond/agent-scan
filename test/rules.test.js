@@ -7,7 +7,7 @@ const path = require('node:path');
 const { collectEvidence } = require('../lib/evidence.js');
 const { scanEvidence } = require('../lib/scanner.js');
 const { sha256 } = require('../lib/canonical.js');
-const { RULESET_DIGEST, createRulesetDigest } = require('../lib/rules.js');
+const { RULES, RULESET_DIGEST, createRulesetDigest } = require('../lib/rules.js');
 const rulesetSources = require('../lib/ruleset-sources.json');
 const { fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
 
@@ -22,7 +22,7 @@ function scanFixture(name) {
 test('every open rule has a positive vulnerable fixture and a negative hardened fixture', () => {
   const vulnerable = scanFixture('vulnerable');
   const hardened = scanFixture('hardened');
-  assert.equal(vulnerable.ruleset.version, 'backbond-local-rules/1.3.0');
+  assert.equal(vulnerable.ruleset.version, 'backbond-local-rules/1.4.0');
   assert.deepEqual(vulnerable.findings.map(item => item.id), ['BB001', 'BB002', 'BB003', 'BB004', 'BB005', 'BB006', 'BB007', 'BB008', 'BB009', 'BB010', 'BB011', 'BB012', 'BB013']);
   assert.equal(vulnerable.coverage.status, 'complete');
   assert.deepEqual(hardened.findings, []);
@@ -38,6 +38,25 @@ test('ruleset identity covers normalized evidence-detector source and rule evalu
   assert.equal(rulesetSources.evidence_sha256, sha256(evidenceSource));
   assert.notEqual(createRulesetDigest('0'.repeat(64)), RULESET_DIGEST);
   assert.notEqual(createRulesetDigest(rulesetSources.evidence_sha256, ['changed helper']), RULESET_DIGEST);
+  assert.notEqual(createRulesetDigest(rulesetSources.evidence_sha256, undefined, {
+    severity_order: { critical: 5, high: 3, medium: 2, low: 1, none: 0 },
+    prompt_lint_ids: ['BB009', 'BB010', 'BB011', 'BB013'],
+  }), RULESET_DIGEST);
+  assert.notEqual(createRulesetDigest(rulesetSources.evidence_sha256, undefined, {
+    severity_order: { critical: 4, high: 3, medium: 2, low: 1, none: 0 },
+    prompt_lint_ids: ['BB009', 'BB010', 'BB011'],
+  }), RULESET_DIGEST);
+});
+
+test('every rule declares one honest finding class and a nonempty precision note', () => {
+  const classes = RULES.reduce((counts, rule) => {
+    assert.equal(['capability_exposure', 'prompt_injection_indicator'].includes(rule.finding_class), true, rule.id);
+    assert.equal(typeof rule.precision_note, 'string', rule.id);
+    assert.notEqual(rule.precision_note.trim(), '', rule.id);
+    counts[rule.finding_class] += 1;
+    return counts;
+  }, { capability_exposure: 0, prompt_injection_indicator: 0 });
+  assert.deepEqual(classes, { capability_exposure: 9, prompt_injection_indicator: 4 });
 });
 
 test('missing evidence becomes coverage gaps, never a synthetic finding', (t) => {

@@ -166,6 +166,7 @@ test('official Action vet-tools mode passes a complete committed manifest and em
   assert.match(outputs, /coverage-status=complete/);
   assert.match(outputs, /finding-count=0/);
   assert.match(outputs, /ruleset-sha256=[0-9a-f]{64}/);
+  assert.match(outputs, /profile-sha256=[0-9a-f]{64}/);
   assert.match(outputs, new RegExp(`commit=${commit}`));
   const jobSummary = fs.readFileSync(summary, 'utf8');
   assert.match(jobSummary, /BackBond Schema Check/);

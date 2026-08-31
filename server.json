@@ -15,13 +15,13 @@
     "source": "github",
     "id": "1350044063"
   },
-  "version": "0.5.14",
+  "version": "0.5.15",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@backbond/agent-scan",
-      "version": "0.5.14",
+      "version": "0.5.15",
       "transport": {
         "type": "stdio"
       },

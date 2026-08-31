@@ -135,6 +135,7 @@ function renderVetJobSummary(result, commit) {
     `- Coverage: ${result.coverage.status}${gaps.length ? ` (${gaps.join(', ')})` : ''}`,
     `- Scanner: \`${result.scanner.name}@${result.scanner.version}\``,
     `- Ruleset: \`${result.ruleset.version}\` (\`${result.ruleset.sha256}\`)`,
+    `- Pre-attachment profile: \`${result.profile.version}\` (\`${result.profile.sha256}\`)`,
     `- Review-only remediation templates: ${patches.length}${patchIds.length ? ` (${patchIds.join(', ')})` : ''}`,
     '',
     'This committed manifest passed only when the decision is `no_blocking_finding`. This is a static pre-attachment check, not runtime verification, insurance coverage, or proof that a deployed server matches the manifest.',
@@ -199,6 +200,7 @@ function main() {
       appendKeyValue(process.env.GITHUB_OUTPUT, 'coverage-status', result.coverage.status);
       appendKeyValue(process.env.GITHUB_OUTPUT, 'finding-count', result.summary.total);
       appendKeyValue(process.env.GITHUB_OUTPUT, 'ruleset-sha256', result.ruleset.sha256);
+      appendKeyValue(process.env.GITHUB_OUTPUT, 'profile-sha256', result.profile.sha256);
       process.stdout.write(`BackBond Schema Check: ${result.decision}; ${result.summary.total} finding(s); coverage ${result.coverage.status}\n`);
       if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderVetJobSummary(result, commit), 'utf8');
       process.exitCode = Number.isInteger(vet.status) ? vet.status : 2;

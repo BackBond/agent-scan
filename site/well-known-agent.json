@@ -7,13 +7,13 @@
     "organization": "BackBond",
     "url": "https://backbond.ai"
   },
-  "version": "0.5.14",
+  "version": "0.5.15",
   "documentationUrl": "https://github.com/BackBond/agent-scan",
   "rulesUrl": "https://backbond.ai/agent-scan/rules/",
   "commands": {
-    "vetBeforeAttach": "npx -y @backbond/agent-scan@0.5.14 vet-tools --stdin < tools-list.json",
-    "scanSuppliedTools": "npx -y @backbond/agent-scan@0.5.14 scan --stdin --require-coverage < tools-list.json",
-    "installAgentSkill": "npx -y skills@1.5.18 add https://github.com/BackBond/agent-scan/tree/v0.5.14 --skill agent-scan --yes"
+    "vetBeforeAttach": "npx -y @backbond/agent-scan@0.5.15 vet-tools --stdin < tools-list.json",
+    "scanSuppliedTools": "npx -y @backbond/agent-scan@0.5.15 scan --stdin --require-coverage < tools-list.json",
+    "installAgentSkill": "npx -y skills@1.5.18 add https://github.com/BackBond/agent-scan/tree/v0.5.15 --skill agent-scan --yes"
   },
   "capabilities": {
     "streaming": false,

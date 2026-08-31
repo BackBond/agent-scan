@@ -39,6 +39,7 @@ test('public record is self-checksummed and redacts names, paths, pointers, and 
   assert.equal(record.scope.input_fingerprints, undefined);
   assert.doesNotMatch(serialized, /shell_exec|vault_read|tool-schema\.json|permissions\.json|trace\.json/);
   assert.doesNotMatch(serialized, /\/tools\/|\\fixtures\\|\/fixtures\//);
+  assert.doesNotMatch(serialized, /metadata_template_summary|distinct_templates|largest_multiplicity/);
   assert.equal(serialized.includes(receipt.inputs[0].sha256), false);
 });
 

@@ -428,6 +428,7 @@ test('stdin accepts a live tool manifest and human output stays compact', () => 
   const manifest = fs.readFileSync(path.join(ROOT, 'fixtures', 'wild', 'mcp-shell-tools.json'), 'utf8');
   const run = spawnSync(process.execPath, [CLI, 'scan', '--stdin'], { input: manifest, encoding: 'utf8' });
   assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stdout, /Capability exposure: 2; prompt-injection indicators: 0/);
   assert.match(run.stdout, /BB001 run_shell \[derived\]/);
   assert.match(run.stdout, /Stop:/);
   assert.doesNotMatch(run.stdout, /backbond-agent-scan\/v1/);
@@ -456,7 +457,12 @@ test('SARIF output uses named rules and JSON evidence locations', () => {
   assert.equal(sarif.version, '2.1.0');
   assert.deepEqual(sarif.runs[0].results.map(item => item.ruleId), ['BB001', 'BB007']);
   assert.equal(sarif.runs[0].results[0].locations[0].logicalLocations[0].kind, 'json-pointer');
-  assert.equal(sarif.runs[0].tool.driver.rules.find(item => item.id === 'BB001').helpUri, 'https://backbond.ai/agent-scan/rules/#BB001');
+  const rule = sarif.runs[0].tool.driver.rules.find(item => item.id === 'BB001');
+  assert.equal(rule.helpUri, 'https://backbond.ai/agent-scan/rules/#BB001');
+  assert.equal(rule.properties.findingClass, 'capability_exposure');
+  assert.equal(typeof rule.properties.precisionNote, 'string');
+  assert.equal(sarif.runs[0].results[0].properties.findingClass, 'capability_exposure');
+  assert.equal(typeof sarif.runs[0].results[0].properties.precisionNote, 'string');
 });
 
 test('OTLP JSON tool spans are ingested without retaining span attributes', (t) => {

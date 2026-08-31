@@ -24,6 +24,7 @@ test('receipt records input hashes, ruleset, finding IDs, and no raw bodies', ()
   assert.match(receipt.ruleset.sha256, /^[a-f0-9]{64}$/);
   assert.equal(receipt.inputs.every(item => /^[a-f0-9]{64}$/.test(item.sha256)), true);
   assert.doesNotMatch(JSON.stringify(receipt), /Run an operating-system command/);
+  assert.doesNotMatch(JSON.stringify(receipt), /metadata_template_summary|distinct_templates|largest_multiplicity/);
 });
 
 test('receipt verification detects finding and input tampering', () => {

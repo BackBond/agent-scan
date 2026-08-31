@@ -2,6 +2,16 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.15 — 2026-08-31
+
+- Advance the public ruleset to `backbond-local-rules/1.4.0` after a focused false-positive review of model-facing tool descriptions.
+- Narrow `BB009`–`BB011` and `BB013` to directed behavior: suppress quotations only in explicit example or security-analysis context, preserve standalone quoted directives, exclude authentication mentions without solicitation, and distinguish scoped routing guidance from passive or active global forced invocation.
+- Add `finding_class` and an honest `precision_note` to findings and SARIF, plus separate capability-exposure and prompt-injection-indicator counts in JSON and compact human output. These fields do not change severities or exit-code semantics.
+- Add normalized metadata-template hashes and multiplicity to full local JSON for offline deduplication of repeated prompt copy. Receipts and public records continue to omit those hashes, descriptions, and tool metadata.
+- Make the pre-attachment profile return `review` rather than a false non-blocking decision when directive-like text is presented as an example or scoped response-ordering instruction, or when a schema exceeds the bounded local depth/node analysis budget.
+- Add a canonical pre-attachment profile digest that binds the fixed rule set, threshold, exit mapping, supported dialects, confusable-name map, and coverage/decision functions independently from the general ruleset digest.
+- Keep `BB001`–`BB008` and `BB012` capability/data-flow behavior, protocols, the static-only execution model, and the scanner's no-network boundary unchanged.
+
 ## 0.5.14 — 2026-08-31
 
 - Declare the bundled `agent-scan` skill explicitly in both Agent Plugin manifests so marketplace lint validates the skill at its real directory instead of treating the staging directory as a skill.
