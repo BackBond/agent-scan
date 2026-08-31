@@ -1,10 +1,14 @@
 # BackBond local agent scanner
 
-@backbond/agent-scan 0.5.11 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
+@backbond/agent-scan 0.5.12 runs an open deterministic rule pack over discovered or explicitly supplied tool schemas, permission scopes, and trace summaries.
 
 Its dependency-free stdio server is listed in the official MCP Registry as `io.github.BackBond/agent-scan`, version-locked to the npm package. The Registry entrypoint exposes local metadata checks and does not probe or execute other MCP servers.
 
 Before attachment, `vet-tools --stdin` returns a scoped block, review, or no_blocking_finding decision over supplied tool metadata and composition. It also emits potential exposure-path summaries over existing BB001–BB013 findings. Neither result is a safety determination, runtime attestation, or insurance decision.
+
+Stable public rule links are under `https://backbond.ai/agent-scan/rules/#BB001` through `#BB013`.
+
+Install the immutable Agent Skill instructions with `npx -y skills@1.5.18 add https://github.com/BackBond/agent-scan/tree/v0.5.12 --skill agent-scan --yes`. Installing the skill does not run a scan. That installer is separate software; review its own network and telemetry behavior before using it in a restricted environment.
 
 The broader scan emits remediation, honest inconclusive coverage with exact strict live-tools next actions, separate runtime and prompt-lint CI gates, tamper-evident receipts, and optional public records with caller-supplied source references. It has no score, private analyzer dependency, hosted POST, or scanner network path.
 

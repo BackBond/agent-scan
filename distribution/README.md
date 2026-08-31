@@ -1,10 +1,10 @@
-# BackBond Agent Scan 0.5.11 distribution kit
+# BackBond Agent Scan 0.5.12 distribution kit
 
-This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.11`. Keep every new command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
+This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.12`. Keep every new command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
 
 ## Campaign objective
 
-The first launch stage ends only after five external users attempt the pinned 0.5.11 command and the checklist in [`first-five-launch.md`](first-five-launch.md) is complete. Until then:
+The first launch stage ends only after five external users attempt the pinned 0.5.12 command and the checklist in [`first-five-launch.md`](first-five-launch.md) is complete. Until then:
 
 - publish one canonical post containing the pinned command and a named finding ID;
 - do not start a multi-post content calendar;
@@ -39,19 +39,19 @@ Do not lead developer channels with insurance. Lead with the tool decision they 
 Before attachment:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.12 vet-tools --stdin < tools-list.json
 ```
 
 Broader inventory and coverage gate:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.11 scan --stdin --require-coverage < tools-list.json
+npx -y @backbond/agent-scan@0.5.12 scan --stdin --require-coverage < tools-list.json
 ```
 
 PowerShell:
 
 ```powershell
-Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin
+Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.12 vet-tools --stdin
 ```
 
 ## Distribution order
@@ -88,6 +88,8 @@ BackBond's broader product is deeper assessment, continuous runtime evidence fro
 - [`demo/`](demo): sanitized runnable manifests and exact demo instructions.
 - [`schema-check-workflow.yml`](schema-check-workflow.yml): strict committed-manifest workflow template.
 - [`schema-check-badge.md`](schema-check-badge.md): honest dynamic status badge language and commercial boundary.
+- [`agent-policy.md`](agent-policy.md): copy-ready repository instruction that requires pre-attachment vetting and stops unknown.
+- [`agent-plugin.md`](agent-plugin.md): skill-only Agent Plugin identity and immutable installation path.
 - [`supply-chain-proof.md`](supply-chain-proof.md): reproducible package and standalone verification commands.
-- [`assets/terminal-demo-0.5.8.webm`](assets/terminal-demo-0.5.8.webm): 20-second 1280×720 demo generated from the sanitized scenarios.
+- [`demo/terminal-demo.html`](demo/terminal-demo.html): browser-ready 20-second scene built from sanitized scenarios; record only from the current pinned source.
 - [`assets/public-record-example.txt`](assets/public-record-example.txt): safe share-card example.

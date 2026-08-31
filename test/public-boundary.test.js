@@ -30,10 +30,10 @@ function files(directory) {
   });
 }
 
-test('package allowlist ships the open engine, rule pack, docs, and fixtures', () => {
+test('package allowlist ships the open engine, rule pack, docs, fixtures, and agent discovery metadata', () => {
   const manifest = require('../package.json');
   assert.equal(manifest.private, false);
-  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'server.json', 'LICENSE']);
+  assert.deepEqual(manifest.files, ['bin/', 'lib/', 'docs/', 'fixtures/', 'AGENTS.md', 'SKILL.md', 'CHANGELOG.md', 'README.md', 'plugin.json', 'server.json', 'skills/', 'LICENSE']);
   assert.deepEqual(fs.readdirSync(path.join(ROOT, 'lib')).sort(), [
     'assessment.js', 'canonical.js', 'discovery.js', 'evidence.js', 'exposure-paths.js', 'mcp-server.js', 'next-action.js',
     'output.js', 'policy.js', 'receipt.js', 'record.js', 'rules.js', 'ruleset-sources.json', 'sarif.js', 'scanner.js',
@@ -72,7 +72,8 @@ test('package discovery metadata describes a local deterministic scanner', () =>
 test('all current public version surfaces follow package.json', () => {
   const manifest = require('../package.json');
   const currentSurfaces = [
-    'README.md', 'AGENTS.md', 'SKILL.md',
+    'README.md', 'AGENTS.md', 'SKILL.md', 'plugin.json',
+    path.join('skills', 'agent-scan', 'SKILL.md'), path.join('skills', 'agent-scan', 'README.md'),
     path.join('docs', 'RECORDS.md'), path.join('docs', 'RULES.md'), path.join('docs', 'PUBLICATION.md'),
     path.join('site', 'llms.txt'), path.join('.github', 'ISSUE_TEMPLATE', 'scan-feedback.yml'),
   ];
@@ -83,6 +84,33 @@ test('all current public version surfaces follow package.json', () => {
   assert.deepEqual([...new Set(versions)], [manifest.version]);
   assert.equal(require('../site/well-known-agent.json').version, manifest.version);
   assert.match(fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8'), new RegExp(`^# Changelog[\\s\\S]*?^## ${manifest.version.replace(/\./g, '\\.')} `, 'm'));
+});
+
+test('Agent Plugin is skill-only and cannot start a process merely by being installed', () => {
+  const manifest = require('../package.json');
+  const plugin = require('../plugin.json');
+  assert.equal(plugin.$schema, 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json');
+  assert.equal(plugin.name, 'backbond-agent-scan');
+  assert.equal(plugin.version, manifest.version);
+  assert.equal(plugin.license, 'MIT');
+  assert.equal(plugin.repository, 'https://github.com/BackBond/agent-scan');
+  assert.equal(fs.existsSync(path.join(ROOT, 'hooks')), false);
+  assert.equal(fs.existsSync(path.join(ROOT, 'mcp.json')), false);
+  assert.equal(fs.existsSync(path.join(ROOT, 'commands')), false);
+  assert.match(fs.readFileSync(path.join(ROOT, 'skills', 'agent-scan', 'SKILL.md'), 'utf8'), /pinned offline static gate/i);
+});
+
+test('MCP tools advertise read-only, non-destructive, idempotent local behavior', () => {
+  const { handleMessage } = require('../lib/mcp-server.js');
+  const response = handleMessage({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} });
+  for (const tool of response.result.tools) {
+    assert.deepEqual(tool.annotations, {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    });
+  }
 });
 
 test('official MCP Registry metadata is version-locked to the published npm package', () => {
@@ -186,9 +214,12 @@ test('official Action verifies committed inputs before invoking the exact tagged
   assert.match(metadata, /coverage-status:/);
   assert.match(metadata, /finding-count:/);
   assert.match(metadata, /ruleset-sha256:/);
+  assert.match(metadata, /sarif-path:/);
   assert.match(source, /CLI, 'vet-tools', '--tool-schema'/);
   assert.match(source, /'--json', '--suggest-policy'/);
   assert.match(source, /vet-tools mode requires exactly one tracked tool-schema input/);
+  assert.match(source, /sarif-path is supported only in vet-tools mode/);
+  assert.match(source, /JSON\.stringify\(toSarif\(result\)/);
   assert.match(source, /static pre-attachment check, not runtime verification/);
   assert.match(source, /caller-supplied|self-run and unverified/);
   assert.doesNotMatch(source, /@latest|node:(?:http|https|net|tls)/);

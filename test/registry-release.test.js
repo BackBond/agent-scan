@@ -17,6 +17,14 @@ test('official registry lookup uses the exact encoded server name and version en
   );
 });
 
+test('registry card exposes the canonical website and a first-party icon', () => {
+  assert.equal(card.websiteUrl, 'https://backbond.ai/agent-scan/');
+  assert.deepEqual(card.icons, [{
+    src: 'https://backbond.ai/agent-scan/backbond-agent-scan.png',
+    mimeType: 'image/png',
+  }]);
+});
+
 test('registry status distinguishes an unpublished exact version from a matching publication', async () => {
   const absent = await checkRegistryVersion({
     manifest,

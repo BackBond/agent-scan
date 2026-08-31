@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { verifyPublicScanRecord } = require('../lib/record.js');
+const { toSarif } = require('../lib/sarif.js');
 
 const ROOT = path.join(__dirname, '..');
 const CLI = path.join(ROOT, 'bin', 'agent-scan.js');
@@ -65,23 +66,27 @@ function resolveTrackedInput(workspace, filename, label) {
   return { absolute: target, relative };
 }
 
-function resolveRecordPath(workspace, filename) {
+function resolveOutputPath(workspace, filename, label) {
   const target = path.resolve(workspace, filename);
-  if (!isInside(workspace, target)) throw new Error('record-path must stay inside GITHUB_WORKSPACE');
-  if (fs.existsSync(target)) throw new Error(`record-path already exists and will not be overwritten: ${filename}`);
+  if (!isInside(workspace, target)) throw new Error(`${label} must stay inside GITHUB_WORKSPACE`);
+  if (fs.existsSync(target)) throw new Error(`${label} already exists and will not be overwritten: ${filename}`);
   let existingAncestor = path.dirname(target);
   while (!fs.existsSync(existingAncestor)) {
     const parent = path.dirname(existingAncestor);
-    if (parent === existingAncestor) throw new Error('record-path has no existing parent');
+    if (parent === existingAncestor) throw new Error(`${label} has no existing parent`);
     existingAncestor = parent;
   }
   if (!isInside(workspace, fs.realpathSync(existingAncestor))) {
-    throw new Error('record-path parent must resolve inside GITHUB_WORKSPACE');
+    throw new Error(`${label} parent must resolve inside GITHUB_WORKSPACE`);
   }
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const parent = fs.realpathSync(path.dirname(target));
-  if (!isInside(workspace, parent)) throw new Error('record-path parent must resolve inside GITHUB_WORKSPACE');
+  if (!isInside(workspace, parent)) throw new Error(`${label} parent must resolve inside GITHUB_WORKSPACE`);
   return target;
+}
+
+function resolveRecordPath(workspace, filename) {
+  return resolveOutputPath(workspace, filename, 'record-path');
 }
 
 function appendKeyValue(filename, key, value) {
@@ -158,6 +163,7 @@ function main() {
     const commit = verifyCheckout(workspace, expectedCommit);
     const mode = getInput('mode', 'scan');
     if (!['scan', 'vet-tools'].includes(mode)) throw new Error('mode must be scan or vet-tools');
+    if (mode !== 'vet-tools' && getInput('sarif-path')) throw new Error('sarif-path is supported only in vet-tools mode');
     const inputDefinitions = [
       ['tool-schema', '--tool-schema'],
       ['permissions', '--permissions'],
@@ -183,6 +189,12 @@ function main() {
       if (vet.stderr) process.stderr.write(vet.stderr);
       if (vet.error) throw new Error(`scanner failed to start: ${vet.error.message}`);
       const result = parseVetResult(vet.stdout);
+      const requestedSarifPath = getInput('sarif-path');
+      if (requestedSarifPath) {
+        const sarifPath = resolveOutputPath(workspace, requestedSarifPath, 'sarif-path');
+        fs.writeFileSync(sarifPath, `${JSON.stringify(toSarif(result), null, 2)}\n`, { encoding: 'utf8', flag: 'wx' });
+        appendKeyValue(process.env.GITHUB_OUTPUT, 'sarif-path', sarifPath);
+      }
       appendKeyValue(process.env.GITHUB_OUTPUT, 'decision', result.decision);
       appendKeyValue(process.env.GITHUB_OUTPUT, 'coverage-status', result.coverage.status);
       appendKeyValue(process.env.GITHUB_OUTPUT, 'finding-count', result.summary.total);
@@ -235,6 +247,7 @@ module.exports = {
   renderJobSummary,
   renderVetJobSummary,
   resolveRecordPath,
+  resolveOutputPath,
   resolveTrackedInput,
   verifyCheckout,
 };

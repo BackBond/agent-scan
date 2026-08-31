@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BackBond Agent Scan 0.5.8 demo</title>
+  <title>BackBond Agent Scan 0.5.12 demo</title>
   <style>
     :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     * { box-sizing: border-box; }
@@ -35,7 +35,7 @@
 </head>
 <body>
   <div class="frame">
-    <header><div class="brand"><span class="mark">B</span><span>BackBond Agent Scan</span></div><span class="version">@backbond/agent-scan@0.5.8</span></header>
+    <header><div class="brand"><span class="mark">B</span><span>BackBond Agent Scan</span></div><span class="version">@backbond/agent-scan@0.5.12</span></header>
     <main>
       <div class="terminal"><div class="bar"><div class="dots"><i></i><i></i><i></i></div><span>local pre-attachment gate</span></div><pre id="terminal"></pre></div>
       <aside><div><span class="step" id="step"></span><h1 id="headline"></h1><p id="explanation"></p><div class="decision" id="decision"></div></div><div class="progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div></aside>
@@ -78,7 +78,7 @@
         explanation: "Share compact output only. Never post raw manifests, prompts, traces, configuration, or JSON reports.",
         decision: "backbond.ai/agent-scan/",
         kind: "",
-        terminal: '<span class="green">$</span> npx -y @backbond/agent-scan@0.5.8 \\\n+  vet-tools --stdin &lt; tools-list.json\n\n<span class="green">1 = block · 3 = review · 0 = scoped result</span>\n\n<span class="soft">No blocking finding is not a safety, runtime-\nattestation, or insurance decision.</span>'
+        terminal: '<span class="green">$</span> npx -y @backbond/agent-scan@0.5.12 \\\n+  vet-tools --stdin &lt; tools-list.json\n\n<span class="green">1 = block · 3 = review · 0 = scoped result</span>\n\n<span class="soft">No blocking finding is not a safety, runtime-\nattestation, or insurance decision.</span>'
       }
     ];
     const els = {

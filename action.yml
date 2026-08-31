@@ -29,6 +29,9 @@ inputs:
     description: Prompt-lint severity threshold.
     required: false
     default: none
+  sarif-path:
+    description: Optional repository-relative SARIF output path. In vet-tools mode only; never uploaded automatically.
+    required: false
 outputs:
   decision:
     description: Pre-attachment decision in vet-tools mode; empty in scan mode.
@@ -44,6 +47,8 @@ outputs:
     description: Integrity digest of the generated public record.
   commit:
     description: Git commit verified by this Action before scanning.
+  sarif-path:
+    description: Absolute path of the optional SARIF file; empty unless sarif-path was requested.
 runs:
   using: node20
   main: action/index.js

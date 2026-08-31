@@ -1,8 +1,8 @@
-# Sanitized 0.5.8 demos
+# Sanitized 0.5.12 demos
 
 These deliberately synthetic manifests are safe to publish. They are not examples of customer or BackBond production configuration.
 
-The ready-to-publish 1280×720 recording is [`../assets/terminal-demo-0.5.8.webm`](../assets/terminal-demo-0.5.8.webm). Its source scene is [`terminal-demo.html`](terminal-demo.html); it contains only the sanitized cases below.
+The browser-ready 1280×720 source scene is [`terminal-demo.html`](terminal-demo.html); it contains only the sanitized cases below. Record or screenshot that source only after verifying its displayed package pin matches the current release.
 
 Run each case from the repository root.
 

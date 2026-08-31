@@ -2,19 +2,26 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.BackBond/agent-scan",
   "title": "BackBond Agent Scan",
-  "description": "Local static screening for MCP and AI-agent tool metadata before attachment",
+  "description": "Vet MCP tool manifests before attachment; returns block, review, or no blocking finding.",
+  "websiteUrl": "https://backbond.ai/agent-scan/",
+  "icons": [
+    {
+      "src": "https://backbond.ai/agent-scan/backbond-agent-scan.png",
+      "mimeType": "image/png"
+    }
+  ],
   "repository": {
     "url": "https://github.com/BackBond/agent-scan",
     "source": "github",
     "id": "1350044063"
   },
-  "version": "0.5.11",
+  "version": "0.5.12",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@backbond/agent-scan",
-      "version": "0.5.11",
+      "version": "0.5.12",
       "transport": {
         "type": "stdio"
       },

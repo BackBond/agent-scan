@@ -1,21 +1,21 @@
 # Installation and prompt cards
 
-Use only version `0.5.11` in launch instructions.
+Use only version `0.5.12` in launch instructions.
 
 ## Agent before attaching MCP tools
 
-> Before attaching the proposed tools, capture their MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin` on it. Exit 1 means do not attach automatically; exit 3 means insufficient evidence; exit 0 is only a scoped static-metadata result, not a safety or insurance determination. Never upload or post the raw tool list.
+> Before attaching the proposed tools, capture their MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.5.12 vet-tools --stdin` on it. Exit 1 means do not attach automatically; exit 3 means insufficient evidence; exit 0 is only a scoped static-metadata result, not a safety or insurance determination. Never upload or post the raw tool list.
 
 POSIX:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.5.12 vet-tools --stdin < tools-list.json
 ```
 
 PowerShell:
 
 ```powershell
-if (Test-Path .\tools-list.json) { Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.11 vet-tools --stdin } else { Write-Error "Save a real MCP tools/list response as tools-list.json first." }
+if (Test-Path .\tools-list.json) { Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.12 vet-tools --stdin } else { Write-Error "Save a real MCP tools/list response as tools-list.json first." }
 ```
 
 `vet-tools` does not create `tools-list.json`. If no live manifest has been captured yet, run the broader local inventory below instead.
@@ -23,13 +23,13 @@ if (Test-Path .\tools-list.json) { Get-Content -Raw .\tools-list.json | npx -y @
 ## Broader local inventory
 
 ```bash
-npx -y @backbond/agent-scan@0.5.11 scan
+npx -y @backbond/agent-scan@0.5.12 scan
 ```
 
 If the result is inconclusive, export the live tool list and run:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.11 scan --stdin --require-coverage < tools-list.json
+npx -y @backbond/agent-scan@0.5.12 scan --stdin --require-coverage < tools-list.json
 ```
 
 ## Network-isolated runtime
@@ -37,8 +37,8 @@ npx -y @backbond/agent-scan@0.5.11 scan --stdin --require-coverage < tools-list.
 On a trusted host:
 
 ```bash
-curl -fLO https://github.com/BackBond/agent-scan/releases/download/v0.5.11/agent-scan.cjs
-curl -fLO https://github.com/BackBond/agent-scan/releases/download/v0.5.11/agent-scan.cjs.sha256
+curl -fLO https://github.com/BackBond/agent-scan/releases/download/v0.5.12/agent-scan.cjs
+curl -fLO https://github.com/BackBond/agent-scan/releases/download/v0.5.12/agent-scan.cjs.sha256
 sha256sum --check agent-scan.cjs.sha256
 ```
 
@@ -61,7 +61,7 @@ permissions:
 steps:
   - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
   - id: backbond
-    uses: BackBond/agent-scan@v0.5.11
+    uses: BackBond/agent-scan@v0.5.12
     with:
       mode: vet-tools
       tool-schema: tools-list.json
@@ -78,7 +78,7 @@ Copy the complete workflow and honest badge language from [`schema-check-badge.m
   "mcpServers": {
     "backbond-agent-scan": {
       "command": "npx",
-      "args": ["-y", "@backbond/agent-scan@0.5.11", "mcp"]
+      "args": ["-y", "@backbond/agent-scan@0.5.12", "mcp"]
     }
   }
 }
@@ -88,10 +88,20 @@ This exposes `scan_my_runtime` and `vet_tools_before_attach`. It does not connec
 
 ## Agent Skill
 
-Copy [`../skills/agent-scan/SKILL.md`](../skills/agent-scan/SKILL.md) to:
+Install the exact tagged skill non-interactively:
+
+```bash
+npx -y skills@1.5.18 add https://github.com/BackBond/agent-scan/tree/v0.5.12 --skill agent-scan --yes
+```
+
+The installer is separate software; review its network and telemetry behavior before using it in a restricted environment. Installing the skill does not execute Agent Scan.
+
+Or copy [`../skills/agent-scan/SKILL.md`](../skills/agent-scan/SKILL.md) to:
 
 ```text
 .agents/skills/agent-scan/SKILL.md
 ```
 
 The folder and the frontmatter `name` must both remain `agent-scan`.
+
+To make the gate part of repository policy instead of relying on skill discovery alone, copy [`agent-policy.md`](agent-policy.md) into the repository's `AGENTS.md`.

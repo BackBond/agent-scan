@@ -2,6 +2,15 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.5.12 — 2026-08-31
+
+- Add a skill-only Agent Plugin manifest and ship the standard `skills/agent-scan` folder in the npm package. Installing the plugin or skill cannot start a process, attach an MCP server, or run a scan.
+- Rewrite Agent Skill discovery metadata around pre-attachment tool vetting, tool poisoning, forced invocation, confusable identities, unconstrained execution inputs, and risky tool composition.
+- Add canonical website and first-party icon metadata to the MCP Registry card, plus read-only, non-destructive, idempotent annotations to both local MCP tools.
+- Give every SARIF rule a stable `https://backbond.ai/agent-scan/rules/#BB...` help link and add an explicit, local-only `sarif-path` output for the Action's `vet-tools` mode. The Action never uploads SARIF automatically.
+- Add a reusable repository policy block and version-pinned skill installation path for agent-native distribution.
+- Keep BB001–BB013 detector behavior, ruleset `backbond-local-rules/1.3.0`, scan/record protocols, exit codes, and the scanner's no-network boundary unchanged from 0.5.11.
+
 ## 0.5.11 — 2026-08-31
 
 - Present the official Action in GitHub Marketplace as **BackBond Agent Scan**, with a pre-attachment MCP manifest description and unchanged Action execution behavior.

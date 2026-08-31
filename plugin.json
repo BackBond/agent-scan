@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "backbond-agent-scan",
+  "version": "0.5.12",
+  "description": "Vet MCP tool manifests before attachment with a local deterministic static gate.",
+  "author": {
+    "name": "BackBond",
+    "url": "https://backbond.ai"
+  },
+  "homepage": "https://backbond.ai/agent-scan/",
+  "repository": "https://github.com/BackBond/agent-scan",
+  "license": "MIT",
+  "keywords": [
+    "mcp-security",
+    "agent-security",
+    "tool-vetting",
+    "pre-attachment"
+  ]
+}

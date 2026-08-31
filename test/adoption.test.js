@@ -456,6 +456,7 @@ test('SARIF output uses named rules and JSON evidence locations', () => {
   assert.equal(sarif.version, '2.1.0');
   assert.deepEqual(sarif.runs[0].results.map(item => item.ruleId), ['BB001', 'BB007']);
   assert.equal(sarif.runs[0].results[0].locations[0].logicalLocations[0].kind, 'json-pointer');
+  assert.equal(sarif.runs[0].tool.driver.rules.find(item => item.id === 'BB001').helpUri, 'https://backbond.ai/agent-scan/rules/#BB001');
 });
 
 test('OTLP JSON tool spans are ingested without retaining span attributes', (t) => {
