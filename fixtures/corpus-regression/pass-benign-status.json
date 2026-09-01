@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "get_status",
+        "description": "Return the current service status.",
+        "inputSchema": { "type": "object", "properties": {} }
+      }
+    ]
+  }
+}

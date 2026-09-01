@@ -18,7 +18,7 @@ const { toSarif } = require('../lib/sarif.js');
 const { scanEvidence, scannerContract, SCANNER_VERSION } = require('../lib/scanner.js');
 const { validateTeaserSubmission } = require('../lib/teaser.js');
 const { safeInline } = require('../lib/text.js');
-const { createVetResult, renderVetHuman, vetExitCode } = require('../lib/vet-tools.js');
+const { createVetResult, createVetSummary, renderVetHuman, vetExitCode } = require('../lib/vet-tools.js');
 
 function usage() {
   process.stdout.write(`@backbond/agent-scan — static, local AI-agent tool scanner
@@ -28,6 +28,8 @@ Usage:
   agent-scan scan --stdin                 Read a live MCP or supported function-tool manifest.
   agent-scan vet-tools --stdin            Vet a proposed tool manifest before attachment.
   agent-scan vet-tools --tool-schema <file>
+  agent-scan vet-tools --stdin --summary-only
+                                           Emit identity-free aggregate JSON for large local runs.
   agent-scan scan [artifact options]      Scan intentionally exported evidence.
   agent-scan inspect [artifact options]
   agent-scan mcp                          Serve scan_my_runtime over MCP stdio.
@@ -50,9 +52,10 @@ Live tools/list recipe:
 Pre-attachment gate:
   POSIX/cmd: npx -y @backbond/agent-scan@${SCANNER_VERSION} vet-tools --stdin < tools-list.json
   PowerShell: Get-Content -Raw .\\tools-list.json | npx -y @backbond/agent-scan@${SCANNER_VERSION} vet-tools --stdin
-  Decisions: block (exit 1), no_blocking_finding (exit 0), review for insufficient profile evidence (exit 3).
+  Decisions: block (exit 1), no_blocking_finding (exit 0), review for a medium finding or incomplete/ambiguous evidence (exit 3).
   Scope: tool metadata and composition only; never a runtime safety determination.
   Review-only templates: add --json --suggest-policy; placeholders are never applied automatically.
+  Large local runs: add --summary-only for counts, rule/coverage histograms, review items, and template multiplicity without tool or server identities.
 
 Scan options:
   --input <file>        Optional v4 claims; hypotheses used only for contradictions.
@@ -66,6 +69,7 @@ Scan options:
   --record-include-fingerprints  Include input hashes and byte lengths (off by default).
   --require-coverage    Exit 3 unless coverage is complete.
   --suggest-policy      Include non-enforcing disable/wrap and patch templates.
+  --summary-only        vet-tools only: emit privacy-safe aggregate JSON; preserves decision exit codes.
   --json                Emit the complete JSON result.
   --sarif               Emit SARIF 2.1.0 for code scanning and IDEs.
 
@@ -83,7 +87,7 @@ function parseArgs(argv) {
   const command = argv[0] && !argv[0].startsWith('-') ? argv[0] : 'start';
   const rest = command === argv[0] ? argv.slice(1) : argv;
   const options = {
-    command, input: null, stdin: false, json: false, sarif: false, suggestPolicy: false, failOn: 'high', failOnPrompt: 'none',
+    command, input: null, stdin: false, json: false, sarif: false, summaryOnly: false, suggestPolicy: false, failOn: 'high', failOnPrompt: 'none',
     requireCoverage: false, recordIncludeToolNames: false, recordIncludeFingerprints: false,
     toolSchemaPath: null, permissionsPath: null, tracePath: null, configPaths: [],
     receiptPath: null, signingKeyPath: null, recordPath: null, recordCommit: null, provided: new Set(),
@@ -99,6 +103,7 @@ function parseArgs(argv) {
     if (argument === '--help' || argument === '-h') options.command = 'help';
     else if (argument === '--json') options.json = true;
     else if (argument === '--sarif') options.sarif = true;
+    else if (argument === '--summary-only') options.summaryOnly = true;
     else if (argument === '--stdin') options.stdin = true;
     else if (argument === '--suggest-policy') options.suggestPolicy = true;
     else if (argument === '--require-coverage') options.requireCoverage = true;
@@ -120,6 +125,7 @@ function parseArgs(argv) {
   if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOn)) throw new Error('--fail-on must be critical, high, medium, low, or none');
   if (!Object.prototype.hasOwnProperty.call(SEVERITY_ORDER, options.failOnPrompt)) throw new Error('--fail-on-prompt must be critical, high, medium, low, or none');
   if (options.json && options.sarif) throw new Error('use either --json or --sarif, not both');
+  if (options.summaryOnly && (options.json || options.sarif)) throw new Error('use --summary-only without --json or --sarif');
   if ((options.recordIncludeToolNames || options.recordIncludeFingerprints || options.recordCommit) && !options.recordPath) {
     throw new Error('record options require --record-public <file>');
   }
@@ -131,10 +137,11 @@ function parseArgs(argv) {
 }
 
 function validateVetOptions(options) {
-  const allowed = new Set(['--stdin', '--tool-schema', '--json', '--suggest-policy']);
+  const allowed = new Set(['--stdin', '--tool-schema', '--json', '--suggest-policy', '--summary-only']);
   const unsupported = [...options.provided].filter(argument => !allowed.has(argument));
   if (unsupported.length) throw new Error(`vet-tools does not accept ${unsupported.join(', ')}`);
   if (options.stdin === Boolean(options.toolSchemaPath)) throw new Error('vet-tools requires exactly one of --stdin or --tool-schema <file>');
+  if (options.summaryOnly && options.suggestPolicy) throw new Error('--summary-only cannot be combined with --suggest-policy');
 }
 
 async function readStdin() {
@@ -199,6 +206,10 @@ async function main() {
   let options;
   try { options = parseArgs(process.argv.slice(2)); }
   catch (error) { fail(error.message); return; }
+  if (options.summaryOnly && options.command !== 'vet-tools') {
+    fail('--summary-only is supported only for vet-tools');
+    return;
+  }
   if (options.command === 'help') { usage(); return; }
   if (options.command === 'start') { process.stdout.write(`${JSON.stringify(scannerContract(), null, 2)}\n`); return; }
   if (options.command === 'questions') { process.stdout.write(`${JSON.stringify(questionSet(), null, 2)}\n`); return; }
@@ -224,7 +235,8 @@ async function main() {
       const scan = scanEvidence(evidence, { now });
       const result = createVetResult(scan, evidence);
       const output = options.suggestPolicy ? { ...result, policy_suggestion: suggestPolicy(result) } : result;
-      if (options.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+      if (options.summaryOnly) process.stdout.write(`${JSON.stringify(createVetSummary(result))}\n`);
+      else if (options.json) process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
       else process.stdout.write(renderVetHuman(result));
       process.exitCode = vetExitCode(result.decision);
       return;

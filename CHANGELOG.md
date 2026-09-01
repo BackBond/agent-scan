@@ -2,6 +2,24 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.6.0 — 2026-09-01
+
+- Advance the public ruleset to `backbond-local-rules/2.0.0` after the 2026-08-31 corpus precision review; no new BB rule is added. The major ruleset version marks materially narrower pre-attachment semantics while package 0.6 remains the same local static scanner.
+- Make BB004 a medium REVIEW finding for a standalone untrusted persistent write and raise it to high only when untrusted network intake or an unallowlisted destination appears in the same supplied inventory.
+- Require active network context plus a URL-like unconstrained field for BB008. Route ambiguous endpoint, href, path, host, destination, documentation/reference URL without explicit fetch action, GIS query, filter, and calculator-expression metadata to explicit pre-attachment REVIEW coverage instead of a high finding or a clean result.
+- Require fetch-shaped evidence plus explicit capabilities, a destructive annotation, an OpenAPI DELETE method, or an action-shaped tool identity for BB012. Privilege words such as permission or delete in help text do not complete the composition signal.
+- Preserve high BB007 for recognizable shell, code, evaluator, and database-interpreter inputs while removing generic query/expression collisions from the block path.
+- Route quoted directives to REVIEW, retain direct unquoted prompt directives as high findings, classify BB011 matches as secret solicitation or credential emission/transmission, and report claimed permission requirements as unverified coverage.
+- Make any scoped medium finding return REVIEW in `vet-tools`; add explicit profile coverage states showing that runtime permissions, approval, audit, and execution are unobservable or not performed.
+- Bind the pre-attachment profile digest to the ruleset version and digest, so a ruleset change cannot retain the same gate identity.
+- Add ten synthetic precision-boundary fixtures and a regression test. The raw corpus was recovered and replayed, but promotion of copied corpus rows remains pending two independent blinded adjudications, so the shipped cases are not represented as human-adjudicated registry rows.
+- Add a research-only JSONL summarizer that emits decision/rule/coverage histograms and template multiplicity without server IDs, tool names, or template hashes. It does not collect from the Registry and is not included as a packaged CLI command.
+- Add `vet-tools --summary-only` for large operator-staged runs. The new `backbond-vet-summary/v1` output preserves decision exits and version/count histograms while omitting tool and server identities, descriptions, artifact names, evidence pointers, and template hashes.
+- Add structured `review_items` to the pre-attachment profile and summary-only output. Each medium finding or coverage gap now states its stable code, affected-tool count when observable, reason, evidence needed, and next operator step without changing detector severity or applying remediation.
+- Let the research JSONL summarizer consume either full local results or summary-only rows, reject mixed-mode input, aggregate review-item codes, and disclose when privacy-safe rows prevent cross-manifest template deduplication.
+- Remove the non-standard top-level `skills` field from both Agent Plugin manifests. The skill remains discoverable from the standard `skills/agent-scan/` directory, and the public-boundary test now enforces both the v1.0 manifest shape and the on-disk skill path.
+- Update the package, site, skill, Action, plugin, and installation copy to one exact `0.6.0` pin. Keep the scanner local and static: no registry URL intake, live probing, `tools/call`, hosted upload, score, or insurance decision.
+
 ## 0.5.15 — 2026-08-31
 
 - Advance the public ruleset to `backbond-local-rules/1.4.0` after a focused false-positive review of model-facing tool descriptions.

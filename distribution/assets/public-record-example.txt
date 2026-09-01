@@ -2,11 +2,11 @@ Illustrative compact record generated from the repository's public vulnerable fi
 
 BackBond local scan record
 Assurance: self-run, unverified; not a safety certificate
-@backbond/agent-scan@0.5.15  ruleset backbond-local-rules/1.4.0
+@backbond/agent-scan@0.6.0  ruleset backbond-local-rules/2.0.0
 Interpretation: FINDINGS
-Findings: 1 critical, 10 high, 2 medium; BB001 [derived] BB002 [derived] BB003 BB004 BB005 [derived] BB006 BB007 [derived] BB008 [derived] BB009 [derived] BB010 [derived] BB011 [derived] BB012 [derived] BB013 [derived]
+Findings: 1 critical, 11 high, 1 medium; BB001 [derived] BB002 [derived] BB003 BB004 BB005 [derived] BB006 BB007 [derived] BB008 [derived] BB009 [derived] BB010 [derived] BB011 [derived] BB012 [derived] BB013 [derived]
 Coverage: complete
-Rerun: npx -y @backbond/agent-scan@0.5.15 scan
-Record: f54c92087be069a9027600b81cd7efbf51d99e73bb1c1f1a794a47ff0fbc1194
+Rerun: npx -y @backbond/agent-scan@0.6.0 scan
+Record: 23bbc74ee730610f92b64ab17ece12a70f7e9d3d4532b6ac18e0f994f5d6607f
 
 This is a static self-run record over public fixtures. It is not proof that a production environment was scanned, safe, monitored, eligible for coverage, or insured.

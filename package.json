@@ -1,6 +1,6 @@
 {
   "name": "@backbond/agent-scan",
-  "version": "0.5.15",
+  "version": "0.6.0",
   "private": false,
   "mcpName": "io.github.BackBond/agent-scan",
   "description": "Local deterministic pre-attachment security scanner for MCP and AI-agent tool manifests.",
@@ -27,6 +27,7 @@
   },
   "scripts": {
     "test": "node --test",
+    "test:corpus-regression": "node --test test/corpus-regression.test.js test/corpus-summary.test.js",
     "test:public-boundary": "node --test test/public-boundary.test.js",
     "prepack": "node --test",
     "prepublishOnly": "node scripts/assert-clean-history.js"

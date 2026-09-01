@@ -1,0 +1,26 @@
+{
+  "protocol": "backbond-corpus-regression/v1",
+  "ruleset": "backbond-local-rules/2.0.0",
+  "source": {
+    "snapshot_date": "2026-08-31",
+    "scanner_observed": "0.5.15",
+    "ruleset_observed": "backbond-local-rules/1.4.0",
+    "raw_bundle_available": true,
+    "csv_sha256": "596c06646f0e47601706bbd994cae01b7cbd56bae4a6e5a06d149bf9dbdf4952",
+    "archive_sha256": "dfd7c13197e42fe4366b5d93bf2024e979336fbbb5afd1e51022b0b571343c4a",
+    "baseline_replay_mismatches": 0,
+    "status": "synthetic-boundary-fixtures-pending-two-review-promotion"
+  },
+  "cases": [
+    { "file": "block-open-url-deploy.json", "expected_decision": "block", "finding_ids": ["BB008", "BB012"] },
+    { "file": "block-shell-command.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
+    { "file": "block-global-forced-tool.json", "expected_decision": "block", "finding_ids": ["BB013"] },
+    { "file": "review-arcgis-endpoint.json", "expected_decision": "review", "gap_codes": ["BB-VET-AMBIGUOUS-DESTINATION", "BB-VET-AMBIGUOUS-QUERY-EXPRESSION"] },
+    { "file": "review-permission-claim.json", "expected_decision": "review", "gap_codes": ["BB-VET-PERMISSION-REQUIREMENT-UNVERIFIED"] },
+    { "file": "review-quoted-must.json", "expected_decision": "review", "gap_codes": ["BB-VET-PROMPT-METADATA-REVIEW"] },
+    { "file": "review-incomplete-schema.json", "expected_decision": "review", "gap_codes": ["BB-VET-MISSING-INPUT-SCHEMA"] },
+    { "file": "pass-benign-status.json", "expected_decision": "no_blocking_finding", "finding_ids": [] },
+    { "file": "pass-fixed-host-url.json", "expected_decision": "no_blocking_finding", "finding_ids": [] },
+    { "file": "pass-scoped-routing.json", "expected_decision": "no_blocking_finding", "finding_ids": [] }
+  ]
+}

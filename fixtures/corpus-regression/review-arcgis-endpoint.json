@@ -1,0 +1,19 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "query_layer",
+        "description": "Query an ArcGIS feature layer.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "endpoint": { "type": "string", "description": "ArcGIS service endpoint." },
+            "where": { "type": "string", "description": "ArcGIS SQL where clause." }
+          }
+        }
+      }
+    ]
+  }
+}

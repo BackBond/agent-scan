@@ -20,6 +20,7 @@ test('start describes a local scanner with no analyzer or network dependency', (
   const output = JSON.parse(run.stdout);
   assert.equal(output.protocol, 'backbond-agent-scan/v1');
   assert.equal(output.mode, 'local_deterministic');
+  assert.equal(output.profiles.pre_attachment.summary_protocol, 'backbond-vet-summary/v1');
   assert.match(output.guarantees.join(' '), /no private analyzer/i);
   assert.match(output.guarantees.join(' '), /no network request/i);
   assert.match(output.guarantees.join(' '), /counted separately.*non-numeric precision note/i);
