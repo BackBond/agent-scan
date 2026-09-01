@@ -1,4 +1,4 @@
-# Sanitized 0.5.15 demos
+# Sanitized 0.6.0 demos
 
 These deliberately synthetic manifests are safe to publish. They are not examples of customer or BackBond production configuration.
 
@@ -57,7 +57,7 @@ Expected decision and exit:
 REVIEW — 0 findings
 Profile: pre-attachment tool manifest only
 Profile coverage: partial — 1 tool-name group(s) become indistinguishable after compatibility, case, separator, and common-script confusable normalization.; 1 tool name(s) contain non-ASCII characters that require operator review.
-Agent decision: do not attach automatically; the manifest is insufficient for this profile.
+Agent decision: do not attach automatically; a finding or evidence gap requires operator review.
 ```
 
 Exit `3`. Name ambiguity is a coverage reason, so the scanner refuses to emit a non-blocking result.

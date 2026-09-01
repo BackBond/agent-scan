@@ -1,10 +1,10 @@
-# BackBond Agent Scan 0.5.15 distribution kit
+# BackBond Agent Scan 0.6.0 distribution kit
 
-This is the distribution kit for BackBond's `@backbond/agent-scan@0.5.15`. Keep every new command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
+This is the distribution kit for BackBond's `@backbond/agent-scan@0.6.0`. Keep every new command version-pinned. Do not substitute `@latest` in posts, prompts, skills, demos, or support replies.
 
 ## Campaign objective
 
-The first launch stage ends only after five external users attempt the pinned 0.5.15 command and the checklist in [`first-five-launch.md`](first-five-launch.md) is complete. Until then:
+The first launch stage ends only after five external users attempt the pinned 0.6.0 command and the checklist in [`first-five-launch.md`](first-five-launch.md) is complete. Until then:
 
 - publish one canonical post containing the pinned command and a named finding ID;
 - do not start a multi-post content calendar;
@@ -32,26 +32,26 @@ Do not lead developer channels with insurance. Lead with the tool decision they 
 
 ## Canonical message
 
-> BackBond Agent Scan vets MCP and AI-agent tools before attachment with a local deterministic static scan. Exit 1 means do not attach automatically, exit 3 means insufficient evidence, and exit 0 is a scoped metadata result—not a safety, runtime-attestation, or insurance decision.
+> BackBond Agent Scan vets MCP and AI-agent tools before attachment with a local deterministic static scan. Exit 1 means do not attach automatically, exit 3 means a medium finding or incomplete/ambiguous evidence requires operator review, and exit 0 is a scoped metadata result, not a safety, runtime-attestation, or insurance decision.
 
 ## Canonical commands
 
 Before attachment:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.15 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.6.0 vet-tools --stdin < tools-list.json
 ```
 
 Broader inventory and coverage gate:
 
 ```bash
-npx -y @backbond/agent-scan@0.5.15 scan --stdin --require-coverage < tools-list.json
+npx -y @backbond/agent-scan@0.6.0 scan --stdin --require-coverage < tools-list.json
 ```
 
 PowerShell:
 
 ```powershell
-Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.5.15 vet-tools --stdin
+Get-Content -Raw .\tools-list.json | npx -y @backbond/agent-scan@0.6.0 vet-tools --stdin
 ```
 
 ## Distribution order

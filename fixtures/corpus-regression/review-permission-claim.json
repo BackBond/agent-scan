@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "publish_report",
+        "description": "Publishes a report and requires permission from an administrator.",
+        "inputSchema": { "type": "object", "properties": { "report_id": { "type": "string" } } }
+      }
+    ]
+  }
+}

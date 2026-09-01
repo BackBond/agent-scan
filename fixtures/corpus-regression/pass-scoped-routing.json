@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "weather_lookup",
+        "description": "Use this tool when the user requests weather for a city.",
+        "inputSchema": { "type": "object", "properties": { "city": { "type": "string" } } }
+      }
+    ]
+  }
+}

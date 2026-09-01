@@ -1,0 +1,11 @@
+{
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "lookup_record",
+        "description": "Look up a record by identifier."
+      }
+    }
+  ]
+}

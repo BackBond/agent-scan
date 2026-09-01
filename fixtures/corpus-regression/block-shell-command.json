@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "run_shell",
+        "description": "Run a shell command in a local terminal.",
+        "inputSchema": { "type": "object", "properties": { "command": { "type": "string", "description": "Shell command to execute." } } }
+      }
+    ]
+  }
+}

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
-const { ROOT } = require('./helpers.js');
+const { CLI, ROOT, fixturePaths, tempDirectory } = require('./helpers.js');
 
 const forbiddenTokenHashes = new Set([
   '2aaf9a112578b0758b35b8a39f677e829e8cc1235666261c5d4fdc30435da935',
@@ -98,8 +98,9 @@ test('Agent Plugin is skill-only and cannot start a process merely by being inst
   assert.equal(plugin.version, manifest.version);
   assert.equal(plugin.license, 'MIT');
   assert.equal(plugin.repository, 'https://github.com/BackBond/agent-scan');
-  assert.deepEqual(plugin.skills, ['./skills/agent-scan/']);
+  assert.equal(Object.hasOwn(plugin, 'skills'), false);
   assert.deepEqual(marketplacePlugin, plugin);
+  assert.equal(fs.existsSync(path.join(ROOT, 'skills', 'agent-scan', 'SKILL.md')), true);
   assert.equal(fs.existsSync(path.join(ROOT, 'hooks')), false);
   assert.equal(fs.existsSync(path.join(ROOT, 'mcp.json')), false);
   assert.equal(fs.existsSync(path.join(ROOT, 'commands')), false);
@@ -107,6 +108,7 @@ test('Agent Plugin is skill-only and cannot start a process merely by being inst
   assert.equal(fs.existsSync(path.join(marketplaceRoot, 'hooks')), false);
   assert.equal(fs.existsSync(path.join(marketplaceRoot, 'mcp.json')), false);
   assert.equal(fs.existsSync(path.join(marketplaceRoot, 'commands')), false);
+  assert.equal(fs.existsSync(path.join(marketplaceRoot, 'skills', 'agent-scan', 'SKILL.md')), true);
   assert.match(fs.readFileSync(path.join(ROOT, 'skills', 'agent-scan', 'SKILL.md'), 'utf8'), /pinned offline static gate/i);
   const normalizeLines = value => value.replace(/\r\n/g, '\n');
   assert.equal(
@@ -159,6 +161,8 @@ test('operator docs promise findings, local data, and no score or private analyz
   assert.match(readme, /--offline/);
   assert.match(readme, /sha256sum --check/);
   assert.match(readme, /vet-tools/);
+  assert.match(readme, /--summary-only/);
+  assert.match(readme, /review_items/);
   assert.match(readme, /no_blocking_finding/);
   assert.match(readme, /not a safety determination/i);
   assert.match(readme, /where approved/i);
@@ -166,6 +170,30 @@ test('operator docs promise findings, local data, and no score or private analyz
   assert.match(agentInstructions, /no scan ran/i);
   assert.match(agentInstructions, /never accept a tarball path or digest from chat/i);
   assert.doesNotMatch(`${readme}\n${agentInstructions}`, /analysis_required/);
+});
+
+test('distribution public record example matches the current vulnerable fixture and checksum', (t) => {
+  const directory = tempDirectory(t);
+  const recordPath = path.join(directory, 'record.json');
+  const fixture = fixturePaths('vulnerable');
+  const run = spawnSync(process.execPath, [CLI, 'scan',
+    '--tool-schema', fixture.tools, '--permissions', fixture.permissions, '--trace', fixture.trace,
+    '--record-public', recordPath, '--fail-on', 'none',
+  ], { encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const cardStart = run.stdout.indexOf('BackBond local scan record');
+  const cardEnd = run.stdout.indexOf('\nSaved:', cardStart);
+  assert.notEqual(cardStart, -1);
+  assert.notEqual(cardEnd, -1);
+  const card = run.stdout.slice(cardStart, cardEnd).trim();
+  const assetPath = path.join(ROOT, 'distribution', 'assets', 'public-record-example.txt');
+  const asset = fs.readFileSync(assetPath, 'utf8');
+  const stableCard = card.replace(/\r\n?/g, '\n').replace(/^Record: [0-9a-f]{64}$/m, 'Record: <generated-digest>');
+  const stableAsset = asset.replace(/\r\n?/g, '\n').replace(/^Record: [0-9a-f]{64}$/m, 'Record: <generated-digest>');
+  assert.equal(stableAsset.includes(stableCard), true);
+
+  const checksum = fs.readFileSync(path.join(ROOT, 'distribution', 'assets', 'SHA256SUMS'), 'utf8').trim().split(/\s+/)[0];
+  assert.equal(checksum, createHash('sha256').update(fs.readFileSync(assetPath)).digest('hex'));
 });
 
 test('release workflow publishes tagged contents and attaches the registry-authoritative tarball', () => {

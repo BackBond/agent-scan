@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "open_status_url",
+        "description": "Open a status URL on the operator-owned service.",
+        "inputSchema": { "type": "object", "properties": { "url": { "type": "string", "pattern": "^https://status\\.example\\.com/" } } }
+      }
+    ]
+  }
+}
