@@ -18,12 +18,12 @@ Avoid mass outreach. The first cohort should be willing to describe whether the 
 
 **Subject:** Will you try a local MCP pre-attachment gate?
 
-We have published `@backbond/agent-scan@0.6.0`, a free deterministic static check for MCP and AI-agent tool manifests.
+We have published `@backbond/agent-scan@0.6.1`, a free deterministic static check for MCP and AI-agent tool manifests.
 
 Would you run it on one proposed toolset before attaching the tools?
 
 ```text
-npx -y @backbond/agent-scan@0.6.0 vet-tools --stdin < tools-list.json
+npx -y @backbond/agent-scan@0.6.1 vet-tools --stdin < tools-list.json
 ```
 
 It does not execute the tools or upload the manifest. Exit 1 means block automatic attachment, exit 3 means a medium finding or incomplete/ambiguous evidence requires operator review, and exit 0 is only a scoped metadata result, not proof of runtime safety.
