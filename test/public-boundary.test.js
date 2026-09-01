@@ -78,7 +78,9 @@ test('all current public version surfaces follow package.json', () => {
     path.join('plugins', 'backbond-agent-scan', 'skills', 'agent-scan', 'SKILL.md'),
     path.join('plugins', 'backbond-agent-scan', 'skills', 'agent-scan', 'README.md'),
     path.join('docs', 'RECORDS.md'), path.join('docs', 'RULES.md'), path.join('docs', 'PUBLICATION.md'),
-    path.join('site', 'llms.txt'), path.join('.github', 'ISSUE_TEMPLATE', 'scan-feedback.yml'),
+    path.join('site', 'llms.txt'),
+    path.join('.github', 'ISSUE_TEMPLATE', 'scan-feedback.yml'),
+    path.join('.github', 'ISSUE_TEMPLATE', 'external-run.yml'),
   ];
   const versions = currentSurfaces.flatMap(target =>
     fs.readFileSync(path.join(ROOT, target), 'utf8').match(/\b0\.\d+\.\d+\b/g) || []
