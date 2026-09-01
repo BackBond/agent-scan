@@ -6,7 +6,7 @@ The analysis-ready CSV and raw-manifest archive were recovered on 2026-09-01. Th
 
 The ten fixtures under `fixtures/corpus-regression` remain synthetic boundary cases. The available corpus rows have not completed the required two-review adjudication, and the first technical reviewer has already seen scanner output. Until an independent blinded review is complete, do not describe the fixture pack as copied, representative, or human-adjudicated registry examples.
 
-The current boundary set locks three BLOCK cases, three `no_blocking_finding` cases, three semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced in package 0.6.0 / ruleset `backbond-local-rules/2.0.0`:
+The current boundary set locks three BLOCK cases, three `no_blocking_finding` cases, three semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced in package 0.6.1 / ruleset `backbond-local-rules/2.0.0`:
 
 - active unallowlisted URL input versus ambiguous endpoint/path language;
 - fetch-shaped plus real privilege composition versus privilege words appearing only in help text;
@@ -28,7 +28,7 @@ Before promoting real corpus rows into regression fixtures, remove identifiers, 
 For registry-scale analysis, run the scanner only against operator-staged local manifests and prefer the identity-free output for each row:
 
 ```bash
-npx -y @backbond/agent-scan@0.6.0 vet-tools --tool-schema staged-manifest.json --summary-only
+npx -y @backbond/agent-scan@0.6.1 vet-tools --tool-schema staged-manifest.json --summary-only
 ```
 
 Store same-mode rows as JSONL, then generate an aggregate rather than publishing raw full-profile output:

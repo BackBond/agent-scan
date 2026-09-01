@@ -29,7 +29,7 @@ body:
     attributes:
       label: Exact pinned package version
       description: Do not use `@latest` in a reproduction.
-      placeholder: "@backbond/agent-scan@0.6.0"
+      placeholder: "@backbond/agent-scan@0.6.1"
     validations:
       required: true
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "backbond-agent-scan",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Vet MCP tool manifests before attachment with a local deterministic static gate.",
   "author": {
     "name": "BackBond",

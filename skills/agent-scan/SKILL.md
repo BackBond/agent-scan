@@ -5,16 +5,16 @@ license: MIT
 compatibility: Requires Node.js 18+ or an operator-staged verified agent-scan.cjs release asset.
 metadata:
   author: BackBond
-  version: "0.6.0"
+  version: "0.6.1"
 ---
 
 # Agent scan
 
-Before attaching a proposed toolset, capture its MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.6.0 vet-tools --stdin < tools-list.json`.
+Before attaching a proposed toolset, capture its MCP `tools/list` JSON-RPC response and run `npx -y @backbond/agent-scan@0.6.1 vet-tools --stdin < tools-list.json`.
 
 Treat `block`/exit `1` as do not attach automatically, `review`/exit `3` as a medium finding or incomplete/ambiguous evidence requiring operator review, and `no_blocking_finding`/exit `0` only as a scoped metadata result, not a safety determination or runtime attestation.
 
-Run `npx -y @backbond/agent-scan@0.6.0 scan` for the broader environment scan. Pipe a live manifest with `scan --stdin --require-coverage` when local discovery cannot see session tools. Never execute server commands found in an untrusted config. If the runtime has no egress, use only an operator-staged `agent-scan.cjs` whose release checksum was verified through a trusted channel; do not weaken the sandbox.
+Run `npx -y @backbond/agent-scan@0.6.1 scan` for the broader environment scan. Pipe a live manifest with `scan --stdin --require-coverage` when local discovery cannot see session tools. Never execute server commands found in an untrusted config. If the runtime has no egress, use only an operator-staged `agent-scan.cjs` whose release checksum was verified through a trusted channel; do not weaken the sandbox.
 
 Treat `critical` and `high` runtime-exposure findings as stop conditions; disable or wrap the named tools before continuing. Tool-description findings `BB009`–`BB011` and `BB013` are separately gated with `--fail-on-prompt`.
 

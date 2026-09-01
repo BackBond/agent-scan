@@ -193,7 +193,8 @@ test('distribution public record example matches the current vulnerable fixture 
   assert.equal(stableAsset.includes(stableCard), true);
 
   const checksum = fs.readFileSync(path.join(ROOT, 'distribution', 'assets', 'SHA256SUMS'), 'utf8').trim().split(/\s+/)[0];
-  assert.equal(checksum, createHash('sha256').update(fs.readFileSync(assetPath)).digest('hex'));
+  const canonicalAsset = asset.replace(/\r\n?/g, '\n');
+  assert.equal(checksum, createHash('sha256').update(canonicalAsset).digest('hex'));
 });
 
 test('release workflow publishes tagged contents and attaches the registry-authoritative tarball', () => {

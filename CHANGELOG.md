@@ -2,6 +2,11 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.6.1 — 2026-09-01
+
+- Publish the 0.6 precision release after the `v0.6.0` tag workflow stopped during tests, before npm, GitHub Release, or MCP Registry publication.
+- Define the bundled public-record example checksum over canonical LF bytes so the release boundary test is consistent on Windows and Linux, and update public installation pins to the corrected `0.6.1` release.
+
 ## 0.6.0 — 2026-09-01
 
 - Advance the public ruleset to `backbond-local-rules/2.0.0` after the 2026-08-31 corpus precision review; no new BB rule is added. The major ruleset version marks materially narrower pre-attachment semantics while package 0.6 remains the same local static scanner.
