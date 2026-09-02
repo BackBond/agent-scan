@@ -23,7 +23,7 @@ test('corpus boundary fixtures stay explicit about provenance', () => {
   assert.equal(INDEX.source.baseline_replay_mismatches, 0);
   assert.match(INDEX.source.bb001_delta_sha256, /^[0-9a-f]{64}$/);
   assert.equal(INDEX.source.bb001_delta_rows, 191);
-  assert.equal(INDEX.cases.length, 18);
+  assert.equal(INDEX.cases.length, 20);
 });
 
 for (const fixture of INDEX.cases) {
