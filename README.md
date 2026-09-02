@@ -329,7 +329,7 @@ Agent Scan has no usage telemetry. If an agent found and attempted the pinned co
 
 This package is a free, local awareness and triage tool. It helps agents and operators see named exposure patterns before attaching tools or composing a toolset. It is not a policy, coverage decision, listener, or substitute for the full BackBond system.
 
-BackBond combines deeper evaluation, continuous runtime evidence, and—where approved—financial protection. Running this package does not create insurance coverage, determine eligibility, or imply that BackBond has verified the environment. Learn more at [backbond.ai](https://backbond.ai).
+BackBond combines deeper evaluation, continuous runtime evidence, and—where approved—financial protection. Running this package does not create insurance coverage, determine eligibility, or imply that BackBond has verified the environment. Learn more at [backbond.ai/agent-scan](https://backbond.ai/agent-scan/).
 
 ## Deliberate 0.6.2 limits
 
