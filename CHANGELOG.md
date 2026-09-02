@@ -2,6 +2,11 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## Unreleased
+
+- Add a security-reporting policy with a private contact route, sensitive-data boundary, supported-version scope, and current-release verification guidance.
+- Point the CLI and README follow-up link to the live Agent Scan page instead of the placeholder BackBond homepage.
+
 ## 0.6.2 — 2026-09-02
 
 - Advance the public ruleset to `backbond-local-rules/2.0.1` after a saved-output audit of all 191 manifests whose BB001 presence changed between 0.5.15 and 0.6.1.

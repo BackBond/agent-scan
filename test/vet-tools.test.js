@@ -51,6 +51,7 @@ test('vet-tools returns a scoped no-blocking decision for a complete benign mani
   assert.equal(result.coverage.states.audit_behavior, 'unobservable_in_profile');
   assert.equal(result.coverage.states.runtime_execution, 'not_performed');
   assert.match(result.assurance, /not a safety determination or runtime attestation/i);
+  assert.match(renderVetHuman(result), /https:\/\/backbond\.ai\/agent-scan\/$/m);
   assert.equal(result.receipt, undefined);
   assert.equal(result.public_record, undefined);
 });
