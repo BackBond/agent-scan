@@ -122,6 +122,7 @@ test('Agent Plugin is skill-only and cannot start a process merely by being inst
 test('MCP tools advertise read-only, non-destructive, idempotent local behavior', () => {
   const { handleMessage } = require('../lib/mcp-server.js');
   const response = handleMessage({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} });
+  assert.match(response.result.tools[0].description, /Unverified self-assessed exposure posture/);
   for (const tool of response.result.tools) {
     assert.deepEqual(tool.annotations, {
       readOnlyHint: true,

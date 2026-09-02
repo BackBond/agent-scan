@@ -1,6 +1,7 @@
 Illustrative compact record generated from the repository's public vulnerable fixture:
 
 BackBond local scan record
+Posture: Unverified self-assessed exposure posture
 Assurance: self-run, unverified; not a safety certificate
 @backbond/agent-scan@0.6.2  ruleset backbond-local-rules/2.0.1
 Interpretation: FINDINGS

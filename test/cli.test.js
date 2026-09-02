@@ -126,6 +126,8 @@ test('redacted public record is write-once and omits tool names and input finger
   const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
   const serialized = JSON.stringify(record);
   assert.equal(record.assurance.level, 'self-run_unverified');
+  assert.equal(record.assurance.posture_label, 'Unverified self-assessed exposure posture');
+  assert.match(run.stdout, /"posture_label": "Unverified self-assessed exposure posture"/);
   assert.equal(record.scope.input_fingerprints, undefined);
   assert.doesNotMatch(serialized, /shell_exec|tool-schema\.json|permissions\.json|trace\.json/);
 

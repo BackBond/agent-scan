@@ -61,7 +61,7 @@ test('compact records cannot be line-injected through disclosed tool names', () 
   const record = createPublicScanRecord(scan, createScanReceipt(scan), { includeToolNames: true });
   const compact = renderCompactRecord(record);
 
-  assert.equal(compact.split('\n').length, 8);
+  assert.equal(compact.split('\n').length, 9);
   for (const line of compact.split('\n')) assert.doesNotMatch(line, /[\p{C}\p{Zl}\p{Zp}]/u);
   assert.doesNotMatch(compact, /^Assurance: VERIFIED$/m);
 });
