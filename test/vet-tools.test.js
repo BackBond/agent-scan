@@ -344,15 +344,51 @@ test('destination and query ambiguity routes to review while concrete network lo
   assert.equal(databaseQuery.status, 1, databaseQuery.stderr);
   assert.equal(JSON.parse(databaseQuery.stdout).findings.some(item => ['BB001', 'BB007'].includes(item.id)), true);
 
-  for (const vacuousPattern of ['^.+$', '^[\\s\\S]*$', '.{1,}', '^[^]*$']) {
+  const movieDatabaseSearch = runVet(mcpManifest([{
+    name: 'search_movies',
+    description: 'Run a query against the movie database by title, director, actor, or keyword.',
+    inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Movie title, actor, or keyword.' } } },
+  }]));
+  assert.equal(movieDatabaseSearch.status, 0, movieDatabaseSearch.stderr);
+  assert.equal(JSON.parse(movieDatabaseSearch.stdout).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  for (const vacuousPattern of [
+    '.*', '^.*$', '.+', '^.+$', '.{1,}', '^.{1,}$',
+    '[\\s\\S]*', '^[\\s\\S]*$', '[^]*', '^[^]*$',
+    '.*SAFE.*', '^.{1,4096}$', '^[\\w\\W]*$', '^(?:.|\\n)*$',
+    '^a|b$', '^[a-z+$', '^[A-z]+$', '^[0-z]+$',
+  ]) {
     const patternedDatabaseQuery = runVet(mcpManifest([{
       name: 'query_database',
       description: 'Query the database.',
       inputSchema: { type: 'object', properties: { sql: { type: 'string', pattern: vacuousPattern } } },
     }]));
     assert.equal(patternedDatabaseQuery.status, 1, `${vacuousPattern}\n${patternedDatabaseQuery.stderr}`);
-    assert.equal(JSON.parse(patternedDatabaseQuery.stdout).findings.some(item => ['BB001', 'BB007'].includes(item.id)), true);
+    const findingIds = new Set(JSON.parse(patternedDatabaseQuery.stdout).findings.map(item => item.id));
+    assert.equal(findingIds.has('BB001'), true, vacuousPattern);
+    assert.equal(findingIds.has('BB007'), true, vacuousPattern);
   }
+
+  const identifierPattern = runVet(mcpManifest([{
+    name: 'query_database',
+    description: 'Query the database by a saved statement identifier.',
+    inputSchema: { type: 'object', properties: {
+      sql: { type: 'string', description: 'Saved statement identifier.', pattern: '^[A-Za-z0-9_-]{1,64}$' },
+    } },
+  }]));
+  assert.equal(identifierPattern.status, 0, identifierPattern.stderr);
+  assert.equal(JSON.parse(identifierPattern.stdout).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  const nearMissPattern = `^${'A'.repeat(26)}!$`;
+  const patternStart = Date.now();
+  const nearMissPatternResult = runVet(mcpManifest([{
+    name: 'query_database',
+    description: 'Query the database.',
+    inputSchema: { type: 'object', properties: { sql: { type: 'string', pattern: nearMissPattern } } },
+  }]));
+  assert.equal(Date.now() - patternStart < 1000, true, 'identifier-pattern validation must remain linear');
+  assert.equal(nearMissPatternResult.status, 1, nearMissPatternResult.stderr);
+  assert.equal(JSON.parse(nearMissPatternResult.stdout).findings.some(item => item.id === 'BB007'), true);
 
   const genericScheme = runVet(mcpManifest([{
     name: 'open_url',
@@ -919,7 +955,7 @@ test('potential exposure paths summarize existing findings without changing the 
     tracePath: path.join(vulnerable, 'trace.json'),
   });
   const scan = scanEvidence(evidence);
-  assert.equal(scan.ruleset.version, 'backbond-local-rules/2.0.0');
+  assert.equal(scan.ruleset.version, 'backbond-local-rules/2.0.1');
   assert.deepEqual(scan.exposure_paths.paths.map(item => item.id), ['EP001', 'EP002', 'EP003']);
   assert.equal(scan.exposure_paths.paths.every(item => item.kind === 'potential_exposure_path'), true);
   assert.equal(scan.exposure_paths.paths.every(item => /not an observed runtime data flow/i.test(item.caveat)), true);

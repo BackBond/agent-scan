@@ -240,6 +240,14 @@ test('known Claude Code files without exported tools are recognized as coverage 
 });
 
 test('capability inference distinguishes documentation from executable parameters', () => {
+  const scanTool = tool => {
+    const evidence = collectEvidence({
+      now: NOW,
+      documents: [{ kind: 'tool_schema', name: `${tool.name}.json`, document: { tools: [tool] } }],
+    });
+    return { evidence, result: scanEvidence(evidence, { now: NOW }) };
+  };
+
   const documentation = collectEvidence({
     now: NOW,
     documents: [{ kind: 'tool_schema', name: 'docs.json', document: { tools: [{
@@ -256,11 +264,12 @@ test('capability inference distinguishes documentation from executable parameter
       { name: 'runner_a', inputSchema: { type: 'object', properties: { cmd: { type: 'string' } } } },
       { name: 'runner_b', inputSchema: { type: 'object', properties: { python: { type: 'string' } } } },
       { name: 'runner_c', inputSchema: { type: 'object', properties: { code: { type: 'string' } } } },
+      { name: 'scan_runner', inputSchema: { type: 'object', properties: { script: { type: 'string' } } } },
     ] } }],
   });
   const executableScan = scanEvidence(executable, { now: NOW });
   assert.equal(executableScan.findings.some(item => item.id === 'BB001'), true);
-  assert.equal(executableScan.findings.find(item => item.id === 'BB007').affected_tools.length, 3);
+  assert.equal(executableScan.findings.find(item => item.id === 'BB007').affected_tools.length, 4);
 
   const mixedDescription = collectEvidence({
     now: NOW,
@@ -281,6 +290,590 @@ test('capability inference distinguishes documentation from executable parameter
     }] } }],
   });
   assert.equal(scanEvidence(conjunctionDescription, { now: NOW }).findings.some(item => item.id === 'BB001'), true);
+
+  const mixedSqlDescription = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'mixed-sql-execution.json', document: { tools: [{
+      name: 'local_query_runner',
+      description: 'Does not execute code remotely, but runs SQL queries locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'SQL query' } } },
+    }] } }],
+  });
+  const mixedSqlScan = scanEvidence(mixedSqlDescription, { now: NOW });
+  assert.equal(mixedSqlScan.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(mixedSqlScan.findings.some(item => item.id === 'BB007'), true);
+
+  const genericSqlExecutor = scanTool({
+    name: 'database_service',
+    description: 'Use this database service to run supplied SQL queries against the local database.',
+    inputSchema: { type: 'object', properties: { statement: { type: 'string', description: 'Statement supplied by the caller.' } } },
+  }).result;
+  assert.equal(genericSqlExecutor.findings.some(item => item.id === 'BB001'), true);
+
+  const namedSelfSqlExecutor = scanTool({
+    name: 'database_service',
+    description: 'Use database_service to run supplied SQL queries against the local database.',
+    inputSchema: { type: 'object', properties: { statement: { type: 'string', description: 'Statement supplied by the caller.' } } },
+  }).result;
+  assert.equal(namedSelfSqlExecutor.findings.some(item => item.id === 'BB001'), true);
+
+  for (const tool of [
+    {
+      name: 'database_service',
+      description: 'Executes\nSQL statements.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'code_preview',
+      description: 'Deploys Python code to a live runtime.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes SQL statements. Call db.query to execute SQL queries.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Call db.query to run SQL. Executes SQL statements.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'local_runner',
+      description: 'Does not execute code or instead runs shell commands.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Does not execute code remotely. Runs shell commands locally.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'sql_parser',
+      description: 'Does not execute queries remotely. Executes SQL locally.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Call db.q to run checks and we execute SQL locally.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Call db.q to run x, but we execute SQL locally.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis and then executes Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis but executes Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis that launches Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis that evaluates JavaScript code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis before executing Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Runs validation before running SQL queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sqlrunner',
+      description: 'Call `sqlrunner` to run SQL against the local database.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL before it is executed by sql_validator.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL before it is executed by `sql_validator`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL before executing it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL, then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and then safely executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and then executes the query locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL but executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and immediately executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL and conditionally executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL; then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Accepts SQL. It executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL. It then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Accepts Python code, then this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Accepts Python code and may execute it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Accepts Python code. When requested, this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Accepts Python code, then executes the input locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Does not execute Python code remotely, but this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Python code was executed by another service, then this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Rather than executing SQL remotely, executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Instead of running Python code remotely, executes it locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL against the database then execute SQL locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL against the database before executing SQL locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL against the database prior to executing SQL locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Call db.query to run SQL followed by executing Python code locally.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL, and this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL; afterward, this tool executes it locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `db-runner` to execute SQL followed by this tool executing it locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'db_runner',
+      description: 'SQL is executed by `DB Runner`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by sql.validator.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by sql:validator.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Python code is launched by this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL executes locally in this tool.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Python code runs locally in this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_runner',
+      description: 'Interprets supplied Python code locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    },
+    {
+      name: 'process_runner',
+      description: 'Spawns a subprocess from supplied commands.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    },
+    {
+      name: 'program_runner',
+      description: 'Runs supplied programs locally.',
+      inputSchema: { type: 'object', properties: { input: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Python code is interpreted by this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'command_validator',
+      description: 'Commands are spawned by this tool.',
+      inputSchema: { type: 'object', properties: { command: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is interpreted by this tool.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'program_validator',
+      description: 'Programs are spawned by this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Runs the supplied query on the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'service',
+      description: 'Executes a caller-supplied query against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes supplied database queries.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Runs a user-supplied database query.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Interprets raw database queries.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Supplied database queries are executed locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Database queries are executed locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The database query is executed by this service.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Queries against the database are executed locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Every database query will be run locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Database queries are executed by this service.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Runs a database query supplied by the caller.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes the query supplied by the caller against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes a database query.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes queries against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Runs queries on the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Interprets queries against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The service executes queries against its database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Runs queries against our database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes queries on this database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The supplied query is executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes queries against remote databases.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The supplied queries are executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'User-supplied queries are run on remote databases.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Queries are executed against our database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The query is executed against databases.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Queries are executed against the database by database_proxy.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to database_proxy. The queries are executed against the database there.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to warehouse_runner. The queries are executed against the database there, but this tool also executes the query locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to warehouse_runner. The queries are executed against the database there, however this tool also executes the query locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to warehouse_runner. The queries are executed against the database there, yet this tool also executes the query locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to warehouse_runner. The queries are executed against the database there. However, this tool executes the query locally too.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL. The service then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL. The component executes the resulting query locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL. The validator then executes it locally.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Database queries are not executed by this service; later the service executes them locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Database queries are not executed by this service; the service later executes them locally.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates a prepared query.',
+      inputSchema: { type: 'object', properties: {
+        sql: { type: 'string', description: 'SQL about to execute; this tool then runs it locally.' },
+      } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates a prepared query.',
+      inputSchema: { type: 'object', properties: {
+        sql: { type: 'string', description: 'SQL about to execute. This tool then runs it locally.' },
+      } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates a prepared query.',
+      inputSchema: { type: 'object', properties: {
+        sql: { type: 'string', description: 'SQL about to execute (must match sql_hash). This tool then runs it locally.' },
+      } },
+    },
+    {
+      name: 'local_service',
+      description: 'The tool runs, and then executes Python code, after validation.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'local_service',
+      description: 'The tool runs, and then launches Python code, after validation.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'The tool runs, and then evaluates SQL, after validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'database_service',
+      description: 'Executes, after validation, supplied SQL queries.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'local_service',
+      description: 'Runs, in a sandbox, supplied shell commands.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+    {
+      name: 'local_service',
+      description: 'Invokes, with isolation, Python code.',
+      inputSchema: { type: 'object', properties: { payload: { type: 'string' } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => item.id === 'BB001'), true, tool.description);
+  }
+
+  for (const tool of [
+    {
+      name: 'job',
+      description: 'Runs a task selected by the operator.',
+      inputSchema: { type: 'object', properties: { shell: { type: 'string', pattern: '^[A-Za-z0-9_-]+$' } } },
+    },
+    {
+      name: 'workflow_executor',
+      description: 'Executes the selected workflow.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', pattern: '^[A-Za-z0-9_-]+$' } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => item.id === 'BB001'), true, tool.name);
+    assert.equal(result.findings.some(item => item.id === 'BB007'), false, tool.name);
+  }
+
+  for (const reference of ['database.service', 'database:service']) {
+    const separatedSelfSqlExecutor = scanTool({
+      name: 'database_service',
+      description: `Use ${reference} to run supplied SQL queries against the local database.`,
+      inputSchema: { type: 'object', properties: { statement: { type: 'string', description: 'Statement supplied by the caller.' } } },
+    }).result;
+    assert.equal(separatedSelfSqlExecutor.findings.some(item => item.id === 'BB001'), true, reference);
+  }
 
   for (const [name, description] of [
     ['imperative_runner', 'Use this tool to execute shell commands supplied by the user.'],
@@ -356,14 +949,762 @@ test('capability inference distinguishes documentation from executable parameter
   });
   assert.equal(scanEvidence(countryLookup, { now: NOW }).findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
 
+  for (const tool of [
+    {
+      name: 'submit_referral_code',
+      description: 'Submit your own referral code for a vendor.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'Referral code' } } },
+    },
+    {
+      name: 'check_tool',
+      description: 'Return a risk classification for a published tool, for example whether execute_sql should be permitted.',
+      inputSchema: { type: 'object', properties: { server: { type: 'string' }, tool: { type: 'string' } } },
+    },
+    {
+      name: 'fx_get_timeseries',
+      description: 'Get exchange rates. Inspect the staged table, then fx_dataframe_query to run SQL against it.',
+      inputSchema: { type: 'object', properties: { base_currency: { type: 'string' } } },
+    },
+    {
+      name: 'resolve_product_code',
+      description: 'A bare keyword runs a search, while a single product code is validated directly.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Keyword or product code.' } } },
+    },
+    {
+      name: 'crypto_new_pairs',
+      description: 'Newly launched DEX pairs per chain (GeckoTerminal) with a safety check, so an agent filters rugs without a second call.',
+      inputSchema: { type: 'object', properties: { chain: { type: 'string' }, limit: { type: 'integer' } } },
+    },
+    {
+      name: 'housing_rental_analysis',
+      description: 'Evaluate rental investment potential by address and zip code.',
+      inputSchema: { type: 'object', properties: { state_code: { type: 'string' } } },
+    },
+    {
+      name: 'aidefense_evaluate_program',
+      description: 'Get an evaluation playbook for assessing an AI security program.',
+      inputSchema: { type: 'object', properties: { framework: { type: 'string' } } },
+    },
+    {
+      name: 'get_partnership_info',
+      description: 'Partnership information for run clubs, gyms, and sports communities, including member codes.',
+      inputSchema: { type: 'object', properties: {} },
+    },
+    {
+      name: 'get_freshness_sample',
+      description: 'Get the weekly update with improvements we run on our live businesses and what changed in Claude Code.',
+      inputSchema: { type: 'object', properties: {} },
+    },
+    {
+      name: 'scan_mcp_server',
+      description: 'Runs a static scanner over source metadata; no target code execution occurs.',
+      inputSchema: { type: 'object', properties: { repository: { type: 'string' } } },
+    },
+    {
+      name: 'test_formula',
+      description: 'Tests a restricted formula grammar. No other Python is executed.',
+      inputSchema: { type: 'object', properties: { formula: { type: 'string' } } },
+    },
+    {
+      name: 'hf_fs',
+      description: 'Run one bounded repository filesystem operation.',
+      inputSchema: { type: 'object', properties: {
+        cmd: { type: 'string', enum: ['ls', 'cat', 'stat', 'find', 'search'], description: 'Command to execute.' },
+      } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis on source code without executing it.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'No code will be executed; returns an analysis report.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_parser',
+      description: 'Runs a restricted SQL parser without executing queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis on Python code; it will not be executed.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis over Python code, which is not executed.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'sql_parser',
+      description: 'Runs a restricted SQL parser and must not execute queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_parser',
+      description: 'Runs a restricted SQL parser and may not execute queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis over Python code that was not executed.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'static_analysis',
+      description: 'Runs static analysis over source code without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Runs validation over source code without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code should never be executed.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_parser',
+      description: 'SQL queries must never be run.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'fx_get_timeseries',
+      description: 'Use db-query to run SQL against the staged table.',
+      inputSchema: { type: 'object', properties: { base_currency: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Call `sqlrunner` to run SQL against the staged table.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Delegate to db.query to run SQL against the staged table.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask db.query to execute SQL against the staged table.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Route to db.query to run SQL against the staged table.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs, without executing it, static analysis on Python code.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs Python code analysis without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_validator',
+      description: 'Runs code validation without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Executes static analysis on Python code without running it.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Executes SQL validation without running queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs, but does not execute, Python code analysis.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs, without executing it, Python code analysis.',
+      inputSchema: { type: 'object', properties: { source: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL before it is executed by db.query.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Validates SQL after it was executed by `sqlrunner`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Analyzes Python code after it was executed by another service.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Ask `query` to execute SQL against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Delegate to `db-runner` to run SQL against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'A static analyzer evaluates Python code syntax without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Evaluates SQL validation rules without running queries.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'static_code_analyzer',
+      description: 'Runs static analysis rather than executing Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Rather than execute SQL, validates its syntax.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by `DB Runner`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed via `DB Runner`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed through `DB Runner`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by `DB Runner 2`.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Another service executes Python code before this tool returns the analysis.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Wolfram Language is evaluated by an external runtime before analysis.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'HogQL is executed by db.query before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by the external service before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by external service before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is asynchronously executed by db.query before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL will ultimately be executed by db.query before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL gets executed by db.query before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'db.query asynchronously executes SQL before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: "Python code isn't executed.",
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code cannot be executed.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code isn’t executed.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code cannot ever be executed.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is never automatically executed.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Checks whether Python code can be executed, without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Checks if SQL can be executed.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Checks whether an external tool may interpret SQL.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Checks whether a remote service may interpret SQL.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Checks whether db.query can execute SQL without executing it.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Checks whether another component can execute SQL without executing it.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Checks if the runtime can execute Python code without executing it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    ...[
+      ['python_linter', 'Runs linter analysis over Python code without executing it.'],
+      ['code_reviewer', 'Runs code review over Python code without executing it.'],
+      ['code_verifier', 'Runs verifier analysis over Python code without executing it.'],
+      ['code_converter', 'Runs converter analysis over Python code without executing it.'],
+      ['code_classifier', 'Runs classifier analysis over Python code without executing it.'],
+      ['code_detector', 'Runs detector analysis over Python code without executing it.'],
+      ['code_explainer', 'Runs explainer analysis over Python code without executing it.'],
+      ['code_auditor', 'Runs auditor analysis over Python code without executing it.'],
+      ['code_verification', 'Runs verification over Python code without executing it.'],
+      ['code_audit', 'Runs audit over Python code without executing it.'],
+      ['code_conversion', 'Runs conversion over Python code without executing it.'],
+      ['code_classification', 'Runs classification over Python code without executing it.'],
+      ['code_detection', 'Runs detection over Python code without executing it.'],
+      ['code_explanation', 'Runs explanation over Python code without executing it.'],
+      ['code_authorizer', 'Runs authorization over SQL without executing it.'],
+    ].map(([name, description]) => ({
+      name,
+      description,
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    })),
+    {
+      name: 'python_examples',
+      description: 'Returns examples showing how to execute Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_tutorial',
+      description: 'Provides a tutorial about running Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Does not interpret Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'process_analyzer',
+      description: 'Never spawns subprocess commands.',
+      inputSchema: { type: 'object', properties: { command: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Instead of interpreting Python code, this tool analyzes it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'Rather than interpret SQL, validates its syntax.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'python_guide',
+      description: 'Guide to executing Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_instructions',
+      description: 'Instructions for running Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_reference',
+      description: 'Reference showing how to interpret Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'sql_tutorial',
+      description: 'Tutorial describing how to execute SQL queries.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'sql_walkthrough',
+      description: 'Walkthrough showing how to execute SQL queries.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'sql_readme',
+      description: 'README showing how to execute SQL queries.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'sql_quickstart',
+      description: 'Quickstart showing how to execute SQL queries.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_documentation',
+      description: 'Documentation on running Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_handbook',
+      description: 'Handbook for executing Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_documentation',
+      description: 'Explains how to run Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'python_reference',
+      description: 'Describes how to execute Python code.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'duckdb_documentation',
+      description: 'Explains how to execute a DuckDB query.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'duckdb_handbook',
+      description: 'Handbook for running a DuckDB query.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'mysql_readme',
+      description: 'README explaining how to run a MySQL query.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code is not executed by this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is never executed by sql_validator.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'command_reference',
+      description: 'Commands are not spawned through this tool.',
+      inputSchema: { type: 'object', properties: { command: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Python code cannot be interpreted by this tool.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'read',
+      title: 'Read Web Page as Markdown',
+      description: 'Markdown is capped at 40,000 characters and no JavaScript is executed.',
+      inputSchema: { type: 'object', properties: { url: { type: 'string' } } },
+    },
+    {
+      name: 'verify_plugin',
+      description: 'Get a recipe for local verification. The verification runs on the local machine via a Node script; this server performs no computation. Follow the returned steps, download the script, and run it against the plugin directory.',
+      inputSchema: { type: 'object', properties: { pluginPath: { type: 'string' } } },
+    },
+    {
+      name: 'sql_validator',
+      description: 'SQL is executed by another component before validation.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string' } } },
+    },
+    {
+      name: 'code_analyzer',
+      description: 'Another component executes Python code before this tool returns metadata.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string' } } },
+    },
+    {
+      name: 'query_checker',
+      description: 'Checks whether queries are executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Documentation explains how queries are executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Queries are executed against the database by another service.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Queries are executed against the database through an external component.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Queries are executed against the database by warehouse_runner.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Queries are run on remote databases through `warehouse runner`.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_verifier',
+      description: 'Verifies whether queries are executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'query_guide',
+      description: 'A guide explaining how queries are executed against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'database_proxy',
+      description: 'Forwards queries to warehouse_runner. The queries are executed against the database there.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+    {
+      name: 'sqlguard_gate',
+      description: 'ABMP GATE — free portable authorize bus. POST /v1/gate with certificate+signature+sql (+ mandate when BIND). Any mutating agent tool fail-closes here before execute. Issues nothing.',
+      inputSchema: { type: 'object', properties: {
+        sql: { type: 'string', description: 'Exact SQL about to execute (must match sql_hash)' },
+      } },
+    },
+    {
+      name: 'query_reference',
+      description: 'Then fx_dataframe_query to run\nSQL against the staged table.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Natural-language lookup.' } } },
+    },
+    {
+      name: 'command_lookup',
+      description: 'Shell commands are listed. They are executed by another tool.',
+      inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    },
+    {
+      name: 'oecd_get_dimension_values',
+      description: 'Fetch valid codes and labels. Codelists run to a thousand-plus entries, and the response returns at most limit codes.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'Substring matched against a code or label.' } } },
+    },
+    {
+      name: 'get_factory_floor',
+      description: 'Reports whether a spawn went ACP or Terminal. Does not spawn, focus, or close tabs.',
+      inputSchema: { type: 'object', properties: { companyId: { type: 'string' } } },
+    },
+    {
+      name: 'fac_federal_awards_by_program',
+      description: 'Answers who spends money in this federal grant program and how much does each one run.',
+      inputSchema: { type: 'object', properties: { cfda: { type: 'string' } } },
+    },
+    {
+      name: 'inspect_requests',
+      description: 'Point code at the mock, run it, then inspect the captured request metadata.',
+      inputSchema: { type: 'object', properties: { project: { type: 'string' } } },
+    },
+    {
+      name: 'analyze_activity_file',
+      description: 'Returns metrics for an activity file. With a local file and shell available, run curl in one command and pass the upload id.',
+      inputSchema: { type: 'object', properties: { filename: { type: 'string' }, upload_id: { type: 'string' } } },
+    },
+    {
+      name: 'manage_account',
+      description: 'Returns instructions and a curl command for the user to run. Do not run it yourself even with shell access.',
+      inputSchema: { type: 'object', properties: { action: { type: 'string', enum: ['register', 'verify'] } } },
+    },
+    {
+      name: 'knowledge_search',
+      description: 'Finds findings that cost someone real work to install and run to settle, including a minimum version, flag, or status code.',
+      inputSchema: { type: 'object', properties: { question: { type: 'string' } } },
+    },
+    {
+      name: 'i18n_checklist',
+      description: 'Returns implementation checklist steps, including which code to implement and when to run builds.',
+      inputSchema: { type: 'object', properties: { step_number: { type: 'integer' }, done: { type: 'boolean' } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => ['BB001', 'BB007'].includes(item.id)), false, `${tool.name}: ${tool.description}`);
+  }
+
+  const longIdentityResult = scanTool({
+    name: 'a'.repeat(100_000),
+    description: 'Returns static metadata.',
+    inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+  }).result;
+  assert.equal(longIdentityResult.findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  for (const tool of [
+    {
+      name: 'sqlguard_gate',
+      description: 'Authorize a request before execution; this tool does not run the SQL.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'Exact SQL about to execute' } } },
+    },
+    {
+      name: 'calculate',
+      description: 'Safely evaluate an arithmetic expression. Does not execute arbitrary code.',
+      inputSchema: { type: 'object', properties: { expression: { type: 'string', description: 'Arithmetic expression' } } },
+    },
+  ]) {
+    const { evidence, result } = scanTool(tool);
+    assert.equal(result.findings.some(item => ['BB001', 'BB007'].includes(item.id)), false, tool.name);
+    assert.equal(evidence.facts.tools[0].semantic_risks.some(item => item.id === 'ambiguous_query_expression'), true, tool.name);
+  }
+
   const sqlQuery = collectEvidence({
     now: NOW,
     documents: [{ kind: 'tool_schema', name: 'sql-query.json', document: { tools: [{
-      name: 'database_lookup',
-      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'SQL query to execute' } } },
+      name: 'query_sql',
+      description: 'Execute a SQL query against the database.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'SQL query' } } },
     }] } }],
   });
   assert.equal(scanEvidence(sqlQuery, { now: NOW }).findings.some(item => item.id === 'BB007'), true);
+
+  const qSql = scanTool({
+    name: 'query_sql',
+    description: 'Execute a SQL query against the database.',
+    inputSchema: { type: 'object', properties: { q: { type: 'string', description: 'SQL query' } } },
+  }).result;
+  assert.equal(qSql.findings.some(item => item.id === 'BB001'), true);
+  assert.equal(qSql.findings.some(item => item.id === 'BB007'), true);
+
+  const qCatalog = scanTool({
+    name: 'search_movie_catalog',
+    description: 'Search the movie catalog by title, director, actor, or keyword.',
+    inputSchema: { type: 'object', properties: { q: { type: 'string', description: 'Movie title, actor, or keyword.' } } },
+  }).result;
+  assert.equal(qCatalog.findings.some(item => ['BB001', 'BB007'].includes(item.id)), false);
+
+  for (const tool of [
+    {
+      name: 'validar_sql',
+      description: 'Ejecuta una consulta SQL contra tablas de prueba.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'La consulta SQL a ejecutar' } } },
+    },
+    {
+      name: 'query_sql',
+      description: 'Exécute une requête SQL directe sur la base DuckDB.',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => item.id === 'BB001'), true, tool.name);
+    assert.equal(result.findings.some(item => item.id === 'BB007'), true, tool.name);
+  }
+
+  for (const tool of [
+    {
+      name: 'faostat_dataframe_query',
+      description: 'Run a single-statement SELECT against staged canvas tables. Standard DuckDB SQL is supported.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'Single-statement read-only SELECT.' } } },
+    },
+    {
+      name: 'render_diagram',
+      description: 'Render a complete Python script to a PNG diagram.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'Python code defining the diagram.' } } },
+    },
+    {
+      name: 'play_live_pattern',
+      description: 'Live code music patterns in JavaScript; patterns play in a REPL and may autoplay.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'JavaScript pattern code.' } } },
+    },
+    {
+      name: 'deploy',
+      description: 'Deploy full server-side code as an ES module.',
+      inputSchema: { type: 'object', properties: { script: { type: 'string', description: 'Full ES module source.' } } },
+    },
+    {
+      name: 'create_slide',
+      title: 'Create or Inspect a Slide',
+      description: 'Create and render a slide from structured input or Python code.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'Python code defining build(prs).' } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => item.id === 'BB001'), true, tool.name);
+    assert.equal(result.findings.some(item => item.id === 'BB007'), true, tool.name);
+  }
+
+  for (const tool of [
+    {
+      name: 'transpile_sql',
+      description: 'Convert SQL between dialects without executing it.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'SQL source to transform.' } } },
+    },
+    {
+      name: 'format_code',
+      description: 'Format JavaScript source without running it.',
+      inputSchema: { type: 'object', properties: { code: { type: 'string', description: 'JavaScript source.' } } },
+    },
+    {
+      name: 'sql_formatter',
+      description: 'Format SQL for display.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'SQL source.' } } },
+    },
+    {
+      name: 'detect_schema',
+      description: 'Convert SQL CREATE TABLE statements into a declarative schema.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'SQL CREATE TABLE statements.' } } },
+    },
+    {
+      name: 'sqlguard_bind',
+      description: 'Bind an authorization certificate for SQL before execution.',
+      inputSchema: { type: 'object', properties: { sql: { type: 'string', description: 'Exact SQL to authorize.' } } },
+    },
+    {
+      name: 'batch_sales_reps',
+      description: 'Process sales-representative records with explicit code and name fields.',
+      inputSchema: { type: 'object', properties: { item: { type: 'object', properties: { code: { type: 'string', description: 'Identifier subject to server-side code limits.' } } } } },
+    },
+  ]) {
+    const { result } = scanTool(tool);
+    assert.equal(result.findings.some(item => ['BB001', 'BB007'].includes(item.id)), false, tool.name);
+  }
 
   const nestedCamelCase = collectEvidence({
     now: NOW,
@@ -378,6 +1719,20 @@ test('capability inference distinguishes documentation from executable parameter
   const nestedScan = scanEvidence(nestedCamelCase, { now: NOW });
   assert.equal(nestedScan.findings.some(item => item.id === 'BB001'), true);
   assert.equal(nestedScan.findings.some(item => item.id === 'BB007'), true);
+
+  const repeatedQueryProperties = {};
+  for (let index = 0; index < 500; index += 1) {
+    repeatedQueryProperties[`field_${index}`] = { type: 'string', description: 'Optional SQL expression metadata.' };
+  }
+  const repeatedQueryEvidence = collectEvidence({
+    now: NOW,
+    documents: [{ kind: 'tool_schema', name: 'repeated-query-risks.json', document: { tools: [{
+      name: 'query_metadata',
+      description: 'Describe SQL query metadata without executing it.',
+      inputSchema: { type: 'object', properties: repeatedQueryProperties },
+    }] } }],
+  });
+  assert.equal(repeatedQueryEvidence.facts.tools[0].semantic_risks.filter(item => item.id === 'ambiguous_query_expression').length, 1);
 
   const wideProperties = {};
   for (let index = 0; index < 140000; index += 1) wideProperties[`field_${index}`] = {};

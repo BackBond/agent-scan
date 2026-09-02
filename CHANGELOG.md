@@ -2,6 +2,16 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
+## 0.6.2 — 2026-09-02
+
+- Advance the public ruleset to `backbond-local-rules/2.0.1` after a saved-output audit of all 191 manifests whose BB001 presence changed between 0.5.15 and 0.6.1.
+- Require direct interpreter context for generic `query`, `code`, and `expression` fields. Database catalog search, referral codes, quoted executor names, delegated SQL references, arithmetic expressions, and SQL authorization gates no longer become high BB001/BB007 findings from a nearby keyword alone; unconstrained formal query or expression syntax remains an explicit REVIEW gap.
+- Restore high BB001/BB007 findings for direct Wolfram Language, SQL, HogQL, DataCanvas, Iceberg, QuickBooks, and nested analytics-query inputs, including active Spanish and French execution descriptions observed in the frozen corpus.
+- Treat only a syntactically valid, anchored, narrowly parsed identifier schema `pattern` as an execution-input constraint. Unanchored, malformed, wildcard, unsafe-range, negated-class, match-any, and length-only patterns retain high findings; explicit runner/executor identities and direct query-execution descriptions fail closed.
+- Coalesce repeated schema-risk evidence per tool and skip interpreter analysis for unrelated field names, preventing adversarial wide schemas from amplifying one query phrase into an unbounded evidence object or unnecessary regex work.
+- Add eight redacted corpus-derived regression boundaries: four direct executors, two formal-query REVIEW cases, and two clean identifier/search cases. The fixture metadata records the 191-row delta digest and does not claim representative prevalence or independent runtime validation.
+- Make the offline corpus rerun report label its current package version dynamically. The scanner remains local and static: this release adds no registry collection, live server spawn, tool invocation, hosted upload, score, auto-fix, or insurance decision.
+
 ## 0.6.1 — 2026-09-01
 
 - Publish the 0.6 precision release after the `v0.6.0` tag workflow stopped during tests, before npm, GitHub Release, or MCP Registry publication.
