@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: tests (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["18", "20", "22", "24"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Node.js ${{ matrix.node }}
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Report toolchain
+        run: node --version
+
+      - name: Run complete test suite
+        run: node --test
+
+      - name: Build standalone agent-scan.cjs
+        run: |
+          node scripts/build-standalone.js agent-scan.cjs
+          test -s agent-scan.cjs
+
+      # The scanner claims local-only execution. Running the standalone bundle in a
+      # network namespace with no interfaces turns that claim into a test: any
+      # outbound call fails instead of silently succeeding on a connected runner.
+      - name: Scan vulnerable fixture with no network (expect exit 1)
+        run: |
+          set +e
+          sudo unshare --net "$(command -v node)" agent-scan.cjs scan \
+            --tool-schema fixtures/vulnerable/tool-schema.json \
+            --permissions fixtures/vulnerable/permissions.json \
+            --trace fixtures/vulnerable/trace.json
+          code=$?
+          echo "exit=${code} (expected 1)"
+          [ "${code}" -eq 1 ]
+
+      - name: Scan hardened fixture with no network (expect exit 0)
+        run: |
+          set +e
+          sudo unshare --net "$(command -v node)" agent-scan.cjs scan \
+            --tool-schema fixtures/hardened/tool-schema.json \
+            --permissions fixtures/hardened/permissions.json \
+            --trace fixtures/hardened/trace.json
+          code=$?
+          echo "exit=${code} (expected 0)"
+          [ "${code}" -eq 0 ]
