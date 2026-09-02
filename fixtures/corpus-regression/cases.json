@@ -31,6 +31,8 @@
     { "file": "block-wolfram-code.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
     { "file": "block-datacanvas-sql.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
     { "file": "block-hogql-query.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
-    { "file": "block-iceberg-sql.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] }
+    { "file": "block-iceberg-sql.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
+    { "file": "pass-explain-shell-command-arg.json", "expected_decision": "no_blocking_finding", "finding_ids": [] },
+    { "file": "pass-explain-shell-text-arg.json", "expected_decision": "no_blocking_finding", "finding_ids": [] }
   ]
 }
