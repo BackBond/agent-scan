@@ -1,4 +1,4 @@
-# Sanitized 0.6.1 demos
+# Sanitized 0.6.2 demos
 
 These deliberately synthetic manifests are safe to publish. They are not examples of customer or BackBond production configuration.
 

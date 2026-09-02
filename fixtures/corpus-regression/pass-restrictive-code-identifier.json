@@ -1,0 +1,32 @@
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [{
+      "name": "policy_conformance",
+      "description": "Evaluate standardized policy observations. This tool does not run provider tests or execute supplied code.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "observation": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,63}$",
+                "description": "A bounded provider status code, never source code or a payload."
+              }
+            },
+            "required": ["code"]
+          }
+        },
+        "required": ["profileId", "observation"]
+      }
+    }]
+  }
+}

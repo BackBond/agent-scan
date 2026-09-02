@@ -15,13 +15,15 @@ const NOW = new Date('2026-08-31T12:00:00.000Z');
 
 test('corpus boundary fixtures stay explicit about provenance', () => {
   assert.equal(INDEX.protocol, 'backbond-corpus-regression/v1');
-  assert.equal(INDEX.ruleset, 'backbond-local-rules/2.0.0');
+  assert.equal(INDEX.ruleset, 'backbond-local-rules/2.0.1');
   assert.equal(INDEX.source.raw_bundle_available, true);
-  assert.equal(INDEX.source.status, 'synthetic-boundary-fixtures-pending-two-review-promotion');
+  assert.equal(INDEX.source.status, 'synthetic-and-redacted-corpus-derived-boundaries');
   assert.match(INDEX.source.csv_sha256, /^[0-9a-f]{64}$/);
   assert.match(INDEX.source.archive_sha256, /^[0-9a-f]{64}$/);
   assert.equal(INDEX.source.baseline_replay_mismatches, 0);
-  assert.equal(INDEX.cases.length, 10);
+  assert.match(INDEX.source.bb001_delta_sha256, /^[0-9a-f]{64}$/);
+  assert.equal(INDEX.source.bb001_delta_rows, 191);
+  assert.equal(INDEX.cases.length, 18);
 });
 
 for (const fixture of INDEX.cases) {

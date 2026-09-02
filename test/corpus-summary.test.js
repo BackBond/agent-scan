@@ -6,6 +6,7 @@ const { renderMarkdown, summarizeRows } = require('../scripts/summarize-corpus-r
 const {
   EXACT_BASELINE,
   ZERO_ERROR_VALIDATION_FIELDS,
+  renderMarkdown: renderRerunMarkdown,
   validateBaselineVerification,
 } = require('../scripts/rerun-enriched-corpus.js');
 
@@ -22,8 +23,8 @@ test('corpus summary emits aggregates and multiplicity without identities or has
       server_id: 'PRIVATE_SERVER_ONE',
       input_sha256: repeatedHash,
       decision: 'block',
-      scanner: { version: '0.6.1' },
-      ruleset: { version: 'backbond-local-rules/2.0.0' },
+      scanner: { version: '0.6.2' },
+      ruleset: { version: 'backbond-local-rules/2.0.1' },
       findings: [
         {
           id: 'BB013', severity: 'high', finding_class: 'prompt_injection_indicator', affected_tools: ['PRIVATE_TOOL_ONE'],
@@ -44,8 +45,8 @@ test('corpus summary emits aggregates and multiplicity without identities or has
       server_id: 'PRIVATE_SERVER_TWO',
       manifest_sha256: repeatedHash,
       decision: 'review',
-      scanner: { version: '0.6.1' },
-      ruleset: { version: 'backbond-local-rules/2.0.0' },
+      scanner: { version: '0.6.2' },
+      ruleset: { version: 'backbond-local-rules/2.0.1' },
       findings: [
         { id: 'BB004', severity: 'medium', finding_class: 'capability_exposure', affected_tools: ['PRIVATE_TOOL_TWO'] },
         {
@@ -83,8 +84,8 @@ test('corpus summary aggregates summary-only rows without recovering identities 
     {
       protocol: 'backbond-vet-summary/v1',
       decision: 'review',
-      scanner: { version: '0.6.1' },
-      ruleset: { version: 'backbond-local-rules/2.0.0' },
+      scanner: { version: '0.6.2' },
+      ruleset: { version: 'backbond-local-rules/2.0.1' },
       summary: severitySummary(0, 1),
       finding_classes: { capability_exposure: { count: 1 }, prompt_injection_indicator: { count: 0 } },
       rule_histogram: { BB004: 1 },
@@ -95,8 +96,8 @@ test('corpus summary aggregates summary-only rows without recovering identities 
     {
       protocol: 'backbond-vet-summary/v1',
       decision: 'block',
-      scanner: { version: '0.6.1' },
-      ruleset: { version: 'backbond-local-rules/2.0.0' },
+      scanner: { version: '0.6.2' },
+      ruleset: { version: 'backbond-local-rules/2.0.1' },
       summary: severitySummary(1),
       finding_classes: { capability_exposure: { count: 0 }, prompt_injection_indicator: { count: 1 } },
       rule_histogram: { BB013: 1 },
@@ -129,8 +130,8 @@ test('corpus summary rejects unknown protocols and truncated or inconsistent row
   assert.throws(() => summarizeRows([{
     protocol: 'backbond-vet-summary/v1',
     decision: 'review',
-    scanner: { version: '0.6.1' },
-    ruleset: { version: 'backbond-local-rules/2.0.0' },
+    scanner: { version: '0.6.2' },
+    ruleset: { version: 'backbond-local-rules/2.0.1' },
     summary: severitySummary(0, 1),
     finding_classes: { capability_exposure: { count: 1 } },
     rule_histogram: { BB004: 1 },
@@ -140,8 +141,8 @@ test('corpus summary rejects unknown protocols and truncated or inconsistent row
   assert.throws(() => summarizeRows([{
     protocol: 'backbond-vet-summary/v1',
     decision: 'review',
-    scanner: { version: '0.6.1' },
-    ruleset: { version: 'backbond-local-rules/2.0.0' },
+    scanner: { version: '0.6.2' },
+    ruleset: { version: 'backbond-local-rules/2.0.1' },
     summary: severitySummary(0, 2),
     finding_classes: { capability_exposure: { count: 1 } },
     rule_histogram: { BB004: 1 },
@@ -202,4 +203,29 @@ test('baseline verifier binds the replay to exact histograms, digests, commit, a
     mutate(invalid);
     assert.throws(() => validateBaselineVerification(invalid, expected), /does not prove an exact/i);
   }
+});
+
+test('corpus rerun markdown labels the current scanner version dynamically', () => {
+  const markdown = renderRerunMarkdown({
+    corpus: { date: '2026-08-31', rows: 1 },
+    sources: { csv: { sha256: 'a'.repeat(64) }, archive: { sha256: 'b'.repeat(64) } },
+    validation: { csv_rows: 1, distinct_manifest_keys: 1, manifest_files: 1, csv_rows_without_manifest: 0, manifests_without_csv_row: 0, json_parse_failures: 0, tool_count_mismatches: 0 },
+    baseline: { decisions: { block: 1 }, rule_histogram: { BB001: 1 }, verification: { exact_tag_replay: true } },
+    current: {
+      scanner: { version: '9.8.7' },
+      ruleset: { version: 'rules/1', sha256: 'c'.repeat(64) },
+      profile: { version: 'profile/1', sha256: 'd'.repeat(64) },
+      decisions: { review: 1 },
+      rule_histogram: {},
+      template_multiplicity: {
+        exact_input: { distinct_templates: 1, largest_multiplicity: 1 },
+        exact_tool_schema: { distinct_templates: 1, largest_multiplicity: 1 },
+      },
+    },
+    delta: { changed_rows: 1, changed_row_percent: 100, transitions: { 'block->review': 1 }, current_rules_by_transition: {} },
+  });
+  assert.match(markdown, /^# MCP corpus precision rerun: 0\.5\.15 baseline to 9\.8\.7/m);
+  assert.match(markdown, /\| Decision \| CSV baseline \| 9\.8\.7 rerun \| Change \|/);
+  assert.match(markdown, /\| Rule \| CSV baseline \| 9\.8\.7 rerun \| Change \|/);
+  assert.doesNotMatch(markdown, /0\.6\.1 rerun/);
 });

@@ -273,10 +273,11 @@ function signed(value) {
 function renderMarkdown(report) {
   const baseline = report.baseline.decisions;
   const current = report.current.decisions;
+  const currentVersion = report.current.scanner.version;
   const allRules = [...new Set([...Object.keys(report.baseline.rule_histogram), ...Object.keys(report.current.rule_histogram)])].sort();
   const transitions = Object.entries(report.delta.transitions).filter(([, count]) => count > 0);
   const lines = [
-    '# MCP corpus precision rerun: 0.5.15 baseline to 0.6.1',
+    `# MCP corpus precision rerun: 0.5.15 baseline to ${currentVersion}`,
     '',
     '> Publication status: internal validation draft. The aggregate tables contain no server names, URLs, tool names, descriptions, evidence pointers, or per-manifest identifiers. A second reviewer should check the fixture adjudications and publication claims before release.',
     '',
@@ -288,7 +289,7 @@ function renderMarkdown(report) {
     '',
     '## Decision delta',
     '',
-    '| Decision | CSV baseline | 0.6.1 rerun | Change |',
+    `| Decision | CSV baseline | ${currentVersion} rerun | Change |`,
     '|---|---:|---:|---:|',
     `| block | ${baseline.block || 0} | ${current.block || 0} | ${signed((current.block || 0) - (baseline.block || 0))} |`,
     `| review | ${baseline.review || 0} | ${current.review || 0} | ${signed((current.review || 0) - (baseline.review || 0))} |`,
@@ -308,7 +309,7 @@ function renderMarkdown(report) {
     '',
     '## Rule delta',
     '',
-    '| Rule | CSV baseline | 0.6.1 rerun | Change |',
+    `| Rule | CSV baseline | ${currentVersion} rerun | Change |`,
     '|---|---:|---:|---:|',
     ...allRules.map(rule => {
       const before = report.baseline.rule_histogram[rule] || 0;

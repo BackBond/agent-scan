@@ -4,9 +4,9 @@ The 2026-08-31 MCP Registry report is a precision-discovery input, not a represe
 
 The analysis-ready CSV and raw-manifest archive were recovered on 2026-09-01. The CSV contains 7,749 rows and the archive contains 7,749 unique JSON manifests. Every row joins to exactly one manifest. Both exports parse cleanly, their tool counts and tool-name lists match, and a local replay of package 0.5.15 / ruleset 1.4.0 reproduced every decision and rule count with zero mismatches. The fixture index records the export checksums and this baseline verification.
 
-The ten fixtures under `fixtures/corpus-regression` remain synthetic boundary cases. The available corpus rows have not completed the required two-review adjudication, and the first technical reviewer has already seen scanner output. Until an independent blinded review is complete, do not describe the fixture pack as copied, representative, or human-adjudicated registry examples.
+The fixture directory now contains ten synthetic precision boundaries from 0.6.0 and eight redacted BB001 boundaries derived from the 191-row saved-output delta audit. The corpus-derived cases retain only the metadata needed to reproduce the rule boundary and record the delta export digest; they omit server names and URLs. They are regression evidence, not representative prevalence evidence, runtime validation, or an independently blinded corpus sample.
 
-The current boundary set locks three BLOCK cases, three `no_blocking_finding` cases, three semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced in package 0.6.1 / ruleset `backbond-local-rules/2.0.0`:
+The current 18-case boundary set locks seven BLOCK cases, five `no_blocking_finding` cases, five semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced through package 0.6.2 / ruleset `backbond-local-rules/2.0.1`:
 
 - active unallowlisted URL input versus ambiguous endpoint/path language;
 - fetch-shaped plus real privilege composition versus privilege words appearing only in help text;
@@ -15,7 +15,7 @@ The current boundary set locks three BLOCK cases, three `no_blocking_finding` ca
 - asserted permission requirements versus observable runtime enforcement; and
 - global forced tool selection versus scoped routing guidance.
 
-Focused unit tests outside the ten-case fixture pack separately lock BB004's standalone-write REVIEW boundary and same-inventory network-intake BLOCK boundary.
+Focused unit tests outside the fixture pack separately lock BB004's standalone-write REVIEW boundary, the same-inventory network-intake BLOCK boundary, and BB001/BB007 exclusions for referral codes, quoted executor names, delegated SQL references, arithmetic expressions, and authorization-only SQL metadata.
 
 Run the pack with:
 
@@ -28,7 +28,7 @@ Before promoting real corpus rows into regression fixtures, remove identifiers, 
 For registry-scale analysis, run the scanner only against operator-staged local manifests and prefer the identity-free output for each row:
 
 ```bash
-npx -y @backbond/agent-scan@0.6.1 vet-tools --tool-schema staged-manifest.json --summary-only
+npx -y @backbond/agent-scan@0.6.2 vet-tools --tool-schema staged-manifest.json --summary-only
 ```
 
 Store same-mode rows as JSONL, then generate an aggregate rather than publishing raw full-profile output:
