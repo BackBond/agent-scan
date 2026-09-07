@@ -4,6 +4,12 @@ BackBond Agent Scan is published as the exact scoped package `@backbond/agent-sc
 
 If a result from this scanner or from a BackBond publication looks wrong, open a correction through the [false-positive form](https://github.com/BackBond/agent-scan/issues/new?template=false-positive.yml). We respond within 72 hours.
 
+## Try the browser preview
+
+[Try Agent Scan in your browser](https://backbond.ai/agent-scan/try/?source=github): three synthetic MCP examples, followed by a local check of your own `tools/list` JSON. No account or installation is required. The page processes the manifest in memory without uploading it.
+
+The browser preview uses Agent Scan 0.6.2 and checks supplied MCP tool metadata only, up to 200 tools and 256 KiB. It does not assess runtime behavior, and a non-blocking result is not a safety determination or insurance decision. Use the pinned CLI below for other supported formats, larger inputs, or offline workflows.
+
 ## Install from a trusted host first
 
 For operator-enforced checks on an existing stdio MCP connection, see the
