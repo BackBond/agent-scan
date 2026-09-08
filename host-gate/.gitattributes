@@ -1,0 +1,2 @@
+* text=auto eol=lf
+vendor/agent-scan.cjs -text -whitespace
