@@ -1,0 +1,12 @@
+{
+  "protocol": "backbond-review-override/v1",
+  "approval_id": "REPLACE-WITH-NEW-OPERATOR-DECISION-ID",
+  "operator": "REPLACE-WITH-REVIEWING-OPERATOR",
+  "approved_at": "REPLACE-WITH-APPROVAL-TIMESTAMP",
+  "manifest_sha256": "REPLACE-WITH-EXACT-REVIEWED-MANIFEST-HASH",
+  "scanner_sha256": "1f1c6cf4c36f2bfd211b31a695d7023186587dd3b0f696eb583af1ea928d1d12",
+  "ruleset_sha256": "bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e",
+  "profile_sha256": "3edfb2bc97a68af345e1df5802e6028d8c32092d3dea379157581847bc2bf140",
+  "accepted_review_codes": ["REPLACE-WITH-ALL-CODES-FROM-THE-REVIEW"],
+  "reason": "REPLACE-WITH-OPERATOR-RATIONALE-AFTER-REVIEW"
+}

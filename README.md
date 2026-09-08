@@ -4,6 +4,13 @@ BackBond Agent Scan is published as the exact scoped package `@backbond/agent-sc
 
 ## Install from a trusted host first
 
+For operator-enforced checks on an existing stdio MCP connection, see the
+separate [Agent Scan stdio gate](host-gate/README.md). It starts the authorized
+server and gates tool attachment and calls; it is not included in the scanner
+npm package, does not sandbox startup, and does not verify runtime behavior.
+The checksum-verified standalone scanner and pinned npm paths below remain
+available for manual checks.
+
 For a hardened or network-isolated agent, an operator should download the single-file release asset and checksum on a network-enabled trusted host, verify it, and transfer the verified file through the organization's approved software path:
 
 ```bash

@@ -1,0 +1,6 @@
+{
+  "command": "/usr/bin/node",
+  "args": ["/approved/existing-server/server.mjs"],
+  "cwd": "/approved/existing-server",
+  "timeoutMs": 10000
+}

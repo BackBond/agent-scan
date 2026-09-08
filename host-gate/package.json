@@ -1,0 +1,13 @@
+{
+  "name": "@backbond/agent-scan-host-gate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {"node": ">=18"},
+  "scripts": {
+    "test": "node --test test/stdio-wrapper.test.mjs test/sdk-interop.test.mjs test/release.test.mjs",
+    "build": "node scripts/build-release.mjs",
+    "test:release": "node scripts/verify-release.mjs"
+  }
+}
