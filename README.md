@@ -2,6 +2,8 @@
 
 BackBond Agent Scan is published as the exact scoped package `@backbond/agent-scan@0.6.2`. Static only: it inspects tool metadata and agent configuration already on your machine. It does not run tools, probe a live agent, upload traces, contact a hosted service, or execute a second binary.
 
+If a result from this scanner or from a BackBond publication looks wrong, open a correction through the [false-positive form](https://github.com/BackBond/agent-scan/issues/new?template=false-positive.yml). We respond within 72 hours.
+
 ## Install from a trusted host first
 
 For operator-enforced checks on an existing stdio MCP connection, see the
