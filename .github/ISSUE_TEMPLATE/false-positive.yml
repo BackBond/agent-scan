@@ -1,0 +1,95 @@
+name: False positive
+description: Dispute a scanner result or a published metadata-match result you believe is wrong, without exposing scan inputs.
+title: "[false positive]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to ask for a correction to a result you believe is wrong, either from a local run of `@backbond/agent-scan` or from a BackBond publication that reports a metadata match.
+
+        **Privacy boundary:** share only compact `vet-tools` output or the compact card printed by `--record-public`. Do not attach or paste raw `tools-list.json`, `--json` output, path-bearing receipts, raw traces, prompts, config files, or optional record fields containing tool names or fingerprints. Compact output reduces disclosure; it is not a zero-disclosure guarantee.
+
+        Raw manifests, enriched records, and input digests are exchanged privately. Do not paste them here. If a correction needs one, email `support@backbond.ai` and reference this issue.
+
+        We respond within 72 hours. An accepted correction is added as a separate changelog line; the original aggregate snapshot stays as published.
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did the result appear?
+      options:
+        - A local run of the scanner
+        - A BackBond publication or article
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: publication
+    attributes:
+      label: Publication and snapshot date
+      description: Leave blank if this is only about a local run.
+      placeholder: "Agent Scan corpus report, snapshot 2026-10-06"
+
+  - type: input
+    id: scan_date
+    attributes:
+      label: Scan date
+      placeholder: "2026-10-06"
+
+  - type: input
+    id: rule_id
+    attributes:
+      label: Rule ID you are disputing
+      description: The rule or finding identifier as printed in the compact output or the published table.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Exact pinned package version or published ruleset version
+      description: Do not use `@latest` in a reproduction.
+      placeholder: "@backbond/agent-scan@0.6.2"
+    validations:
+      required: true
+
+  - type: input
+    id: decision
+    attributes:
+      label: Reported decision or exit code
+      placeholder: "0, 1, 2, 3, block, review, or no_blocking_finding"
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: What correction are you asking for, and why?
+      description: Describe the behavior without reconstructing the raw manifest or trace.
+    validations:
+      required: true
+
+  - type: textarea
+    id: compact_output
+    attributes:
+      label: Compact output only
+      description: Paste only compact human output from `vet-tools` or the compact `--record-public` card. Redact tool names if they are sensitive.
+      render: text
+
+  - type: input
+    id: contact
+    attributes:
+      label: How can we reach you?
+      description: An email or a handle we can reply to. We may need to confirm you speak for the server before publishing a correction.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I used an exact pinned package version and did not substitute `@latest`.
+        - label: I did not include a raw tool manifest, JSON report, path-bearing receipt, trace, prompt, config file, input fingerprint, or sensitive tool name.
+          required: true
+        - label: I understand that compact output and public records reduce disclosure but are not a zero-disclosure guarantee.
+          required: true
