@@ -54,6 +54,15 @@ body:
       label: Exit code or MCP decision
       placeholder: "0, 1, 2, 3, block, review, or no_blocking_finding"
 
+  - type: input
+    id: rule_code
+    attributes:
+      label: Rule or review code in dispute
+      description: The `BB0xx` identifier or pre-attachment review code you believe fired wrongly. The compact `--record-public` card lists them on its `Findings:` line, and `vet-tools` prints them with each finding. Write `unknown` if no code is shown, or `none` for a documentation, installation, or compatibility report.
+      placeholder: "BB007"
+    validations:
+      required: true
+
   - type: textarea
     id: compact_output
     attributes:
