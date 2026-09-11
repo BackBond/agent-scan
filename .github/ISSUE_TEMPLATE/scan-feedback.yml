@@ -55,7 +55,7 @@ body:
       placeholder: "0, 1, 2, 3, block, review, or no_blocking_finding"
 
   - type: input
-    id: rule_code
+    id: rule_id
     attributes:
       label: Rule or review code in dispute
       description: The `BB0xx` identifier or pre-attachment review code you believe fired wrongly. The compact `--record-public` card lists them on its `Findings:` line, and `vet-tools` prints them with each finding. Write `unknown` if no code is shown, or `none` for a documentation, installation, or compatibility report.
