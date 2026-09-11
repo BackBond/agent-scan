@@ -1,6 +1,6 @@
 {
   "protocol": "backbond-corpus-regression/v1",
-  "ruleset": "backbond-local-rules/2.0.1",
+  "ruleset": "backbond-local-rules/2.0.2",
   "source": {
     "snapshot_date": "2026-08-31",
     "scanner_observed": "0.5.15",
@@ -33,6 +33,7 @@
     { "file": "block-hogql-query.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
     { "file": "block-iceberg-sql.json", "expected_decision": "block", "finding_ids": ["BB001", "BB007"] },
     { "file": "pass-explain-shell-command-arg.json", "expected_decision": "no_blocking_finding", "finding_ids": [] },
-    { "file": "pass-explain-shell-text-arg.json", "expected_decision": "no_blocking_finding", "finding_ids": [] }
+    { "file": "pass-explain-shell-text-arg.json", "expected_decision": "no_blocking_finding", "finding_ids": [] },
+    { "file": "pass-read-only-audit-note.json", "expected_decision": "no_blocking_finding", "finding_ids": [] }
   ]
 }

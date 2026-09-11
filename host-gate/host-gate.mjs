@@ -54,7 +54,7 @@ export async function scanManifest(raw, scannerPath, timeoutMs = 8000) {
         try { result = JSON.parse(stdout); } catch { return reject(new GateError('invalid_scanner_output')); }
         const codes = { no_blocking_finding: 0, block: 1, review: 3 };
         if (codes[result.decision] !== exit || result.scanner?.version !== '0.6.2'
-            || result.ruleset?.version !== 'backbond-local-rules/2.0.1'
+            || result.ruleset?.version !== 'backbond-local-rules/2.0.2'
             || result.ruleset?.sha256 !== 'bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e'
             || result.profile?.sha256 !== '3edfb2bc97a68af345e1df5802e6028d8c32092d3dea379157581847bc2bf140'
             || result.protocol !== 'backbond-vet-summary/v1') return reject(new GateError('scanner_identity_or_decision_mismatch'));

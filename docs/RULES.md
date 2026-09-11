@@ -1,6 +1,6 @@
 # Open local rule pack
 
-Ruleset `backbond-local-rules/2.0.1` is implemented in `lib/rules.js` and fed by the evidence inference in `lib/evidence.js`. Its SHA-256 digest is computed from canonical public rule definitions, shared rule helpers, and the normalized evidence-detector source hash, so packaging the same logic does not change its identity while behavioral changes do. A test binds the source manifest to the current evidence implementation. The digest is emitted in every scan, receipt, and public record.
+Ruleset `backbond-local-rules/2.0.2` is implemented in `lib/rules.js` and fed by the evidence inference in `lib/evidence.js`. Its SHA-256 digest is computed from canonical public rule definitions, shared rule helpers, and the normalized evidence-detector source hash, so packaging the same logic does not change its identity while behavioral changes do. A test binds the source manifest to the current evidence implementation. The digest is emitted in every scan, receipt, and public record.
 
 | ID | Severity | Requires | Finding condition |
 |---|---|---|---|
@@ -36,7 +36,7 @@ Every finding also reports `finding_class` and a non-numeric `precision_note`. `
 - `EP002`: secret access → shared agent authority → unrestricted network egress; and
 - `EP003`: untrusted input → model-selected tool call → code or shell execution.
 
-They do not affect severity or exit status and do not claim observed taint, sanitization, exploitability, or runtime data flow. The rule pack is `backbond-local-rules/2.0.1`.
+They do not affect severity or exit status and do not claim observed taint, sanitization, exploitability, or runtime data flow. The rule pack is `backbond-local-rules/2.0.2`.
 
 ### Known heuristic overreach
 

@@ -848,6 +848,21 @@ function schemaHasExecutionInput(value, executionContext, depth = 0) {
   return false;
 }
 
+function schemaHasPersistentWriteInput(value, depth = 0) {
+  if (!value || typeof value !== 'object' || depth > 5) return false;
+  if (value.properties && typeof value.properties === 'object') {
+    for (const [name, child] of Object.entries(value.properties)) {
+      if (/\b(?:body|content|data|document|entry|file|memory|note|payload|record|state|text|value)\b/.test(normalizedWords(name))) return true;
+      if (schemaHasPersistentWriteInput(child, depth + 1)) return true;
+    }
+  }
+  if (value.items && schemaHasPersistentWriteInput(value.items, depth + 1)) return true;
+  for (const keyword of ['anyOf', 'oneOf', 'allOf']) {
+    if (Array.isArray(value[keyword]) && value[keyword].some(child => schemaHasPersistentWriteInput(child, depth + 1))) return true;
+  }
+  return false;
+}
+
 function usefulSchemaPattern(node) {
   return typeof node.pattern === 'string' && !['.*', '^.*$', '.+'].includes(node.pattern.trim());
 }
@@ -1091,8 +1106,9 @@ function inferredPersistentWrite(tool, identity, description) {
   const writeObject = String.raw`(?:data|content|text|notes?|memory|memories|records?|entries|documents?|artifacts?|context|knowledge|preferences?|state|values?)`;
   const actionIdentity = new RegExp(String.raw`^(?:${writeAction})\b`).test(identity)
     || new RegExp(String.raw`\b(?:create|add|update)\b.{0,30}\b(?:memory|note|record|entry|document|artifact|knowledge)\b`).test(identity);
-  if (actionIdentity) return true;
-  if (tool.annotations && tool.annotations.readOnlyHint === true) return false;
+  const explicitlyReadOnly = tool.annotations && tool.annotations.readOnlyHint === true;
+  if (actionIdentity && !(explicitlyReadOnly && !schemaHasPersistentWriteInput(inputSchema(tool)))) return true;
+  if (explicitlyReadOnly) return false;
   const imperativeDescription = new RegExp(String.raw`(?:^|[.!?;]\s*)(?:(?:this|the)\s+tool\s+)?${writeAction}\b.{0,60}\b${writeObject}\b`).test(description);
   const activeDescription = new RegExp(String.raw`\b(?:saves|remembers|memorizes|persists|stores|writes|upserts|inserts|appends|caches|indexes)\b.{0,60}\b${writeObject}\b`).test(description);
   return imperativeDescription || activeDescription;
@@ -2208,12 +2224,13 @@ const { createPublicScanRecord, renderCompactRecord } = require('./record.js');
 const { createScanReceipt } = require('./receipt.js');
 const { scanEvidence, SCANNER_VERSION } = require('./scanner.js');
 const { safeInline } = require('./text.js');
+const { POSTURE_LABEL } = require('./teaser.js');
 const { createVetResult, renderVetHuman } = require('./vet-tools.js');
 
 const TOOL = {
   name: 'scan_my_runtime',
   title: 'Scan my runtime tools',
-  description: 'Statically scans a supplied live tool manifest, or bounded local agent config discovery when omitted. No network requests or tool execution.',
+  description: `Statically scans a supplied live tool manifest, or bounded local agent config discovery when omitted. ${POSTURE_LABEL}; no network requests or tool execution.`,
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,
@@ -2721,6 +2738,7 @@ module.exports = { RECEIPT_PROTOCOL, createScanReceipt, verifyScanReceipt };
 
 const { canonicalize, sha256 } = require('./canonical.js');
 const { safeInline } = require('./text.js');
+const { POSTURE_LABEL } = require('./teaser.js');
 
 const RECORD_PROTOCOL = 'backbond-scan-record/v1';
 const COMMIT_BOUND_RECORD_PROTOCOL = 'backbond-scan-record/v2';
@@ -2784,6 +2802,7 @@ function createPublicScanRecord(scan, receipt, options = {}) {
     kind: 'scan_record',
     assurance: {
       level: 'self-run_unverified',
+      posture_label: POSTURE_LABEL,
       statement: resolved.commit
         ? 'Local scan record only. Git commit was supplied by the caller and was not verified by the scanner. Not a safety certificate or BackBond attestation.'
         : 'Local scan record only. Not a safety certificate or BackBond attestation.',
@@ -2846,6 +2865,7 @@ function renderCompactRecord(record) {
     : record.result.coverage.status;
   return [
     'BackBond local scan record',
+    `Posture: ${record.assurance.posture_label}`,
     'Assurance: self-run, unverified; not a safety certificate',
     `${record.scanner.name}@${record.scanner.version}  ruleset ${record.ruleset.version}`,
     ...(record.source ? [`Commit (caller-supplied, unverified): ${record.source.git_commit}`] : []),
@@ -2874,7 +2894,7 @@ module.exports = {
 const { sha256 } = require('./canonical.js');
 const RULESET_SOURCES = require('./ruleset-sources.json');
 
-const RULESET_VERSION = 'backbond-local-rules/2.0.1';
+const RULESET_VERSION = 'backbond-local-rules/2.0.2';
 const SEVERITY_ORDER = { critical: 4, high: 3, medium: 2, low: 1, none: 0 };
 const PROMPT_LINT_IDS = new Set(['BB009', 'BB010', 'BB011', 'BB013']);
 
@@ -3256,7 +3276,7 @@ module.exports = { RULES, RULESET_DIGEST, RULESET_VERSION, SEVERITY_ORDER, creat
 
 "lib/ruleset-sources.json": function(module) {
 module.exports = {
-  "evidence_sha256": "e041485a445e12a5a43c895f8277ed34f5743969ac9f616e87e62ccc871dbb6d"
+  "evidence_sha256": "1b9f998fc8174f1e72cacbbeac53f2fdde12c744b175ac12e7cbc3bec89d4455"
 };
 },
 
@@ -3463,12 +3483,37 @@ module.exports = { SCAN_PROTOCOL, SCANNER_VERSION, claimContradictions, scanEvid
 const { PROTOCOL: ASSESSMENT_PROTOCOL, assessmentJsonSchema, questionSet, validateAssessment } = require('./assessment.js');
 
 const TEASER_PROTOCOL = 'backbond-agent-teaser/v4';
+const POSTURE_LABEL = 'Unverified self-assessed exposure posture';
+const MIN_PUBLIC_ID_BITS = 128;
+
+const TRUST_BOUNDARY = Object.freeze({
+  posture_label: POSTURE_LABEL,
+  result_kind: 'optional_claim_hypotheses',
+  scoring: 'none',
+  higher_is_stronger: null,
+  evidence_credit: {
+    observed_runtime_enforcement: 0,
+    deterministically_derived: 0,
+    agent_asserted: 0,
+    unknown: 0,
+  },
+  behavioral_checks: 'separate_indicative_disclosed_smoke_checks',
+  public_report: 'not_emitted_by_this_package',
+  public_badge: 'not_emitted_by_this_package',
+  public_identifier_minimum_entropy_bits: MIN_PUBLIC_ID_BITS,
+  transmitted_data: 'none',
+  prohibited_transmission: [
+    'evidence_text', 'behavioral_prompts', 'behavioral_responses', 'transcripts',
+    'source_code', 'logs', 'environment_variables', 'credentials',
+  ],
+});
 
 function teaserContract() {
   return {
     protocol: TEASER_PROTOCOL,
     subject: 'self',
     public_client_role: 'optional_claim_hypotheses',
+    trust_boundary: TRUST_BOUNDARY,
     instructions: [
       'Claims are optional hypotheses and are never finding or severity inputs.',
       'The local scanner compares claims with observed evidence only to report contradictions.',
@@ -3506,7 +3551,15 @@ function validateTeaserSubmission(submission) {
   return submission;
 }
 
-module.exports = { TEASER_PROTOCOL, teaserContract, teaserSubmissionJsonSchema, validateTeaserSubmission };
+module.exports = {
+  MIN_PUBLIC_ID_BITS,
+  POSTURE_LABEL,
+  TEASER_PROTOCOL,
+  TRUST_BOUNDARY,
+  teaserContract,
+  teaserSubmissionJsonSchema,
+  validateTeaserSubmission,
+};
 
 },
 
@@ -3933,7 +3986,7 @@ function renderVetHuman(result) {
   }
   lines.push(`Agent decision: ${result.decision === 'block' ? 'do not attach automatically; isolate or review the toolset.' : result.decision === 'review' ? 'do not attach automatically; a finding or evidence gap requires operator review.' : 'this profile found no reason to block; runtime policy still controls attachment.'}`);
   lines.push('Not assessed: runtime enforcement, approval, audit behavior, traces, or actual execution.');
-  lines.push('BackBond combines deeper evaluation, continuous runtime evidence, and—where approved—financial protection: https://backbond.ai');
+  lines.push('BackBond combines deeper evaluation, continuous runtime evidence, and—where approved—financial protection: https://backbond.ai/agent-scan/');
   return `${lines.map(line => safeInline(line)).join('\n')}\n`;
 }
 

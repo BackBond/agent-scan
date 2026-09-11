@@ -1,0 +1,13 @@
+{
+  "tools": [
+    {
+      "name": "write_audit_note",
+      "description": "Returns audit guidance without changing stored data.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "topic": { "type": "string" } }
+      },
+      "annotations": { "readOnlyHint": true }
+    }
+  ]
+}
