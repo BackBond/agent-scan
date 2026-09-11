@@ -3,7 +3,7 @@ Illustrative compact record generated from the repository's public vulnerable fi
 BackBond local scan record
 Posture: Unverified self-assessed exposure posture
 Assurance: self-run, unverified; not a safety certificate
-@backbond/agent-scan@0.6.2  ruleset backbond-local-rules/2.0.1
+@backbond/agent-scan@0.6.2  ruleset backbond-local-rules/2.0.2
 Interpretation: FINDINGS
 Findings: 1 critical, 11 high, 1 medium; BB001 [derived] BB002 [derived] BB003 BB004 BB005 [derived] BB006 BB007 [derived] BB008 [derived] BB009 [derived] BB010 [derived] BB011 [derived] BB012 [derived] BB013 [derived]
 Coverage: complete

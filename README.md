@@ -188,7 +188,7 @@ Agent frameworks can use the scanner today by exporting their runtime tool list 
 
 ## Findings
 
-The public `backbond-local-rules/2.0.1` pack contains:
+The public `backbond-local-rules/2.0.2` pack contains:
 
 - `BB001` — untrusted input can reach code or shell execution;
 - `BB002` — secret access is combined with unrestricted egress;

@@ -977,7 +977,7 @@ test('potential exposure paths summarize existing findings without changing the 
     tracePath: path.join(vulnerable, 'trace.json'),
   });
   const scan = scanEvidence(evidence);
-  assert.equal(scan.ruleset.version, 'backbond-local-rules/2.0.1');
+  assert.equal(scan.ruleset.version, 'backbond-local-rules/2.0.2');
   assert.deepEqual(scan.exposure_paths.paths.map(item => item.id), ['EP001', 'EP002', 'EP003']);
   assert.equal(scan.exposure_paths.paths.every(item => item.kind === 'potential_exposure_path'), true);
   assert.equal(scan.exposure_paths.paths.every(item => /not an observed runtime data flow/i.test(item.caveat)), true);

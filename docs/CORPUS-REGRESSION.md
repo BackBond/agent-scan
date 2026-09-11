@@ -6,7 +6,7 @@ The analysis-ready CSV and raw-manifest archive were recovered on 2026-09-01. Th
 
 The fixture directory now contains ten synthetic precision boundaries from 0.6.0 and eight redacted BB001 boundaries derived from the 191-row saved-output delta audit. The corpus-derived cases retain only the metadata needed to reproduce the rule boundary and record the delta export digest; they omit server names and URLs. They are regression evidence, not representative prevalence evidence, runtime validation, or an independently blinded corpus sample.
 
-The current 18-case boundary set locks seven BLOCK cases, five `no_blocking_finding` cases, five semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced through package 0.6.2 / ruleset `backbond-local-rules/2.0.1`:
+The current 21-case boundary set locks seven BLOCK cases, six `no_blocking_finding` cases, five semantic REVIEW cases, and one incomplete-schema REVIEW case. It protects the distinctions introduced through package 0.6.2 / ruleset `backbond-local-rules/2.0.2`:
 
 - active unallowlisted URL input versus ambiguous endpoint/path language;
 - fetch-shaped plus real privilege composition versus privilege words appearing only in help text;

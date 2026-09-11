@@ -24,7 +24,7 @@ test('corpus summary emits aggregates and multiplicity without identities or has
       input_sha256: repeatedHash,
       decision: 'block',
       scanner: { version: '0.6.2' },
-      ruleset: { version: 'backbond-local-rules/2.0.1' },
+      ruleset: { version: 'backbond-local-rules/2.0.2' },
       findings: [
         {
           id: 'BB013', severity: 'high', finding_class: 'prompt_injection_indicator', affected_tools: ['PRIVATE_TOOL_ONE'],
@@ -46,7 +46,7 @@ test('corpus summary emits aggregates and multiplicity without identities or has
       manifest_sha256: repeatedHash,
       decision: 'review',
       scanner: { version: '0.6.2' },
-      ruleset: { version: 'backbond-local-rules/2.0.1' },
+      ruleset: { version: 'backbond-local-rules/2.0.2' },
       findings: [
         { id: 'BB004', severity: 'medium', finding_class: 'capability_exposure', affected_tools: ['PRIVATE_TOOL_TWO'] },
         {
@@ -85,7 +85,7 @@ test('corpus summary aggregates summary-only rows without recovering identities 
       protocol: 'backbond-vet-summary/v1',
       decision: 'review',
       scanner: { version: '0.6.2' },
-      ruleset: { version: 'backbond-local-rules/2.0.1' },
+      ruleset: { version: 'backbond-local-rules/2.0.2' },
       summary: severitySummary(0, 1),
       finding_classes: { capability_exposure: { count: 1 }, prompt_injection_indicator: { count: 0 } },
       rule_histogram: { BB004: 1 },
@@ -97,7 +97,7 @@ test('corpus summary aggregates summary-only rows without recovering identities 
       protocol: 'backbond-vet-summary/v1',
       decision: 'block',
       scanner: { version: '0.6.2' },
-      ruleset: { version: 'backbond-local-rules/2.0.1' },
+      ruleset: { version: 'backbond-local-rules/2.0.2' },
       summary: severitySummary(1),
       finding_classes: { capability_exposure: { count: 0 }, prompt_injection_indicator: { count: 1 } },
       rule_histogram: { BB013: 1 },
@@ -131,7 +131,7 @@ test('corpus summary rejects unknown protocols and truncated or inconsistent row
     protocol: 'backbond-vet-summary/v1',
     decision: 'review',
     scanner: { version: '0.6.2' },
-    ruleset: { version: 'backbond-local-rules/2.0.1' },
+    ruleset: { version: 'backbond-local-rules/2.0.2' },
     summary: severitySummary(0, 1),
     finding_classes: { capability_exposure: { count: 1 } },
     rule_histogram: { BB004: 1 },
@@ -142,7 +142,7 @@ test('corpus summary rejects unknown protocols and truncated or inconsistent row
     protocol: 'backbond-vet-summary/v1',
     decision: 'review',
     scanner: { version: '0.6.2' },
-    ruleset: { version: 'backbond-local-rules/2.0.1' },
+    ruleset: { version: 'backbond-local-rules/2.0.2' },
     summary: severitySummary(0, 2),
     finding_classes: { capability_exposure: { count: 1 } },
     rule_histogram: { BB004: 1 },
