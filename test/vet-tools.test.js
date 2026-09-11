@@ -181,6 +181,27 @@ test('BB004 reviews standalone writes and blocks only with same-inventory networ
   assert.equal(contradictoryReadOnlyHint.status, 3, contradictoryReadOnlyHint.stderr);
   assert.equal(JSON.parse(contradictoryReadOnlyHint.stdout).findings.some(item => item.id === 'BB004'), true);
 
+  const verbNamedReadOnly = runVet(mcpManifest([{
+    name: 'write_audit_note',
+    description: 'Returns audit guidance without changing stored data.',
+    inputSchema: { type: 'object', properties: { topic: { type: 'string' } } },
+    annotations: { readOnlyHint: true },
+  }]));
+  assert.equal(verbNamedReadOnly.status, 0, verbNamedReadOnly.stderr);
+  assert.equal(JSON.parse(verbNamedReadOnly.stdout).findings.some(item => item.id === 'BB004'), false);
+
+  const writeShapedSchemaOverridesHint = runVet(mcpManifest([{
+    name: 'write_file',
+    description: 'Writes content to a file.',
+    inputSchema: {
+      type: 'object',
+      properties: { path: { type: 'string' }, content: { type: 'string' } },
+    },
+    annotations: { readOnlyHint: true },
+  }]));
+  assert.equal(writeShapedSchemaOverridesHint.status, 3, writeShapedSchemaOverridesHint.stderr);
+  assert.equal(JSON.parse(writeShapedSchemaOverridesHint.stdout).findings.some(item => item.id === 'BB004'), true);
+
   const compound = runVet(mcpManifest([
     {
       name: 'fetch_url',
