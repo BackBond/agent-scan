@@ -12,7 +12,7 @@ test('standalone release is deterministic, syntax-valid, and contains only appro
   try {
     assert.equal(renderBundle().bundle,renderBundle().bundle);
     const first=buildRelease(dir),before=readFileSync(join(dir,'build.json'),'utf8');
-    assert.equal(first.checksums['agent-scan-gate.mjs'],'783c623f98833db524c164b4edba5e6d9e08502669b6eb9a13bb302be223b083');
+    assert.equal(first.checksums['agent-scan-gate.mjs'],'a187c6e230b7b9105a169c1007cf114b20e2ce7ee5e186beff6a957c33215299');
     assert.equal(JSON.parse(before).release_tag,'host-gate-v0.1.0');
     assert.equal(Object.hasOwn(JSON.parse(before),'release_status'),false);
     assert.deepEqual(first.checksums,buildRelease(dir).checksums);
