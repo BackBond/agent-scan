@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { resolve } from 'node:path';
 
-export const SCANNER_SHA256 = '1f1c6cf4c36f2bfd211b31a695d7023186587dd3b0f696eb583af1ea928d1d12';
+export const SCANNER_SHA256 = 'dd35cdb9bebb62d53a6c633e902121a319e4030e5b9cd65ff32e77731336b509';
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const MAX_BYTES = 256 * 1024;
 
