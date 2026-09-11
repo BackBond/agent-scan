@@ -55,8 +55,8 @@ export async function scanManifest(raw, scannerPath, timeoutMs = 8000) {
         const codes = { no_blocking_finding: 0, block: 1, review: 3 };
         if (codes[result.decision] !== exit || result.scanner?.version !== '0.6.2'
             || result.ruleset?.version !== 'backbond-local-rules/2.0.2'
-            || result.ruleset?.sha256 !== 'bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e'
-            || result.profile?.sha256 !== '3edfb2bc97a68af345e1df5802e6028d8c32092d3dea379157581847bc2bf140'
+            || result.ruleset?.sha256 !== 'b34e6b7ba6e90c7a2fbb94cc1b8495aa556910a106f8c92d782d58139ca53292'
+            || result.profile?.sha256 !== '3238bd195f0b65c9b07b038a2146893b3f14b025a9d2851d5947348f6d7cf36a'
             || result.protocol !== 'backbond-vet-summary/v1') return reject(new GateError('scanner_identity_or_decision_mismatch'));
         resolveResult(result);
       });

@@ -56,7 +56,7 @@ test('stdio handshake, vetted list and call; no unvetted initialization or extra
     assert.ok(!JSON.stringify(list).includes('EXTRA_'));
     const call=await h.request('tools/call',{name:'add',arguments:{a:1,b:2}});assert.equal(call.result.content[0].text,'3');assert.equal(h.count('call'),1);
     assert.ok(h.count('list')>=2);assert.ok(!/PRIVATE_|EXTRA_|"name":"add"/.test(h.logs));
-    const logs=h.logs.trim().split('\n').map(JSON.parse);assert.ok(logs.some(l=>l.record?.ruleset.sha256.startsWith('bcfa6d47')));
+    const logs=h.logs.trim().split('\n').map(JSON.parse);assert.ok(logs.some(l=>l.record?.ruleset.sha256.startsWith('b34e6b7b')));
   }finally{await h.close();}
 });
 test('recorded REVIEW override exposes tools and calls but scanner decision stays review',async()=>{
