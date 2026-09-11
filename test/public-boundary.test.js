@@ -91,6 +91,14 @@ test('all current public version surfaces follow package.json', () => {
   assert.match(fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8'), new RegExp(`^# Changelog[\\s\\S]*?^## ${manifest.version.replace(/\./g, '\\.')} `, 'm'));
 });
 
+test('bare-domain entry page is indexable and routes visitors to Agent Scan', () => {
+  const home = fs.readFileSync(path.join(ROOT, 'site', 'index.html'), 'utf8');
+  assert.match(home, /<meta name="robots" content="index, follow">/);
+  assert.doesNotMatch(home, /noindex|nofollow/i);
+  assert.match(home, /href="\/agent-scan\/"/);
+  assert.equal(fs.existsSync(path.join(ROOT, 'site', 'assets', 'home.css')), true);
+});
+
 test('Agent Plugin is skill-only and cannot start a process merely by being installed', () => {
   const manifest = require('../package.json');
   const plugin = require('../plugin.json');
