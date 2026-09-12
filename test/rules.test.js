@@ -7,7 +7,7 @@ const path = require('node:path');
 const { collectEvidence } = require('../lib/evidence.js');
 const { scanEvidence } = require('../lib/scanner.js');
 const { sha256 } = require('../lib/canonical.js');
-const { RULES, RULESET_DIGEST, createRulesetDigest } = require('../lib/rules.js');
+const { RULES, RULESET_DIGEST, RULESET_VERSION, createRulesetDigest } = require('../lib/rules.js');
 const rulesetSources = require('../lib/ruleset-sources.json');
 const { fixturePaths, tempDirectory, writeJson } = require('./helpers.js');
 
@@ -46,6 +46,12 @@ test('ruleset identity covers normalized evidence-detector source and rule evalu
     severity_order: { critical: 4, high: 3, medium: 2, low: 1, none: 0 },
     prompt_lint_ids: ['BB009', 'BB010', 'BB011'],
   }), RULESET_DIGEST);
+});
+
+test('ruleset version and digest advance together', () => {
+  const updateInstruction = 'Bump RULESET_VERSION and update both pinned literals together; do not update the digest literal alone.';
+  assert.equal(RULESET_VERSION, 'backbond-local-rules/2.0.2', updateInstruction);
+  assert.equal(RULESET_DIGEST, 'b34e6b7ba6e90c7a2fbb94cc1b8495aa556910a106f8c92d782d58139ca53292', updateInstruction);
 });
 
 test('every rule declares one honest finding class and a nonempty precision note', () => {
