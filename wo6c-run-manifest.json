@@ -1,0 +1,104 @@
+{
+  "manifest_version": "backbond-agent-scan-run-manifest/v1",
+  "issue": "BEAAA-30613",
+  "produced_utc": "2026-09-08",
+  "run": {
+    "package": "@backbond/agent-scan",
+    "package_version": "0.6.2",
+    "source_commit": "5d229346137fdc1c332603126c9456009e9de37a",
+    "ruleset_version": "backbond-local-rules/2.0.1",
+    "ruleset_sha256": "bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e",
+    "profile_version": "backbond-pre-attach/v1",
+    "profile_sha256": "3edfb2bc97a68af345e1df5802e6028d8c32092d3dea379157581847bc2bf140",
+    "corpus_date": "2026-08-31",
+    "manifest_archive_sha256": "dfd7c13197e42fe4366b5d93bf2024e979336fbbb5afd1e51022b0b571343c4a",
+    "runner_commit": "237dae61000bd8b410f73a7ce0c20383bd45c193",
+    "summarizer_commit": "c2d7de3df57d6beeb53360dee0f8688aad167bed",
+    "manifests_retrieved": 7749
+  },
+  "released_artifacts": {
+    "summary_rows": {
+      "file": "wo6c-public-summary-rows.jsonl",
+      "row_protocol": "backbond-vet-summary-public/v1",
+      "rows": 7749,
+      "sha256": "64f6818a62093598b01bffb2aaebe9ae074dbb41a4b4c0a3e8663e9f02ac7c29",
+      "row_order": "serialized then sorted lexicographically; order carries no linkage to a manifest"
+    },
+    "class_counts": {
+      "file": "wo6c-public-class-counts.json",
+      "sha256": "b6b656b58aa89e4438702b32d315ebf54d75611ed7e99b96f930009774530d91"
+    },
+    "transform": {
+      "file": "transform-public-rows.py",
+      "sha256": "09eb4bb460e840446f36a8e164ff544758cb9f732dae334ec39497b3f35faf8e",
+      "input_rows_sha256": "e74f07d417498ac25c57dd6945e135d2b4fa7cd617a3c32a3f7ec786030272a7",
+      "deterministic": true,
+      "network": false,
+      "rescan": false
+    }
+  },
+  "minimum_cell_size": {
+    "threshold": 10,
+    "tested_on": "the full released categorical vector, all released columns in combination",
+    "distinct_released_rows": 151,
+    "smallest_equivalence_class": 10,
+    "classes_below_threshold": 0,
+    "policy": "docs/third-party-publication-policy.md revision 2cd99410-d8ac-4f68-9c3c-930176876e82",
+    "review": "Compliance, signed on BEAAA-30587"
+  },
+  "reconciliation_with_the_article": "The article's figures and this file are counted over the same 7,749 retrieved manifests; the released columns are a generalisation of that population, never a different population. The rows here are generalised on rule_combination, coverage_gap_codes, coverage_gap_count, prompt_template_count, tool_count_bucket, finding_total, severity_present and finding_classes_present so that every equivalence class recoverable from the released columns in combination holds at least ten rows. Counts recounted from this file are therefore at or below the article's and are not intended to sum to them. Three specifics, so a reader who takes the release without the article can reconcile it: the rule co-occurrence row BB004+BB008+BB012 is 1,328 manifests in the article and 1,326 in the released rule_combination column; other_combination is 124 in the column rather than the article's 96, because 28 rows from larger combinations were generalised into it; and a further 38 rows carry rule_combination not_released. A rule or gap kind that the article reports only as an unnamed suppressed line does not appear as a value in these columns at all, and a rule the article names at exactly ten can still be absent from the columns: every BB013 combination is under ten rows, so all ten BB013 manifests sit inside other_combination.",
+  "generalized_columns": [
+    "rule_combination",
+    "coverage_gap_codes",
+    "coverage_gap_count",
+    "prompt_template_count",
+    "tool_count_bucket",
+    "finding_total",
+    "severity_present",
+    "finding_classes_present"
+  ],
+  "columns_released_unchanged": [
+    "protocol",
+    "scanner",
+    "ruleset",
+    "profile",
+    "threshold",
+    "excluded_rule_ids",
+    "privacy"
+  ],
+  "columns_released_unchanged_except_on_the_fully_suppressed_rows": [
+    "decision",
+    "coverage_status"
+  ],
+  "fully_suppressed_rows": {
+    "rows": 23,
+    "generalisation_level": 13,
+    "description": "Twenty-three rows reached the last two rungs of the generalisation ladder, which write coverage_status and then decision as not_released. On those rows every generalisable field, including these two, reads not_released; the pins and the privacy block are unaffected. The twenty-three are identical to one another and form a single equivalence class of 23, so the threshold of ten holds on them with room to spare. On the other 7,726 rows decision and coverage_status carry their scanned values unchanged.",
+    "consequence_for_a_recount": "A reader who counts decision or coverage_status over the released rows and sets the not_released bucket aside gets 7,726, not 7,749. The difference is exactly these 23 rows and nothing else.",
+    "decision_counts": {
+      "review": 3012,
+      "block": 2529,
+      "no_blocking_finding": 2185,
+      "not_released": 23
+    },
+    "coverage_status_counts": {
+      "partial": 5270,
+      "complete": 2456,
+      "not_released": 23
+    }
+  },
+  "not_released": [
+    "the enriched CSV",
+    "the raw manifest archive",
+    "the manifest archive index",
+    "the private candidate pools",
+    "per-manifest identifiers, server names, URLs, tool names, tool descriptions and evidence pointers"
+  ],
+  "corrections": [
+    {
+      "date_utc": "2026-09-09",
+      "issue": "BEAAA-30911",
+      "change": "decision and coverage_status were listed under columns_released_unchanged, which is true on 7,726 of the 7,749 rows and false on the 23 fully suppressed ones. They now sit in their own list with the count and its effect on a recount stated. No row, cell, digest or minimum-cell-size result changed; the released artifacts are the same bytes."
+    }
+  ]
+}
