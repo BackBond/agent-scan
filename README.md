@@ -1,4 +1,4 @@
-# BackBond agent scan
+# BackBond Agent Scan
 
 BackBond Agent Scan is published as the exact scoped package `@backbond/agent-scan@0.6.2`. Static only: it inspects tool metadata and agent configuration already on your machine. It does not run tools, probe a live agent, upload traces, contact a hosted service, or execute a second binary.
 
@@ -9,6 +9,14 @@ If a result from this scanner or from a BackBond publication looks wrong, open a
 [Try Agent Scan in your browser](https://backbond.ai/agent-scan/try/?source=github): three synthetic MCP examples, followed by a local check of your own `tools/list` JSON. No account or installation is required. The page processes the manifest in memory without uploading it.
 
 The browser preview uses Agent Scan 0.6.2 and checks supplied MCP tool metadata only, up to 200 tools and 256 KiB. It does not assess runtime behavior, and a non-blocking result is not a safety determination or insurance decision. Use the pinned CLI below for other supported formats, larger inputs, or offline workflows.
+
+## Static MCP tool manifest inspection
+
+BackBond Agent Scan helps operators vet MCP tools before attachment through local, deterministic static MCP tool manifest inspection. It reports findings and missing evidence without executing proposed tools. Results do not establish runtime safety.
+
+### Vet MCP tools before attachment
+
+Export the proposed server's real `tools/list` response, then inspect that supplied manifest with the pinned `vet-tools` instructions below. A `block` result stops automatic attachment; `review` requires operator review; `no_blocking_finding` means no configured blocking rule fired on the supplied metadata. The scanner itself does not enforce attachment or create insurance coverage.
 
 ## Install from a trusted host first
 
