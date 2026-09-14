@@ -1,0 +1,7 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "url": "https://context7.com/backbond/agent-scan",
+  "public_key": "pk_t5VUda09QLPraCa82aFfb",
+  "projectTitle": "BackBond Agent Scan",
+  "description": "Locally vet MCP tools before attachment using deterministic static MCP tool manifest inspection. Reports findings and missing evidence without tool execution; does not establish runtime safety."
+}
