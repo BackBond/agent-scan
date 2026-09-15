@@ -6,6 +6,8 @@ If a result from this scanner or from a BackBond publication looks wrong, open a
 
 ## Try the browser preview
 
+[Watch the 50-second synthetic walkthrough](https://backbond.ai/agent-scan/#watch-demo), then [try the synthetic example](https://backbond.ai/agent-scan/try/?source=github-video). The silent video has on-screen text and a transcript. It shows a verified scanner 0.6.2 result for supplied metadata, not runtime behavior.
+
 [Try Agent Scan in your browser](https://backbond.ai/agent-scan/try/?source=github): three synthetic MCP examples, followed by a local check of your own `tools/list` JSON. No account or installation is required. The page processes the manifest in memory without uploading it.
 
 The browser preview uses Agent Scan 0.6.2 and checks supplied MCP tool metadata only, up to 200 tools and 256 KiB. It does not assess runtime behavior, and a non-blocking result is not a safety determination or insurance decision. Use the pinned CLI below for other supported formats, larger inputs, or offline workflows.
