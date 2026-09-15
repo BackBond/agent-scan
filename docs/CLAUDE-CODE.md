@@ -6,7 +6,7 @@ Connect Agent Scan's local MCP metadata checker to Claude Code and request a che
 
 ## Verification status
 
-On Windows with Node 22.17.1 and Claude Code 2.1.38, Claude Code reported the `backbond-agent-scan` server as connected and exposed `mcp__backbond-agent-scan__vet_tools_before_attach`. The model request failed before a tool call because the configured API key required an Anthropic workspace ID. End-to-end Claude Code execution remains unverified; this draft must not be promoted as a fully tested integration.
+On Windows with Node 22.17.1 and Claude Code 2.1.38, Claude Code reported the `backbond-agent-scan` server as connected and exposed `mcp__backbond-agent-scan__vet_tools_before_attach`. The inherited API-key attempt failed because it required an Anthropic workspace ID. Two attempts using the existing sign-in, including the exact PowerShell launch block below with Sonnet, connected but reached a two-minute timeout without a model response or tool call. End-to-end Claude Code execution remains unverified; this draft must not be promoted as a fully tested integration.
 
 A separate direct stdio MCP check of the same scanner bytes returned `no_blocking_finding` for the complete synthetic schema and `review` for the incomplete example below. That protocol check is not evidence that Claude Code called the tool. Cursor, macOS and Linux were not tested in this check.
 
@@ -63,7 +63,7 @@ claude -p $prompt --mcp-config ./mcp.json --strict-mcp-config `
   --model sonnet --max-budget-usd 1 --output-format stream-json --verbose
 ```
 
-Use PowerShell 7 for empty-string argument forwarding to native commands. The download, checksum and configuration blocks were executed successfully with PowerShell 7.6.5. End-to-end native-client acceptance of the launch block remains pending. No permission bypass flag is required.
+Use PowerShell 7 for empty-string argument forwarding to native commands. The download, checksum and configuration blocks were executed successfully with PowerShell 7.6.5. The exact launch block established the MCP connection but timed out before a model response; end-to-end acceptance remains pending. No permission bypass flag is required.
 
 The dollar cap applies to this test invocation. Model access must work before this can verify a complete Claude Code tool call. A `connected` initialization event alone proves neither execution nor a scan result.
 
