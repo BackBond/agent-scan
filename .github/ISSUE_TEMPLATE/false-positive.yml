@@ -1,6 +1,7 @@
 name: False positive
 description: Dispute a scanner result or a published metadata-match result you believe is wrong, without exposing scan inputs.
 title: "[false positive]: "
+labels: ["false positive"]
 body:
   - type: markdown
     attributes:
