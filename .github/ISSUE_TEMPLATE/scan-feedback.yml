@@ -1,6 +1,7 @@
 name: Scan feedback or bug
 description: Report a false positive, unexpected decision, compatibility problem, or documentation issue without exposing scan inputs.
 title: "[scan feedback]: "
+labels: ["scan feedback"]
 body:
   - type: markdown
     attributes:
