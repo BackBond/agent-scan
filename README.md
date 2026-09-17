@@ -175,6 +175,8 @@ Or expose the dependency-free MCP stdio server:
 
 It provides `scan_my_runtime` for full local scanning and `vet_tools_before_attach` for the scoped pre-attachment decision. The latter requires a `tools` array and never falls back to local discovery. A caller may supply live tools to `scan_my_runtime`; otherwise the result returns the exact strict `next_action` for both the full scan and pre-attachment gate. Undeclared arguments and mistyped fields are errors. Set `emit_record: true` on `scan_my_runtime` to receive only compact text and a redacted public record. Pin `0.6.2`—do not replace it with `@latest`.
 
+For a tested walkthrough that connects the checksum-verified standalone scanner to Claude Code as a single-session stdio MCP server and reads the two synthetic decisions from the event log, see [docs/CLAUDE-CODE.md](docs/CLAUDE-CODE.md). It was verified end-to-end on Linux on September 16, 2026, with the Windows setup blocks verified separately. It is a metadata check only; it does not gate attachment or create insurance coverage.
+
 The MCP stdio server is also published in the official MCP Registry as `io.github.BackBond/agent-scan`. Its Registry entrypoint is `agent-scan mcp`, which exposes the local `scan_my_runtime` and `vet_tools_before_attach` metadata checks; it does not connect to, attack, or execute other MCP servers. Registry identities are case-sensitive. Registry metadata is version-locked to the npm artifact; the registry listing does not change the scanner's static-only or local-data boundary.
 
 ## Inputs and adapters
