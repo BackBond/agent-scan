@@ -17,5 +17,6 @@ test('false-positive intake exposes the 72-hour response path and rule identity'
   assert.match(process, /docs\/RULES\.md/);
   assert.match(process, /\.github\/ISSUE_TEMPLATE\/false-positive\.yml/);
   assert.match(process, /\.github\/ISSUE_TEMPLATE\/scan-feedback\.yml/);
-  assert.match(process, /homoglyph tool-name shadowing: undispositioned/);
+  assert.match(process, /homoglyph tool-name shadowing: verified closed on 0\.6\.2/);
+  assert.match(process, /BB-VET-CONFUSABLE-TOOL-NAME/);
 });

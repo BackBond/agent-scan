@@ -25,12 +25,12 @@ A patch is report-driven, not calendar-driven. Existing coverage is recorded as 
 
 ## 2026-08-30 provenance gap
 
-The source reports for homoglyph tool-name shadowing, forced-invocation language, and the verb-named read-only false positive are not retrievable from an agent seat. Do not reconstruct or guess their contents.
+The source reports for homoglyph tool-name shadowing, forced-invocation language, and the verb-named read-only false positive are not retrievable from an agent seat. Do not reconstruct or guess their contents. Each item below is dispositioned against the behaviour its short name describes, which is what a "verified closed on <version>, test <path>" disposition asserts. It does not assert that the original report said only that. If a source report is later supplied and describes a boundary other than the one cited, re-adjudicate it through the path above.
 
 Against package `@backbond/agent-scan@0.6.2`, source commit `5d229346137fdc1c332603126c9456009e9de37a`, ruleset `backbond-local-rules/2.0.1` (`bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e`), and corpus `2026-08-31`:
 
 - forced-invocation language: verified closed on 0.6.2; test `fixtures/corpus-regression/block-global-forced-tool.json`; no release;
 - verb-named read-only false positive: fixed in 0.6.2; test `test/rules.test.js` (BB004 standalone-write REVIEW boundary); no release; and
-- homoglyph tool-name shadowing: undispositioned until the source report is supplied; this is a provenance gap, not a scanner finding.
+- homoglyph tool-name shadowing: verified closed on 0.6.2; rule `BB-VET-CONFUSABLE-TOOL-NAME` at `lib/vet-tools.js:61`; test `test/vet-tools.test.js:844-852`; no release. Checked by execution, not inspection: a manifest pairing `get_weather` with `get_w\u0435ather` (Cyrillic U+0435) exits 3 and decides `review`, raising both `BB-VET-NON-ASCII-TOOL-NAME` and `BB-VET-CONFUSABLE-TOOL-NAME`.
 
 If the missing source report is later supplied, adjudicate it through this same path.
