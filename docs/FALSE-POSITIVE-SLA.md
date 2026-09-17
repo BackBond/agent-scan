@@ -1,6 +1,6 @@
 # False-positive response path
 
-The named intake route is the repository's **Scan feedback or bug** issue form at `.github/ISSUE_TEMPLATE/scan-feedback.yml`. Public and warm-list reports use the same route. Do not request raw manifests, traces, prompts, config files, paths, tool names, or fingerprints.
+There are two intake routes and both are in scope. A disputed scanner result belongs in the **False-positive report** form at `.github/ISSUE_TEMPLATE/false-positive.yml`; a broader scan problem belongs in the **Scan feedback or bug** form at `.github/ISSUE_TEMPLATE/scan-feedback.yml`. A report filed on the wrong form is still a report and still starts the clock. Public and warm-list reports use the same routes. Do not request raw manifests, traces, prompts, config files, paths, tool names, or fingerprints.
 
 ## First response: within 72 hours
 
