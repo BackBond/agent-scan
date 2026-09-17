@@ -2,11 +2,12 @@
 
 All notable changes to `@backbond/agent-scan` are recorded here.
 
-## Unreleased
+## 0.6.3 — 2026-09-17
 
 - Advance the public ruleset to `backbond-local-rules/2.0.2`: BB004 now honors `readOnlyHint: true` for tools whose descriptions and schemas are also non-writing, while contradictory write descriptions or write-shaped schemas still produce the finding. Record the clean `write_audit_note` boundary in the regression corpus.
 - Add a security-reporting policy with a private contact route, sensitive-data boundary, supported-version scope, and current-release verification guidance.
 - Point the CLI and README follow-up link to the live Agent Scan page instead of the placeholder BackBond homepage.
+- Update the public installation pins to `0.6.3`. Published `0.6.2` carries ruleset `backbond-local-rules/2.0.1` and the unfixed BB004 read-only false positive, so the repository tree no longer shares a version string with a differently-behaving published artifact.
 
 ## 0.6.2 — 2026-09-02
 
