@@ -27,7 +27,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "test:corpus-regression": "node --test test/corpus-regression.test.js test/corpus-summary.test.js",
+    "test:corpus-regression": "node --test test/corpus-regression.test.js test/corpus-summary.test.js test/false-positive-sla.test.js",
     "test:public-boundary": "node --test test/public-boundary.test.js",
     "prepack": "node --test",
     "prepublishOnly": "node scripts/assert-clean-history.js"

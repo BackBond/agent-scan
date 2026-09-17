@@ -1,11 +1,14 @@
 name: Scan feedback or bug
 description: Report a false positive, unexpected decision, compatibility problem, or documentation issue without exposing scan inputs.
 title: "[scan feedback]: "
+labels: ["scan feedback"]
 body:
   - type: markdown
     attributes:
       value: |
         Thank you for helping improve `@backbond/agent-scan`.
+
+        False-positive reports receive a first response within 72 hours. The response confirms receipt, names the package and rule under review, and gives the next adjudication step. See `docs/FALSE-POSITIVE-SLA.md`.
 
         **Privacy boundary:** share only compact `vet-tools` output or the compact card printed by `--record-public`. Do not attach or paste raw `tools-list.json`, `--json` output, path-bearing receipts, raw traces, prompts, config files, or optional record fields containing tool names or fingerprints. Compact output reduces disclosure; it is not a zero-disclosure guarantee.
 
@@ -62,6 +65,13 @@ body:
       placeholder: "BB007"
     validations:
       required: true
+
+  - type: input
+    id: report_received_at
+    attributes:
+      label: When did you first send this report?
+      description: Use an ISO 8601 timestamp if known. Maintainers use this to measure the 72-hour first-response SLA.
+      placeholder: "2026-09-10T12:00:00Z"
 
   - type: textarea
     id: compact_output
