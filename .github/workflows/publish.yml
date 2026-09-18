@@ -138,18 +138,13 @@ jobs:
           fi
           mkdir registry-copy
           registry_file="${{ steps.pack.outputs.file }}"
-          for attempt in 1 2 3 4 5 6; do
-            if npm pack "@backbond/agent-scan@$version" --pack-destination registry-copy --silent >/dev/null; then
-              break
-            fi
-            sleep 5
-          done
-          test -f "registry-copy/$registry_file"
+          node scripts/await-registry-tarball.js "$version" registry-copy "$registry_file"
           mkdir source-tree registry-tree
           tar -xzf "${{ steps.pack.outputs.file }}" -C source-tree
           tar -xzf "registry-copy/$registry_file" -C registry-tree
           if ! diff -qr --strip-trailing-cr source-tree/package registry-tree/package; then
             echo "Refusing release: tagged package contents differ from the npm registry artifact." >&2
+            echo "@backbond/agent-scan@$version is already public on npm and cannot be replaced; the GitHub release and MCP Registry publish did not run." >&2
             exit 1
           fi
           cp "registry-copy/$registry_file" "${{ steps.pack.outputs.file }}"
@@ -205,11 +200,19 @@ jobs:
       - name: Verify the published official MCP Registry version
         shell: bash
         run: |
-          for attempt in 1 2 3 4 5 6; do
+          waited=0
+          pause=5
+          while :; do
             if node scripts/check-mcp-registry.js --require-published; then
               exit 0
             fi
-            sleep 5
+            if [ "$((waited + pause))" -gt 600 ]; then
+              break
+            fi
+            sleep "$pause"
+            waited=$((waited + pause))
+            pause=$(( pause * 2 > 30 ? 30 : pause * 2 ))
           done
-          echo "Published MCP Registry version was not observable after 30 seconds." >&2
+          echo "Refusing release: the MCP Registry did not serve this version after ${waited}s." >&2
+          echo "Already published and irreversible: the npm package and the GitHub release. Re-run this failed job rather than re-tagging; every step above verifies instead of republishing." >&2
           exit 1
