@@ -30,7 +30,7 @@ The source reports for homoglyph tool-name shadowing, forced-invocation language
 Against package `@backbond/agent-scan@0.6.2`, source commit `5d229346137fdc1c332603126c9456009e9de37a`, ruleset `backbond-local-rules/2.0.1` (`bcfa6d47ad68b1fda89b61834fa70dfb7b0e17dcb7d2a8e38d63f045687c492e`), and corpus `2026-08-31`:
 
 - forced-invocation language: verified closed on 0.6.2; test `fixtures/corpus-regression/block-global-forced-tool.json`; no release;
-- verb-named read-only false positive: fixed in 0.6.2; test `test/rules.test.js` (BB004 standalone-write REVIEW boundary); no release; and
+- verb-named read-only false positive: **reproduces on 0.6.2**, fixed after it. A tool whose name begins with a write verb could not suppress BB004 with `readOnlyHint: true`, because the name-derived inference returned before the annotation was consulted. The fix is on `main` at `e0d9e50` under ruleset `backbond-local-rules/2.0.2`; tests `test/vet-tools.test.js` (both boundary directions: a read-only-hinted `write_audit_note` is clean, a `write_file` with a `path`/`content` schema still reports) and `fixtures/corpus-regression/pass-read-only-audit-note.json`. It is not in a published package yet: `@backbond/agent-scan@0.6.2` on npm still carries the pre-fix behaviour; and
 - homoglyph tool-name shadowing: verified closed on 0.6.2; rule `BB-VET-CONFUSABLE-TOOL-NAME` at `lib/vet-tools.js:61`; test `test/vet-tools.test.js:844-852`; no release. Checked by execution, not inspection: a manifest pairing `get_weather` with `get_w\u0435ather` (Cyrillic U+0435) exits 3 and decides `review`, raising both `BB-VET-NON-ASCII-TOOL-NAME` and `BB-VET-CONFUSABLE-TOOL-NAME`.
 
 If the missing source report is later supplied, adjudicate it through this same path.
