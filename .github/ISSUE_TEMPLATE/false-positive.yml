@@ -14,6 +14,8 @@ body:
 
         We respond within 72 hours. An accepted correction is added as a separate changelog line; the original aggregate snapshot stays as published.
 
+        How a report is handled is written down: `docs/FALSE-POSITIVE-SLA.md` covers what a first response must contain, the blinded two-reviewer adjudication, and what happens to a report filed on the other form.
+
   - type: dropdown
     id: source
     attributes:
