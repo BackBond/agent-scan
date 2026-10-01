@@ -1,16 +1,16 @@
 # Inspect a synthetic tool manifest through Claude Code
 
-Updated September 16, 2026. BackBond Agent Scan 0.6.2.
+Updated September 23, 2026. BackBond Agent Scan 0.6.3.
 
 Connect Agent Scan's local MCP metadata checker to Claude Code and request a check of a supplied tool manifest. This recipe uses harmless synthetic metadata. It does not install or execute the described `add_numbers` tool, enforce attachment, or create insurance coverage.
 
 ## Verification status
 
-End-to-end acceptance passed once, on Linux, on September 16, 2026: Claude Code 2.1.273 with Node 22.22.2 connected to the checksum-verified 0.6.2 standalone scanner, exposed only `mcp__backbond-agent-scan__vet_tools_before_attach`, called it exactly twice with the two synthetic manifests below unchanged, and received `no_blocking_finding` for the complete schema and `review` for the incomplete one. The run used the `--model sonnet` alias, completed in about 11 seconds and cost about USD 0.03. The evidence is the `stream-json` event log: two `tool_use` events with the exact arguments, two matching `tool_result` events, and a `result` event with `subtype: success`.
+End-to-end acceptance has passed twice, on Linux, once per pinned release: on September 16, 2026 against the 0.6.2 standalone (Claude Code 2.1.273, Node 22.22.2) and on September 23, 2026 against the 0.6.3 standalone (Claude Code 2.1.280, Node 22.22.2, ruleset `backbond-local-rules/2.0.2`). In both runs Claude Code connected to the checksum-verified scanner, exposed only `mcp__backbond-agent-scan__vet_tools_before_attach`, called it exactly twice with the two synthetic manifests below unchanged, and received `no_blocking_finding` for the complete schema and `review` for the incomplete one. Each run used the `--model sonnet` alias, completed in about 11 seconds and cost about USD 0.03. The evidence is the `stream-json` event log: two `tool_use` events with the exact arguments, two matching `tool_result` events, and a `result` event with `subtype: success`.
 
-On Windows (PowerShell 7.6.5, Node 22.17.1, Claude Code 2.1.38) the download, checksum and session-configuration blocks below were executed successfully on September 15, 2026, and Claude Code reported the scanner connected with the intended tool exposed. The Windows launch itself did not reach a model response because the test machine's saved Claude sign-in was invalid at the time; that is an authentication condition, not a scanner result, and Windows end-to-end execution is therefore not separately verified. Cursor and macOS were not tested.
+On Windows (PowerShell 7.6.5, Node 22.17.1, Claude Code 2.1.38) the download, checksum and session-configuration blocks were executed successfully on September 15, 2026 against the 0.6.2 release, and Claude Code reported the scanner connected with the intended tool exposed. The Windows launch itself did not reach a model response because the test machine's saved Claude sign-in was invalid at the time; that is an authentication condition, not a scanner result, and Windows end-to-end execution is therefore not separately verified. The 0.6.3 blocks below differ from the tested ones only in the release tag and checksum. Cursor and macOS were not tested.
 
-A direct stdio MCP check of the same scanner bytes (no Claude involved) returned the same two decisions on both dates. That protocol check is a useful control but is not evidence that Claude Code called the tool.
+A direct stdio MCP check of the same scanner bytes (no Claude involved) returned the same two decisions on every date. That protocol check is a useful control but is not evidence that Claude Code called the tool.
 
 ## Prepare a dedicated folder
 
@@ -21,8 +21,8 @@ PowerShell 7:
 ```powershell
 New-Item -ItemType Directory -Path agent-scan-claude-demo
 Set-Location agent-scan-claude-demo
-Invoke-WebRequest 'https://github.com/BackBond/agent-scan/releases/download/v0.6.2/agent-scan.cjs' -OutFile agent-scan.cjs
-Invoke-WebRequest 'https://github.com/BackBond/agent-scan/releases/download/v0.6.2/agent-scan.cjs.sha256' -OutFile agent-scan.cjs.sha256
+Invoke-WebRequest 'https://github.com/BackBond/agent-scan/releases/download/v0.6.3/agent-scan.cjs' -OutFile agent-scan.cjs
+Invoke-WebRequest 'https://github.com/BackBond/agent-scan/releases/download/v0.6.3/agent-scan.cjs.sha256' -OutFile agent-scan.cjs.sha256
 $expected = ((Get-Content -Raw agent-scan.cjs.sha256).Trim() -split '\s+')[0]
 $actual = (Get-FileHash -Algorithm SHA256 agent-scan.cjs).Hash
 if ($actual -ine $expected) { throw 'Scanner checksum mismatch; stop.' }
@@ -32,12 +32,12 @@ Linux or macOS (bash):
 
 ```bash
 mkdir agent-scan-claude-demo && cd agent-scan-claude-demo
-curl -sSL -o agent-scan.cjs 'https://github.com/BackBond/agent-scan/releases/download/v0.6.2/agent-scan.cjs'
-curl -sSL -o agent-scan.cjs.sha256 'https://github.com/BackBond/agent-scan/releases/download/v0.6.2/agent-scan.cjs.sha256'
+curl -sSL -o agent-scan.cjs 'https://github.com/BackBond/agent-scan/releases/download/v0.6.3/agent-scan.cjs'
+curl -sSL -o agent-scan.cjs.sha256 'https://github.com/BackBond/agent-scan/releases/download/v0.6.3/agent-scan.cjs.sha256'
 sha256sum -c agent-scan.cjs.sha256   # on macOS: shasum -a 256 -c agent-scan.cjs.sha256
 ```
 
-The verified 0.6.2 standalone SHA-256 is `1f1c6cf4c36f2bfd211b31a695d7023186587dd3b0f696eb583af1ea928d1d12`. Independently verify the official release and its checksum; a copied hash is not a runtime attestation. Restricted environments should stage the verified file through their approved software path.
+The verified 0.6.3 standalone SHA-256 is `49dc4b5428212dd75c802afaeae18938b29781d596a6b3b7810bb66910fbcb4d`. Independently verify the official release and its checksum; a copied hash is not a runtime attestation. Restricted environments should stage the verified file through their approved software path.
 
 ## Configure one session
 
@@ -92,7 +92,7 @@ claude -p $prompt --mcp-config ./mcp.json --strict-mcp-config `
   --model sonnet --max-budget-usd 1 --output-format stream-json --verbose
 ```
 
-bash (save the prompt above as `prompt.txt` first; this is the exact invocation that passed on September 16):
+bash (save the prompt above as `prompt.txt` first; this is the exact invocation that passed on September 16 and September 23):
 
 ```bash
 claude -p "$(cat prompt.txt)" --mcp-config ./mcp.json --strict-mcp-config \
@@ -109,7 +109,7 @@ Use PowerShell 7 for empty-string argument forwarding to native commands. No per
 
 ## Read the result
 
-| Synthetic input | Claude Code tool result on September 16 | Meaning |
+| Synthetic input | Claude Code tool result on September 16 (0.6.2) and September 23 (0.6.3) | Meaning |
 |---|---|---|
 | Complete `add_numbers` schema | `no_blocking_finding`; zero findings; complete profile coverage | No configured blocking rule fired on the supplied metadata |
 | Same description with no input schema | `review`; zero findings; partial profile coverage; review items `BB-COV-MISSING-TOOL_SCHEMA`, `BB-COV-UNSUPPORTED-TOOL_SCHEMA`, `BB-VET-NO-TOOLS`, `BB-VET-UNSUPPORTED-MANIFEST` | Evidence is incomplete; require operator review before attachment |
@@ -126,7 +126,7 @@ When the test ends, the session-specific MCP configuration is no longer loaded. 
 
 ## Sources and next action
 
-- [Agent Scan 0.6.2 release](https://github.com/BackBond/agent-scan/releases/tag/v0.6.2): scanner artifact and checksum.
+- [Agent Scan 0.6.3 release](https://github.com/BackBond/agent-scan/releases/tag/v0.6.3): scanner artifact and checksum.
 - [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp): local stdio configuration.
 - [Claude Code CLI reference](https://code.claude.com/docs/en/cli-usage): session configuration and tool restrictions.
 
