@@ -4,6 +4,12 @@ BackBond Agent Scan is published as the exact scoped package `@backbond/agent-sc
 
 If a result from this scanner or from a BackBond publication looks wrong, open a correction through the [false-positive form](https://github.com/BackBond/agent-scan/issues/new?template=false-positive.yml). We respond within 72 hours.
 
+## Automated scan by mcprush
+
+<a href="https://mcprush.com/backbond/backbond-agent-scan-mcp#security"><img src="https://mcprush.com/badge/backbond-agent-scan-mcp/card.svg" alt="mcprush automated scan of BackBond Agent Scan MCP" width="380" height="200"></a>
+
+[Read the mcprush automated scan report](https://mcprush.com/backbond/backbond-agent-scan-mcp#security). The result applies to the release identified in the report and covers static analysis of the package source and inferred MCP tool surface. It is not a security certification, runtime verification, or an assessment of Agent Scan's detection accuracy.
+
 ## Try the browser preview
 
 [Watch the 50-second synthetic walkthrough](https://backbond.ai/agent-scan/#watch-demo), then [try the synthetic example](https://backbond.ai/agent-scan/try/?source=github-video). The silent video has on-screen text and a transcript. It shows a verified scanner 0.6.3 result for supplied metadata, not runtime behavior.
