@@ -1,17 +1,5 @@
 # BackBond Agent Scan
 
-## Looking for "Protect me via BackBond"?
-
-The [Grok Bot protection simulation](https://backbond.ai/protect/) has a separate
-[public installation path](https://backbond.ai/protect/install.md). For that
-request, use the simulation connector and its synthetic test shop rather than
-running this scanner or exporting real connector tool lists.
-
-The temporary demonstration creates no real insurance, warranty, purchases,
-payouts or charges. Its backend expires on 17 November 2026 at 12:30:38 UTC.
-Automatic one-line discovery and installation are under test; host connector
-permissions and approval requirements still apply.
-
 BackBond Agent Scan is published as the exact scoped package `@backbond/agent-scan@0.6.3`. Static only: it inspects tool metadata and agent configuration already on your machine. It does not run tools, probe a live agent, upload traces, contact a hosted service, or execute a second binary.
 
 If a result from this scanner or from a BackBond publication looks wrong, open a correction through the [false-positive form](https://github.com/BackBond/agent-scan/issues/new?template=false-positive.yml). We respond within 72 hours.
